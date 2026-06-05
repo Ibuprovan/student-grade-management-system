@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# OpenCode
+.opencode/.gitignore
+
+# Environment（安全修复：防止敏感配置泄露）
+.env
+.env.local
+.env.*.local
+.env.production
+.env.staging

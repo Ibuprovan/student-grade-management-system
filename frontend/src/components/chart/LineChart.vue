@@ -1,0 +1,218 @@
+<template>
+  <div class="line-chart">
+    <div class="chart-header" v-if="title">
+      <h4 class="chart-title">{{ title }}</h4>
+    </div>
+    <div ref="chartRef" class="chart-container" :style="{ height: height + 'px' }"></div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import * as echarts from 'echarts'
+
+/** 系列数据项 */
+interface SeriesItem {
+  /** 系列名称 */
+  name: string
+  /** 数据 */
+  data: number[]
+  /** 颜色 */
+  color?: string
+}
+
+/** 折线图组件 Props */
+interface LineChartProps {
+  /** 图表标题 */
+  title?: string
+  /** X 轴数据 */
+  xData: string[]
+  /** 系列数据 */
+  series: SeriesItem[]
+  /** X 轴标签 */
+  xLabel?: string
+  /** Y 轴标签 */
+  yLabel?: string
+  /** 是否平滑曲线 */
+  smooth?: boolean
+  /** 是否显示填充区域 */
+  areaStyle?: boolean
+  /** 图表高度 */
+  height?: number
+  /** 是否显示工具提示 */
+  showTooltip?: boolean
+  /** 是否显示图例 */
+  showLegend?: boolean
+  /** 是否显示网格线 */
+  showGrid?: boolean
+}
+
+const props = withDefaults(defineProps<LineChartProps>(), {
+  title: '',
+  xLabel: '',
+  yLabel: '',
+  smooth: false,
+  areaStyle: false,
+  height: 300,
+  showTooltip: true,
+  showLegend: true,
+  showGrid: true,
+})
+
+/** 默认颜色列表 */
+const defaultColors = ['#409EFF', '#67C23A', '#E6A23C', '#F56C6C', '#909399', '#8B5CF6', '#EC4899']
+
+/** 图表引用 */
+const chartRef = ref<HTMLElement>()
+
+/** 图表实例 */
+let chart: echarts.ECharts | null = null
+
+/** 初始化图表 */
+function initChart() {
+  if (!chartRef.value) return
+
+  chart = echarts.init(chartRef.value)
+  updateChart()
+}
+
+/** 更新图表配置 */
+function updateChart() {
+  if (!chart) return
+
+  const seriesData = props.series.map((item, index) => ({
+    name: item.name,
+    type: 'line' as const,
+    data: item.data,
+    smooth: props.smooth,
+    symbol: 'circle',
+    symbolSize: 8,
+    itemStyle: {
+      color: item.color || defaultColors[index % defaultColors.length],
+    },
+    lineStyle: {
+      width: 2,
+      color: item.color || defaultColors[index % defaultColors.length],
+    },
+    areaStyle: props.areaStyle ? {
+      color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+        {
+          offset: 0,
+          color: (item.color || defaultColors[index % defaultColors.length]) + '80',
+        },
+        {
+          offset: 1,
+          color: (item.color || defaultColors[index % defaultColors.length]) + '10',
+        },
+      ]),
+    } : undefined,
+    emphasis: {
+      focus: 'series',
+    },
+  }))
+
+  const option: echarts.EChartsOption = {
+    tooltip: props.showTooltip ? {
+      trigger: 'axis',
+      axisPointer: {
+        type: 'cross',
+        label: {
+          backgroundColor: '#6a7985',
+        },
+      },
+    } : undefined,
+    legend: props.showLegend && props.series.length > 1 ? {
+      data: props.series.map((item) => item.name),
+      top: props.title ? '10%' : '0%',
+      textStyle: {
+        fontSize: 12,
+      },
+    } : undefined,
+    grid: props.showGrid ? {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      top: props.title ? (props.showLegend && props.series.length > 1 ? '25%' : '15%') : (props.showLegend && props.series.length > 1 ? '15%' : '10%'),
+      containLabel: true,
+    } : undefined,
+    xAxis: {
+      type: 'category',
+      data: props.xData,
+      name: props.xLabel,
+      boundaryGap: false,
+      axisLabel: {
+        rotate: props.xData.length > 6 ? 30 : 0,
+        interval: 0,
+      },
+    },
+    yAxis: {
+      type: 'value',
+      name: props.yLabel,
+      axisLabel: {
+        formatter: '{value}',
+      },
+    },
+    series: seriesData,
+  }
+
+  chart.setOption(option, true)
+}
+
+/** 窗口大小变化时重绘图表 */
+function handleResize() {
+  chart?.resize()
+}
+
+/** 监听数据变化 */
+watch(
+  () => [props.xData, props.series],
+  () => {
+    nextTick(() => {
+      updateChart()
+    })
+  },
+  { deep: true }
+)
+
+onMounted(() => {
+  initChart()
+  window.addEventListener('resize', handleResize)
+})
+
+onUnmounted(() => {
+  chart?.dispose()
+  chart = null
+  window.removeEventListener('resize', handleResize)
+})
+
+/** 暴露方法供父组件调用 */
+defineExpose({
+  /** 获取图表实例 */
+  getChart: () => chart,
+  /** 手动刷新图表 */
+  refresh: () => updateChart(),
+  /** 导出图片 */
+  exportImage: () => chart?.getDataURL({ type: 'png', pixelRatio: 2 }),
+})
+</script>
+
+<style lang="scss" scoped>
+.line-chart {
+  width: 100%;
+
+  .chart-header {
+    margin-bottom: 12px;
+
+    .chart-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-color);
+      margin: 0;
+    }
+  }
+
+  .chart-container {
+    width: 100%;
+  }
+}
+</style>

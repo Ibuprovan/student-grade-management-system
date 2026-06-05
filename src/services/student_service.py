@@ -1,0 +1,224 @@
+"""
+学生业务逻辑 Service
+
+实现学生信息管理的核心业务逻辑，包括：
+- 学生增删改查（CRUD）
+- 学号唯一性校验
+- 分页查询与搜索
+"""
+
+from typing import Optional, List, Dict, Any, Tuple
+
+from sqlalchemy.orm import Session
+
+from src.core.exceptions import (
+    StudentNotFoundException,
+    DuplicateException,
+    ValidationException,
+)
+from src.models.student import Student
+from src.repositories.student_repo import StudentRepository
+from src.schemas.student import StudentCreate, StudentUpdate
+
+
+class StudentService:
+    """
+    学生业务逻辑类
+
+    职责：
+    - 处理学生相关的业务逻辑
+    - 协调 Repository 层进行数据操作
+    - 执行业务规则校验（如学号唯一性）
+
+    Attributes:
+        repo: StudentRepository 实例
+    """
+
+    def __init__(self, db: Session):
+        """
+        初始化 StudentService
+
+        Args:
+            db: SQLAlchemy 数据库会话
+        """
+        self.repo = StudentRepository(db)
+
+    def create_student(self, data: StudentCreate) -> Student:
+        """
+        创建学生
+
+        业务流程：
+        1. 检查学号是否已存在
+        2. 不存在则创建学生记录
+        3. 返回创建的学生对象
+
+        Args:
+            data: 学生创建请求数据（已通过 Pydantic 验证）
+
+        Returns:
+            Student: 创建的学生 ORM 对象
+
+        Raises:
+            DuplicateException: 学号已存在
+        """
+        # 检查学号唯一性
+        if self.repo.student_id_exists(data.student_id):
+            raise DuplicateException("学生", "学号", data.student_id)
+
+        # 创建学生记录
+        student_data = data.model_dump()
+        student = self.repo.create(student_data)
+        return student
+
+    def get_student_by_id(self, student_id: str) -> Student:
+        """
+        根据学号查询学生
+
+        Args:
+            student_id: 学号
+
+        Returns:
+            Student: 学生 ORM 对象
+
+        Raises:
+            StudentNotFoundException: 学生不存在
+        """
+        student = self.repo.get_by_student_id(student_id)
+        if student is None:
+            raise StudentNotFoundException(student_id)
+        return student
+
+    def get_student_list(
+        self,
+        page: int = 1,
+        page_size: int = 20,
+        class_name: Optional[str] = None,
+    ) -> Tuple[List[Student], int]:
+        """
+        获取学生列表（分页）
+
+        Args:
+            page: 页码（从 1 开始）
+            page_size: 每页数量
+            class_name: 班级筛选（可选）
+
+        Returns:
+            Tuple[List[Student], int]: (学生列表, 总数)
+        """
+        # 计算偏移量
+        skip = (page - 1) * page_size
+
+        # 构建过滤条件
+        filters = []
+        if class_name:
+            filters.append(Student.class_name == class_name)
+
+        # 查询数据
+        students = self.repo.get_all(skip=skip, limit=page_size, filters=filters)
+        total = self.repo.count(filters=filters)
+
+        return students, total
+
+    def update_student(self, student_id: str, data: StudentUpdate) -> Student:
+        """
+        更新学生信息
+
+        Args:
+            student_id: 学号
+            data: 学生更新请求数据（仅包含需要更新的字段）
+
+        Returns:
+            Student: 更新后的学生 ORM 对象
+
+        Raises:
+            StudentNotFoundException: 学生不存在
+        """
+        # 检查学生是否存在
+        student = self.repo.get_by_student_id(student_id)
+        if student is None:
+            raise StudentNotFoundException(student_id)
+
+        # 获取需要更新的字段（排除 None 值）
+        update_data = data.model_dump(exclude_unset=True, exclude_none=True)
+
+        if not update_data:
+            # 没有需要更新的字段，直接返回
+            return student
+
+        # 执行更新
+        updated_student = self.repo.update(student.student_id, update_data)
+        return updated_student
+
+    def delete_student(self, student_id: str) -> bool:
+        """
+        删除学生
+
+        删除学生时会级联删除其所有成绩记录（通过 ORM 的 cascade 配置）
+
+        Args:
+            student_id: 学号
+
+        Returns:
+            bool: 删除成功返回 True
+
+        Raises:
+            StudentNotFoundException: 学生不存在
+        """
+        # 检查学生是否存在
+        student = self.repo.get_by_student_id(student_id)
+        if student is None:
+            raise StudentNotFoundException(student_id)
+
+        # 执行删除
+        return self.repo.delete(student.student_id)
+
+    def search_students(
+        self,
+        keyword: str,
+        class_name: Optional[str] = None,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> Tuple[List[Student], int]:
+        """
+        搜索学生
+
+        支持按学号或姓名模糊搜索，可选按班级筛选
+
+        Args:
+            keyword: 搜索关键词（匹配学号或姓名）
+            class_name: 班级筛选（可选）
+            page: 页码
+            page_size: 每页数量
+
+        Returns:
+            Tuple[List[Student], int]: (学生列表, 总数)
+        """
+        skip = (page - 1) * page_size
+
+        # 使用 Repository 的搜索方法，传入分页参数
+        # 先获取所有匹配的学生（不带分页）来计算总数
+        all_students = self.repo.search(keyword=keyword, skip=0, limit=10000)
+
+        # 如果指定了班级，进一步过滤
+        if class_name:
+            all_students = [s for s in all_students if s.class_name == class_name]
+
+        # 计算总数
+        total = len(all_students)
+
+        # 应用分页
+        students = all_students[skip:skip + page_size]
+
+        return students, total
+
+    def student_exists(self, student_id: str) -> bool:
+        """
+        检查学生是否存在
+
+        Args:
+            student_id: 学号
+
+        Returns:
+            bool: 存在返回 True，否则返回 False
+        """
+        return self.repo.student_id_exists(student_id)
