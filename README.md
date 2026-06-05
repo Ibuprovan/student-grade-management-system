@@ -70,13 +70,25 @@ student-grade-management-system/
 ├── tests/                        # 测试代码
 ├── data/                         # 数据文件
 ├── project-memory.md             # 项目记忆
-├── agents.md                     # 多 Agent 建设方案
-└── opencode.json                 # OpenCode 配置
+├── start.bat                     # Windows 一键启动脚本
+└── USER_GUIDE.md                 # 用户手册指南
 ```
 
 ## 快速开始
 
-### 后端启动
+### 一键启动（推荐）
+
+**Windows 用户**：双击运行 `start.bat` 文件，系统将自动：
+1. 检查并安装依赖
+2. 初始化数据库
+3. 启动后端和前端服务
+4. 自动打开浏览器访问系统
+
+**其他系统用户**：请参考下方手动启动步骤。
+
+### 手动启动
+
+#### 后端启动
 
 ```bash
 # 安装依赖
