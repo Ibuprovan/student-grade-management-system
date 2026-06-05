@@ -1,0 +1,72 @@
+# Docker Compose 开发环境配置
+# 用于本地开发，支持热更新
+
+version: '3.8'
+
+services:
+  # ============================================
+  # 后端服务（开发模式）
+  # ============================================
+  backend:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile
+    container_name: student-grade-backend-dev
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      # 挂载源代码，支持热更新
+      - ../src:/app/src
+      # 持久化数据
+      - backend-data-dev:/app/data
+    environment:
+      - DATABASE_URL=sqlite:///./data/grades.db
+      - APP_NAME=学生成绩管理系统
+      - DEBUG=true
+      - LOG_LEVEL=DEBUG
+    # 覆盖启动命令，启用热更新
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - app-network-dev
+
+  # ============================================
+  # 前端服务（开发模式）
+  # ============================================
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: ../deployment/frontend/Dockerfile
+    container_name: student-grade-frontend-dev
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    volumes:
+      # 挂载源代码，支持热更新
+      - ../frontend:/app
+      # 排除 node_modules，使用容器内的
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+    # 覆盖启动命令，使用 Vite 开发服务器
+    command: pnpm dev --host
+    depends_on:
+      - backend
+    networks:
+      - app-network-dev
+
+# ============================================
+# 网络配置
+# ============================================
+networks:
+  app-network-dev:
+    driver: bridge
+    name: student-grade-network-dev
+
+# ============================================
+# 数据卷配置
+# ============================================
+volumes:
+  backend-data-dev:
+    name: student-grade-data-dev
+    driver: local
