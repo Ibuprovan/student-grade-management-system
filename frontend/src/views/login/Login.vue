@@ -113,25 +113,30 @@ const rules: FormRules = {
 async function handleLogin() {
   if (!formRef.value) return
 
-  await formRef.value.validate(async (valid) => {
+  try {
+    // 使用 Promise 形式的 validate，确保验证完成后才继续执行
+    const valid = await formRef.value.validate()
     if (!valid) return
+  } catch {
+    // 表单验证失败（validate 返回 rejected promise 时）
+    return
+  }
 
-    loading.value = true
-    try {
-      const success = await authStore.login(loginForm.username, loginForm.password)
+  loading.value = true
+  try {
+    const success = await authStore.login(loginForm.username, loginForm.password)
 
-      if (success) {
-        // 登录成功，跳转到目标页面或默认首页
-        const redirect = (route.query.redirect as string) || '/dashboard'
-        router.push(redirect)
-      }
-    } catch (error) {
-      console.error('登录异常:', error)
-      ElMessage.error('登录失败，请稍后重试')
-    } finally {
-      loading.value = false
+    if (success) {
+      // 登录成功，跳转到目标页面或默认首页
+      const redirect = (route.query.redirect as string) || '/dashboard'
+      router.push(redirect)
     }
-  })
+  } catch (error) {
+    console.error('登录异常:', error)
+    ElMessage.error('登录失败，请稍后重试')
+  } finally {
+    loading.value = false
+  }
 }
 </script>
 

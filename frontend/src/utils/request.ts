@@ -101,14 +101,13 @@ service.interceptors.response.use(
     if (error.response) {
       const { status, data } = error.response
 
-      // 处理 401 错误 - 尝试刷新 Token
-      if (status === 401 && !originalRequest._retry) {
-        // 如果是刷新 Token 的请求失败，直接跳转登录页
-        if (originalRequest.url?.includes('/auth/refresh')) {
-          handleAuthError()
-          return Promise.reject(error)
-        }
+      // 登录/刷新接口的 401 不走 Token 刷新逻辑，直接拒绝（由调用方处理错误提示）
+      const isAuthRequest =
+        originalRequest.url?.includes('/auth/login') ||
+        originalRequest.url?.includes('/auth/refresh')
 
+      // 处理 401 错误 - 尝试刷新 Token（仅对非认证接口生效）
+      if (status === 401 && !originalRequest._retry && !isAuthRequest) {
         // 如果正在刷新 Token，将请求加入队列
         if (isRefreshing) {
           return new Promise((resolve, reject) => {
@@ -164,13 +163,13 @@ service.interceptors.response.use(
 
       switch (status) {
         case 400:
-          message = data?.error?.message || '请求参数错误'
+          message = data?.error?.message || data?.detail || '请求参数错误'
           break
         case 401:
-          message = '未授权，请重新登录'
+          message = data?.detail || data?.error?.message || '用户名或密码错误'
           break
         case 403:
-          message = '拒绝访问'
+          message = data?.detail || data?.error?.message || '拒绝访问'
           break
         case 404:
           message = data?.error?.message || '请求的资源不存在'
@@ -186,6 +185,11 @@ service.interceptors.response.use(
           break
         default:
           message = data?.error?.message || `请求失败 (${status})`
+      }
+
+      // 认证接口（登录/刷新）的错误由调用方处理，不在拦截器中弹消息
+      if (isAuthRequest) {
+        return Promise.reject(error)
       }
     } else if (error.code === 'ECONNABORTED') {
       message = '请求超时，请稍后重试'

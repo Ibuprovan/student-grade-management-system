@@ -164,10 +164,15 @@ export const useAuthStore = defineStore('auth', () => {
         return true
       }
 
+      // 后端返回 success: false 但未抛出异常的情况
+      ElMessage.error('登录失败，请检查用户名和密码')
       return false
     } catch (error: unknown) {
       console.error('登录失败:', error)
-      const message = (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail || '登录失败，请检查用户名和密码'
+
+      // 兼容 FastAPI HTTPException 的 detail 字段和自定义 error 格式
+      const errData = (error as { response?: { data?: { detail?: string; error?: { message?: string } } } })?.response?.data
+      const message = errData?.detail || errData?.error?.message || '登录失败，请检查用户名和密码'
       ElMessage.error(message)
       return false
     } finally {
