@@ -110,6 +110,10 @@ student-grade-management-system/
 │   ├── experiment-report.md      # 实验报告
 │   ├── vulnerability-assessment.md # 漏洞评估
 │   └── project-completion-summary.md # 项目完成总结
+├── CHANGELOG/                    # 更新日志
+│   ├── README.md                 # 更新日志索引
+│   ├── V2.0.0-second-generation-upgrade.md # V2.0.0 更新记录
+│   └── V2.0.1-login-fix.md       # V2.0.1 更新记录
 ├── tests/                        # 测试代码
 ├── data/                         # 数据文件
 ├── project-memory.md             # 项目记忆
@@ -316,6 +320,15 @@ npm run test:coverage
 | API 接口 | 16 个 |
 | 文档文件 | 15+ |
 | 总代码行数 | 15,000+ |
+
+## 更新日志
+
+| 版本 | 日期 | 类型 | 说明 |
+|------|------|------|------|
+| V2.0.1 | 2026-06-08 | Bug 修复 | 修复登录按钮点击无响应问题 |
+| V2.0.0 | 2026-06-07 | 重大更新 | 第二代全面升级：认证系统、UI美化、性能优化、安全增强 |
+
+详细更新记录请查看 [CHANGELOG/](CHANGELOG/) 文件夹。
 
 ## License
 
