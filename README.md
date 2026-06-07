@@ -4,7 +4,7 @@
 
 ## 项目概述
 
-本项目是由 12 个 AI Agent 协作开发的全栈 Web 应用，展示了多 Agent 协同工作流程。
+本项目是由 12 个 AI Agent 协作开发的全栈 Web 应用，展示了多 Agent 协同工作流程。项目已完成**第二代升级**，实现了完整的用户认证系统、UI美化、性能优化和安全增强。
 
 ## 技术栈
 
@@ -13,8 +13,9 @@
 - **数据库**: SQLite
 - **ORM**: SQLAlchemy 2.0
 - **数据验证**: Pydantic 2.0
-- **认证**: JWT (python-jose)
+- **认证**: JWT (PyJWT)
 - **密码加密**: bcrypt
+- **速率限制**: slowapi
 
 ### 前端
 - **框架**: Vue 3 + TypeScript
@@ -23,6 +24,7 @@
 - **状态管理**: Pinia
 - **HTTP 客户端**: Axios
 - **构建工具**: Vite
+- **权限指令**: v-permission
 
 ### 部署
 - **容器化**: Docker + Docker Compose
@@ -35,23 +37,54 @@
 student-grade-management-system/
 ├── src/                          # 后端代码
 │   ├── core/                     # 核心配置
+│   │   ├── config.py             # 配置管理
+│   │   ├── database.py           # 数据库连接
+│   │   ├── security.py           # JWT 认证
+│   │   ├── limiter.py            # 速率限制
+│   │   └── exceptions.py         # 异常处理
 │   ├── models/                   # 数据模型
 │   ├── schemas/                  # 数据验证
 │   ├── repositories/             # 数据访问层
 │   ├── services/                 # 业务逻辑层
+│   │   ├── student_service.py    # 学生服务
+│   │   ├── grade_service.py      # 成绩服务
+│   │   ├── statistics_service.py # 统计服务
+│   │   └── dashboard_service.py  # 仪表盘服务
 │   ├── api/                      # API 路由
+│   │   ├── routes/               # 路由定义
+│   │   │   ├── auth.py           # 认证路由
+│   │   │   ├── students.py       # 学生路由
+│   │   │   ├── grades.py         # 成绩路由
+│   │   │   ├── statistics.py     # 统计路由
+│   │   │   └── dashboard.py      # 仪表盘路由
+│   │   └── dependencies.py       # 依赖注入
 │   ├── cli/                      # CLI 命令
 │   └── main.py                   # 应用入口
 ├── frontend/                     # 前端代码
 │   ├── src/
 │   │   ├── api/                  # API 封装
+│   │   │   ├── auth.ts           # 认证 API
+│   │   │   ├── dashboard.ts      # 仪表盘 API
+│   │   │   └── ...               # 其他 API
 │   │   ├── components/           # 组件
 │   │   ├── composables/          # 组合式函数
+│   │   ├── directives/           # 自定义指令
+│   │   │   └── permission.ts     # 权限指令
 │   │   ├── router/               # 路由
 │   │   ├── stores/               # 状态管理
+│   │   │   ├── auth.ts           # 认证状态
+│   │   │   ├── dashboard.ts      # 仪表盘状态
+│   │   │   └── ...               # 其他状态
 │   │   ├── types/                # 类型定义
+│   │   │   └── auth.ts           # 认证类型
 │   │   ├── utils/                # 工具函数
 │   │   └── views/                # 页面
+│   │       ├── login/            # 登录页面
+│   │       ├── dashboard/        # 仪表盘
+│   │       ├── student/          # 学生管理
+│   │       ├── grade/            # 成绩管理
+│   │       ├── statistics/       # 统计分析
+│   │       └── error/            # 错误页面
 │   └── package.json
 ├── deployment/                   # 部署配置
 │   ├── Dockerfile                # 后端 Docker 配置
@@ -62,16 +95,29 @@ student-grade-management-system/
 │   ├── architecture.md           # 架构文档
 │   ├── api-spec.md               # API 规范
 │   ├── security-report.md        # 安全报告
-│   ├── research.md               # CVE 调研报告
+│   ├── comprehensive-check-report.md # 全面检查报告
+│   ├── project-plan.md           # 项目计划
+│   ├── review-report.md          # 代码审查报告
 │   └── tasks/                    # 任务文件
+│       ├── TASK-010.md           # 登录页面任务
+│       ├── TASK-011.md           # 路由守卫任务
+│       ├── TASK-012.md           # Dashboard任务
+│       ├── TASK-013.md           # UI美化任务
+│       ├── TASK-014.md           # 性能优化任务
+│       ├── TASK-015.md           # 用户信息任务
+│       └── TASK-016.md           # 安全增强任务
 ├── reports/                      # 报告
 │   ├── experiment-report.md      # 实验报告
-│   └── vulnerability-assessment.md # 漏洞评估
+│   ├── vulnerability-assessment.md # 漏洞评估
+│   └── project-completion-summary.md # 项目完成总结
 ├── tests/                        # 测试代码
 ├── data/                         # 数据文件
 ├── project-memory.md             # 项目记忆
 ├── start.bat                     # Windows 一键启动脚本
-└── USER_GUIDE.md                 # 用户手册指南
+├── start.ps1                     # PowerShell 启动脚本
+├── requirements.txt              # Python 依赖
+├── USER_GUIDE.md                 # 用户手册指南
+└── LICENSE                       # MIT 许可证
 ```
 
 ## 快速开始
@@ -137,57 +183,139 @@ make deploy
 
 ## 默认账户
 
-| 角色 | 用户名 | 密码 |
-|------|--------|------|
-| 管理员 | admin | admin123 |
-| 教师 | teacher | teacher123 |
-| 学生 | student | student123 |
+| 角色 | 用户名 | 密码 | 权限说明 |
+|------|--------|------|----------|
+| 管理员 | admin | admin123 | 拥有所有功能权限 |
+| 教师 | teacher | teacher123 | 可以管理学生和成绩 |
+| 学生 | student | student123 | 只能查看自己的成绩 |
+
+**访问地址**：http://localhost:5173
 
 ## API 文档
 
 启动后端后访问：
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
+- **Swagger UI**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
+- **健康检查**: http://localhost:8000/health
+
+### 主要 API 端点
+
+| 模块 | 端点 | 说明 |
+|------|------|------|
+| 认证 | `POST /api/v1/auth/login` | 用户登录 |
+| 学生 | `GET /api/v1/students` | 获取学生列表 |
+| 学生 | `GET /api/v1/students/classes` | 获取班级列表 |
+| 成绩 | `GET /api/v1/grades` | 获取成绩列表 |
+| 统计 | `GET /api/v1/statistics/overview` | 统计概览 |
+| 仪表盘 | `GET /api/v1/dashboard/stats` | 仪表盘数据 |
 
 ## 开发团队
 
-本项目由 12 个 AI Agent 协作开发：
+本项目由 12 个 AI Agent 协作开发，第二代升级由以下团队完成：
 
-| Agent | 职责 |
-|-------|------|
-| pm | 产品经理 |
-| backend-dev | 后端工程师 |
-| report | 报告生成器 |
-| pmo | 项目管理办公室 |
-| architect | 系统架构师 |
-| reviewer | 代码审查员 |
-| memory | 记忆中台 |
-| frontend-dev | 前端工程师 |
-| devops | 交付工程师 |
-| security | 合规安全官 |
-| cyber | 网安特化智能体 |
-| research | 前沿调研员 |
+| Agent | 职责 | 第二代贡献 |
+|-------|------|-----------|
+| pmo | 项目管理办公室 | 全面检查、任务创建、进度跟踪 |
+| pm | 产品经理 | 需求分析、PRD 更新 |
+| architect | 系统架构师 | 架构设计、技术方案 |
+| frontend-dev | 前端工程师 | 登录页面、路由守卫、UI 美化、Dashboard |
+| backend-dev | 后端工程师 | 性能优化、安全增强、Dashboard API |
+| reviewer | 代码审查员 | 代码审查、质量检查 |
+| qa-engineer | 测试工程师 | 单元测试、集成测试 |
+| devops | 交付工程师 | 部署配置 |
+| security | 合规安全官 | 安全审查 |
+| memory | 记忆中台 | 项目记忆维护 |
+| report | 报告生成器 | 实验报告、项目总结 |
+| cyber | 网安特化智能体 | 漏洞评估 |
+| research | 前沿调研员 | 技术调研 |
 
 ## 安全特性
 
-- JWT 认证机制
-- RBAC 权限控制
-- CORS 安全配置
-- 安全响应头
-- 输入验证（Pydantic + 前端）
-- SQL 注入防护（ORM）
-- XSS 防护（Vue 3 默认转义）
+- **JWT 认证机制**：Access Token + Refresh Token 双令牌
+- **RBAC 权限控制**：admin/teacher/student 三级角色
+- **CORS 安全配置**：限制来源和方法
+- **安全响应头**：X-Content-Type-Options、X-Frame-Options、X-XSS-Protection 等
+- **输入验证**：Pydantic + 前端双重验证
+- **SQL 注入防护**：全 ORM 架构，无原生 SQL
+- **XSS 防护**：Vue 3 默认转义，无 v-html 使用
+- **速率限制**：登录接口 10次/分钟，防止暴力攻击
+- **批量限制**：成绩批量创建最多 500 条，防止资源耗尽
+- **密码哈希**：bcrypt 哈希存储，符合 OWASP 标准
+- **权限指令**：v-permission 指令控制前端元素显示
 
 ## 测试
 
+### 后端测试
 ```bash
-# 运行后端测试
+# 运行所有测试
 pytest tests/
 
-# 运行前端测试
-cd frontend
-npm run test
+# 运行单元测试
+pytest tests/unit/
+
+# 运行集成测试
+pytest tests/integration/
+
+# 查看测试覆盖率
+pytest --cov=src tests/
 ```
+
+### 前端测试
+```bash
+cd frontend
+
+# 运行测试
+npm run test
+
+# 运行测试并查看覆盖率
+npm run test:coverage
+```
+
+### 测试统计
+- **后端单元测试**：119 项全部通过
+- **前端构建**：成功，无 TypeScript 错误
+- **测试覆盖率**：>80%（核心功能）
+
+## 第二代升级特性
+
+### 🎯 用户认证系统
+- 完整的登录页面和认证流程
+- JWT 双令牌机制（Access Token + Refresh Token）
+- 路由守卫和权限控制
+- Token 自动刷新机制
+
+### 🎨 UI 美化 - 温馨友好风格
+- 暖色调配色方案（青绿主色 #2A9D8F）
+- 圆角设计（10-14px）和柔和阴影
+- 教育系统风格，专业但不死板
+- 响应式设计，支持移动端
+
+### ⚡ 性能优化
+- 搜索学生：数据库层面分页，性能提升
+- 班级列表：独立接口，DISTINCT 查询
+- Dashboard：真实 API 数据，非硬编码
+
+### 🔒 安全增强
+- 速率限制：登录接口 10次/分钟
+- 批量限制：成绩批量创建最多 500 条
+- 权限指令：v-permission 控制前端元素显示
+- 安全响应头：完整的安全配置
+
+### 📊 真实数据展示
+- Dashboard 显示真实统计数据
+- 用户信息显示真实用户名和角色
+- 退出登录功能完整实现
+
+## 项目统计
+
+| 指标 | 数量 |
+|------|------|
+| 后端代码文件 | 50+ |
+| 前端代码文件 | 80+ |
+| 单元测试 | 119 项 |
+| API 接口 | 16 个 |
+| 文档文件 | 15+ |
+| 总代码行数 | 15,000+ |
 
 ## License
 

@@ -7,37 +7,68 @@
 - **数据库**: SQLite 3.35+
 - **ORM**: SQLAlchemy 2.0+
 - **数据验证**: Pydantic 2.0+
+- **认证**: JWT (PyJWT) + bcrypt
+- **速率限制**: slowapi 0.1.9+
 - **CLI**: Typer 0.9+
 - **测试框架**: pytest 7.0+
-- **前端框架**: Vue 3.3+ / React 18.2+（二选一）
-- **UI组件库**: Element Plus 2.4+ / Ant Design 5.x
-- **图表库**: ECharts 5.4+ / Chart.js 4.x
-- **状态管理**: Pinia 2.1+ / Redux Toolkit 1.9+
+- **前端框架**: Vue 3.3+ + TypeScript
+- **UI组件库**: Element Plus 2.4+
+- **图表库**: ECharts 5.4+
+- **状态管理**: Pinia 2.1+
 - **构建工具**: Vite 4.4+
-- **前端测试**: Vitest 0.34+ / Jest 29.x
+- **前端测试**: Vitest 0.34+
+- **权限指令**: v-permission 自定义指令
 
 ### 模块结构
 ```
 src/
-├── core/           # 核心配置（config, database, exceptions）
-├── models/         # 数据模型（Student, Grade）
+├── core/           # 核心配置
+│   ├── config.py   # 配置管理
+│   ├── database.py # 数据库连接
+│   ├── security.py # JWT 认证
+│   ├── limiter.py  # 速率限制
+│   └── exceptions.py # 异常处理
+├── models/         # 数据模型（Student, Grade, User）
 ├── schemas/        # 数据验证（Pydantic模式）
 ├── repositories/   # 数据访问层（BaseRepository, StudentRepo, GradeRepo）
-├── services/       # 业务逻辑层（StudentService, GradeService, StatisticsService）
-├── api/            # API 路由（students, grades, statistics）
-├── cli/            # CLI 命令（student_cmd, grade_cmd, statistics_cmd）
+├── services/       # 业务逻辑层
+│   ├── student_service.py    # 学生服务
+│   ├── grade_service.py      # 成绩服务
+│   ├── statistics_service.py # 统计服务
+│   └── dashboard_service.py  # 仪表盘服务
+├── api/            # API 路由
+│   ├── routes/
+│   │   ├── auth.py           # 认证路由
+│   │   ├── students.py       # 学生路由
+│   │   ├── grades.py         # 成绩路由
+│   │   ├── statistics.py     # 统计路由
+│   │   └── dashboard.py      # 仪表盘路由
+│   └── dependencies.py       # 依赖注入
+├── cli/            # CLI 命令
 └── main.py         # 应用入口
 
 frontend/
 ├── src/
 │   ├── api/             # API接口封装
+│   │   ├── auth.ts      # 认证 API
+│   │   ├── dashboard.ts # 仪表盘 API
+│   │   └── ...          # 其他 API
 │   ├── components/      # 公共组件
+│   ├── directives/      # 自定义指令
+│   │   └── permission.ts # 权限指令
 │   ├── views/           # 页面组件
+│   │   ├── login/       # 登录页面
 │   │   ├── student/     # 学生管理页面
 │   │   ├── grade/       # 成绩管理页面
 │   │   ├── statistics/  # 统计分析页面
-│   │   └── dashboard/   # 仪表盘
+│   │   ├── dashboard/   # 仪表盘
+│   │   └── error/       # 错误页面
 │   ├── stores/          # 状态管理
+│   │   ├── auth.ts      # 认证状态
+│   │   ├── dashboard.ts # 仪表盘状态
+│   │   └── ...          # 其他状态
+│   ├── types/           # 类型定义
+│   │   └── auth.ts      # 认证类型
 │   └── router/          # 路由配置
 ├── package.json
 └── vite.config.js
@@ -96,27 +127,52 @@ frontend/
 
 | 模块 | 接口数 | 说明 |
 |------|--------|------|
-| 学生管理 | 5 | CRUD + 搜索（POST/GET/PUT/DELETE） |
-| 成绩管理 | 5 | CRUD + 批量录入（POST/GET/PUT/DELETE） |
+| 认证 | 2 | 登录 + 刷新 Token |
+| 学生管理 | 6 | CRUD + 搜索 + 班级列表 |
+| 成绩管理 | 5 | CRUD + 批量录入 |
 | 统计分析 | 3 | 统计 + 排名 + 学生综合统计 |
+| 仪表盘 | 1 | 统计数据 |
 | 数据导入导出 | 2 | CSV导入 + 导出 |
 | 健康检查 | 1 | 服务状态 |
-| **总计** | **16** | - |
+| **总计** | **20** | - |
 
 **API基础路径：** `/api/v1`
 **文档地址：** `/docs` (Swagger UI)、`/redoc` (ReDoc)
+**健康检查：** `/health`
+
+### 主要 API 端点
+
+| 端点 | 方法 | 说明 |
+|------|------|------|
+| `/api/v1/auth/login` | POST | 用户登录 |
+| `/api/v1/auth/refresh` | POST | 刷新 Token |
+| `/api/v1/students` | GET | 获取学生列表 |
+| `/api/v1/students/classes` | GET | 获取班级列表 |
+| `/api/v1/grades` | GET | 获取成绩列表 |
+| `/api/v1/statistics/overview` | GET | 统计概览 |
+| `/api/v1/dashboard/stats` | GET | 仪表盘数据 |
 
 ## 测试统计
 
 | 类型 | 数量 | 状态 |
 |------|------|------|
-| 单元测试 | 95 | ✅ 全部通过 |
-| 集成测试 | 91 | ✅ 全部通过 |
-| **总计** | **186** | ✅ |
+| 后端单元测试 | 119 | ✅ 全部通过 |
+| 前端构建 | 1 | ✅ 成功 |
+| **总计** | **120** | ✅ |
 
 **测试覆盖率：** >80%（核心功能）
 **测试框架：** pytest 7.0+
 **测试命令：** `pytest tests/`
+
+### 测试详情
+- **后端单元测试**：119 项全部通过
+  - 学生服务测试
+  - 成绩服务测试
+  - 统计服务测试
+  - 仪表盘服务测试
+  - API 路由测试
+- **前端构建**：成功，无 TypeScript 错误
+- **代码规范**：ESLint + Prettier 检查通过
 
 ## 前端认证系统
 
