@@ -44,7 +44,7 @@ if %errorlevel% neq 0 (
 
 echo.
 echo [INFO] Starting backend service...
-start "Student Grade Management System - Backend" cmd /k "cd /d %~dp0 && uvicorn src.main:app --reload --host 0.0.0.0 --port 8000"
+start "Student Grade Management System - Backend" cmd /k "cd /d %~dp0 && python -m uvicorn src.main:app --reload --host 0.0.0.0 --port 8000"
 
 echo [INFO] Starting frontend service...
 start "Student Grade Management System - Frontend" cmd /k "cd /d %~dp0\frontend && npm run dev"
