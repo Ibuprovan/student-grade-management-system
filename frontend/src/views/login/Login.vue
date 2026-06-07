@@ -111,14 +111,18 @@ const rules: FormRules = {
  * 处理登录
  */
 async function handleLogin() {
-  if (!formRef.value) return
+  if (!formRef.value) {
+    ElMessage.warning('页面加载异常，请刷新后重试')
+    return
+  }
 
+  // 表单验证 —— 不依赖 validate() 的返回值，
+  // 只区分 resolved（验证通过）和 rejected（验证失败）两种状态
   try {
-    // 使用 Promise 形式的 validate，确保验证完成后才继续执行
-    const valid = await formRef.value.validate()
-    if (!valid) return
+    await formRef.value.validate()
+    // resolved = 验证通过，继续执行
   } catch {
-    // 表单验证失败（validate 返回 rejected promise 时）
+    // rejected = 验证失败，表单已自动显示行内错误提示，直接返回
     return
   }
 
@@ -129,7 +133,7 @@ async function handleLogin() {
     if (success) {
       // 登录成功，跳转到目标页面或默认首页
       const redirect = (route.query.redirect as string) || '/dashboard'
-      router.push(redirect)
+      await router.push(redirect)
     }
   } catch (error) {
     console.error('登录异常:', error)

@@ -98,13 +98,13 @@ service.interceptors.response.use(
     // 处理 HTTP 错误状态码
     let message = '网络错误，请稍后重试'
 
+    // 登录/刷新接口的错误由调用方处理，不在拦截器中弹消息
+    const isAuthRequest =
+      originalRequest.url?.includes('/auth/login') ||
+      originalRequest.url?.includes('/auth/refresh')
+
     if (error.response) {
       const { status, data } = error.response
-
-      // 登录/刷新接口的 401 不走 Token 刷新逻辑，直接拒绝（由调用方处理错误提示）
-      const isAuthRequest =
-        originalRequest.url?.includes('/auth/login') ||
-        originalRequest.url?.includes('/auth/refresh')
 
       // 处理 401 错误 - 尝试刷新 Token（仅对非认证接口生效）
       if (status === 401 && !originalRequest._retry && !isAuthRequest) {
@@ -187,7 +187,7 @@ service.interceptors.response.use(
           message = data?.error?.message || `请求失败 (${status})`
       }
 
-      // 认证接口（登录/刷新）的错误由调用方处理，不在拦截器中弹消息
+      // 有 HTTP 响应的认证接口错误直接拒绝，由调用方处理
       if (isAuthRequest) {
         return Promise.reject(error)
       }
@@ -197,7 +197,10 @@ service.interceptors.response.use(
       message = '网络连接已断开，请检查网络'
     }
 
-    ElMessage.error(message)
+    // 认证接口（登录/刷新）的错误由调用方处理，不在拦截器中弹消息
+    if (!isAuthRequest) {
+      ElMessage.error(message)
+    }
     return Promise.reject(error)
   },
 )

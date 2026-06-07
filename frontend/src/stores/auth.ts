@@ -62,6 +62,30 @@ export const useAuthStore = defineStore('auth', () => {
   // ========== 辅助函数 ==========
 
   /**
+   * 从 JWT Token 中解析用户信息（兜底方案）
+   * JWT Payload 格式：{ sub, username, role, exp, iat, jti, type }
+   */
+  function decodeTokenToUser(token: string): UserInfo | null {
+    try {
+      const parts = token.split('.')
+      if (parts.length !== 3) return null
+
+      const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+      const padded = base64 + '='.repeat((4 - base64.length % 4) % 4)
+      const payload = JSON.parse(atob(padded))
+      return {
+        id: Number(payload.sub),
+        username: payload.username || '',
+        role: payload.role || 'student',
+        is_active: true,
+      }
+    } catch (e) {
+      console.error('解析 Token 失败:', e)
+      return null
+    }
+  }
+
+  /**
    * 从 localStorage 加载认证状态
    */
   function loadFromStorage() {
@@ -153,11 +177,39 @@ export const useAuthStore = defineStore('auth', () => {
         updateTokenResponse(tokenResponse)
 
         // 获取用户信息
-        const userResponse = await authApi.getCurrentUser()
+        try {
+          const userResponse = await authApi.getCurrentUser()
 
-        if (userResponse.success && userResponse.data) {
-          user.value = userResponse.data
-          localStorage.setItem(STORAGE_KEYS.USER_INFO, JSON.stringify(userResponse.data))
+          if (userResponse.success && userResponse.data) {
+            user.value = userResponse.data
+            localStorage.setItem(STORAGE_KEYS.USER_INFO, JSON.stringify(userResponse.data))
+          } else {
+            // API 未返回用户信息时，从 JWT Token 解析基本信息作为兜底
+            const fallbackUser = decodeTokenToUser(tokenResponse.access_token)
+            if (fallbackUser) {
+              user.value = fallbackUser
+              localStorage.setItem(STORAGE_KEYS.USER_INFO, JSON.stringify(fallbackUser))
+            }
+          }
+        } catch (userError) {
+          console.warn('获取用户信息失败，从 Token 解析:', userError)
+          // 从 JWT Token 解析基本信息作为兜底
+          const fallbackUser = decodeTokenToUser(tokenResponse.access_token)
+          if (fallbackUser) {
+            user.value = fallbackUser
+            localStorage.setItem(STORAGE_KEYS.USER_INFO, JSON.stringify(fallbackUser))
+          }
+        }
+
+        // 检查是否成功获取到用户信息
+        if (!user.value) {
+          // 登录成功但获取用户信息失败，清除状态
+          localStorage.removeItem('access_token')
+          localStorage.removeItem('refresh_token')
+          accessToken.value = null
+          refreshTokenValue.value = null
+          ElMessage.error('获取用户信息失败，请重试')
+          return false
         }
 
         ElMessage.success('登录成功')
