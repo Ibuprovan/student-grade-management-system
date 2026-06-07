@@ -54,7 +54,7 @@ if ($LASTEXITCODE -ne 0) {
 
 Write-Host ""
 Write-Host "[信息] 正在启动后端服务..." -ForegroundColor Yellow
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$PSScriptRoot'; uvicorn src.main:app --reload --host 0.0.0.0 --port 8000" -WindowStyle Normal
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$PSScriptRoot'; python -m uvicorn src.main:app --reload --host 0.0.0.0 --port 8000" -WindowStyle Normal
 
 Write-Host "[信息] 正在启动前端服务..." -ForegroundColor Yellow
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$PSScriptRoot\frontend'; npm run dev" -WindowStyle Normal

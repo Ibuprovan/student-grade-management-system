@@ -15,7 +15,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.api.routes import students_router, grades_router, statistics_router, auth_router
+from src.api.routes import students_router, grades_router, statistics_router, auth_router, dashboard_router
 from src.api.exception_handlers import (
     app_exception_handler,
     validation_exception_handler,
@@ -115,6 +115,7 @@ def create_app() -> FastAPI:
     app.include_router(students_router)
     app.include_router(grades_router)
     app.include_router(statistics_router)
+    app.include_router(dashboard_router)
 
     # 健康检查端点（公开，用于监控）
     @app.get("/health", tags=["系统"])
