@@ -1,6 +1,12 @@
 /**
  * Axios 请求工具封装
  * 配置拦截器、错误处理、请求方法
+ *
+ * 功能特性：
+ * - 请求拦截器：自动附加 Token
+ * - 响应拦截器：处理业务错误和 401 状态码
+ * - Token 自动刷新：401 时自动尝试刷新 Token
+ * - 请求队列：刷新期间其他请求排队等待
  */
 
 import axios from 'axios'
@@ -17,6 +23,32 @@ interface BackendResponse<T = unknown> {
   } | null
 }
 
+/** 请求队列项 */
+interface QueueItem {
+  resolve: (value: unknown) => void
+  reject: (reason?: unknown) => void
+}
+
+/** Token 刷新状态 */
+let isRefreshing = false
+let failedQueue: QueueItem[] = []
+
+/**
+ * 处理失败队列
+ * @param error 错误对象（如果刷新失败）
+ * @param token 新的 Access Token（如果刷新成功）
+ */
+function processQueue(error: unknown, token: string | null = null) {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error)
+    } else {
+      prom.resolve(token)
+    }
+  })
+  failedQueue = []
+}
+
 /** 创建 Axios 实例 */
 const service: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api/v1',
@@ -29,11 +61,14 @@ const service: AxiosInstance = axios.create({
 /** 请求拦截器 */
 service.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // 可在此处添加 token 等认证信息
-    // const token = localStorage.getItem('token')
-    // if (token) {
-    //   config.headers.Authorization = `Bearer ${token}`
-    // }
+    // 从 localStorage 获取 Token
+    const token = localStorage.getItem('access_token')
+
+    // 如果存在 Token，自动附加到请求头
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+
     return config
   },
   (error) => {
@@ -57,19 +92,82 @@ service.interceptors.response.use(
     // 返回完整响应数据
     return data as unknown as AxiosResponse
   },
-  (error) => {
+  async (error) => {
+    const originalRequest = error.config
+
     // 处理 HTTP 错误状态码
     let message = '网络错误，请稍后重试'
 
     if (error.response) {
       const { status, data } = error.response
+
+      // 处理 401 错误 - 尝试刷新 Token
+      if (status === 401 && !originalRequest._retry) {
+        // 如果是刷新 Token 的请求失败，直接跳转登录页
+        if (originalRequest.url?.includes('/auth/refresh')) {
+          handleAuthError()
+          return Promise.reject(error)
+        }
+
+        // 如果正在刷新 Token，将请求加入队列
+        if (isRefreshing) {
+          return new Promise((resolve, reject) => {
+            failedQueue.push({ resolve, reject })
+          })
+            .then((token) => {
+              originalRequest.headers.Authorization = `Bearer ${token}`
+              return service(originalRequest)
+            })
+            .catch((err) => {
+              return Promise.reject(err)
+            })
+        }
+
+        originalRequest._retry = true
+        isRefreshing = true
+
+        // 尝试刷新 Token
+        const refreshToken = localStorage.getItem('refresh_token')
+
+        if (!refreshToken) {
+          handleAuthError()
+          return Promise.reject(error)
+        }
+
+        try {
+          const response = await axios.post(
+            `${import.meta.env.VITE_API_BASE_URL || '/api/v1'}/auth/refresh`,
+            { refresh_token: refreshToken },
+          )
+
+          const { access_token, refresh_token: newRefreshToken } = response.data.data
+
+          // 更新 Token
+          localStorage.setItem('access_token', access_token)
+          localStorage.setItem('refresh_token', newRefreshToken)
+
+          // 处理队列中的请求
+          processQueue(null, access_token)
+
+          // 重试原始请求
+          originalRequest.headers.Authorization = `Bearer ${access_token}`
+          return service(originalRequest)
+        } catch (refreshError) {
+          // 刷新失败，清除认证状态
+          processQueue(refreshError, null)
+          handleAuthError()
+          return Promise.reject(refreshError)
+        } finally {
+          isRefreshing = false
+        }
+      }
+
       switch (status) {
         case 400:
           message = data?.error?.message || '请求参数错误'
           break
         case 401:
           message = '未授权，请重新登录'
-          // 可在此处跳转到登录页
           break
         case 403:
           message = '拒绝访问'
@@ -99,6 +197,25 @@ service.interceptors.response.use(
     return Promise.reject(error)
   },
 )
+
+/**
+ * 处理认证失败
+ * 清除本地 Token 并跳转到登录页
+ */
+function handleAuthError() {
+  // 清除本地存储的认证信息
+  localStorage.removeItem('access_token')
+  localStorage.removeItem('refresh_token')
+  localStorage.removeItem('user_info')
+
+  // 显示提示
+  ElMessage.error('登录已过期，请重新登录')
+
+  // 使用 setTimeout 确保在 Vue 应用初始化后再跳转
+  setTimeout(() => {
+    window.location.href = '/login'
+  }, 100)
+}
 
 /**
  * 封装 GET 请求

@@ -40,6 +40,7 @@ onMounted(() => {
 <style lang="scss" scoped>
 .app-layout {
   min-height: 100vh;
+  background: var(--bg-color);
 }
 
 .layout-main {
@@ -51,7 +52,7 @@ onMounted(() => {
 
 .layout-content {
   flex: 1;
-  padding: 16px;
+  padding: 20px;
   background: var(--bg-color);
   overflow-y: auto;
 }
@@ -59,16 +60,28 @@ onMounted(() => {
 // 页面切换动画
 .fade-transform-enter-active,
 .fade-transform-leave-active {
-  transition: all 0.3s;
+  transition: all 0.25s ease;
 }
 
 .fade-transform-enter-from {
   opacity: 0;
-  transform: translateX(-20px);
+  transform: translateX(-12px);
 }
 
 .fade-transform-leave-to {
   opacity: 0;
-  transform: translateX(20px);
+  transform: translateX(12px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-transform-enter-active,
+  .fade-transform-leave-active {
+    transition: opacity 0.1s;
+  }
+
+  .fade-transform-enter-from,
+  .fade-transform-leave-to {
+    transform: none;
+  }
 }
 </style>

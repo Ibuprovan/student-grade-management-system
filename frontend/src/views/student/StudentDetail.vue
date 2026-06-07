@@ -206,6 +206,8 @@ function getScoreTagType(score: number): '' | 'success' | 'warning' | 'danger' |
 
 <style lang="scss" scoped>
 .student-detail {
+  animation: fadeIn 0.3s ease;
+
   .page-header {
     display: flex;
     justify-content: space-between;
@@ -214,8 +216,8 @@ function getScoreTagType(score: number): '' | 'success' | 'warning' | 'danger' |
 
     .page-title {
       margin: 0;
-      font-size: 20px;
-      font-weight: 600;
+      font-size: 22px;
+      font-weight: 700;
     }
 
     .header-actions {
@@ -227,25 +229,26 @@ function getScoreTagType(score: number): '' | 'success' | 'warning' | 'danger' |
   .detail-content {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 16px;
   }
 
   .info-card {
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    background: var(--surface-color);
+    border-radius: var(--border-radius-lg);
+    border: 1px solid var(--border-color-light);
+    box-shadow: var(--shadow-xs);
     overflow: hidden;
 
     .card-title {
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 16px 20px;
-      background: #fafafa;
-      border-bottom: 1px solid #f0f0f0;
-      font-size: 16px;
+      padding: 16px 24px;
+      background: var(--bg-color);
+      border-bottom: 1px solid var(--border-color-light);
+      font-size: 15px;
       font-weight: 600;
-      color: #303133;
+      color: var(--text-color);
 
       .grade-count {
         margin-left: auto;
@@ -253,28 +256,29 @@ function getScoreTagType(score: number): '' | 'success' | 'warning' | 'danger' |
     }
 
     .card-body {
-      padding: 20px;
+      padding: 24px;
     }
   }
 
   .info-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 16px;
+    gap: 20px;
 
     .info-item {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 6px;
 
       .label {
         font-size: 13px;
-        color: #909399;
+        color: var(--text-color-secondary);
+        font-weight: 500;
       }
 
       .value {
         font-size: 14px;
-        color: #303133;
+        color: var(--text-color);
         font-weight: 500;
       }
     }
@@ -282,27 +286,27 @@ function getScoreTagType(score: number): '' | 'success' | 'warning' | 'danger' |
 
   // 分数样式
   .score-excellent {
-    color: #67c23a;
+    color: var(--success-color);
     font-weight: 600;
   }
 
   .score-good {
-    color: #409eff;
+    color: var(--primary-color);
     font-weight: 600;
   }
 
   .score-medium {
-    color: #e6a23c;
+    color: var(--warning-color);
     font-weight: 600;
   }
 
   .score-pass {
-    color: #f56c6c;
+    color: var(--danger-color);
     font-weight: 600;
   }
 
   .score-fail {
-    color: #909399;
+    color: var(--info-color);
     font-weight: 600;
   }
 
@@ -312,8 +316,8 @@ function getScoreTagType(score: number): '' | 'success' | 'warning' | 'danger' |
     gap: 12px;
 
     .grade-card {
-      background: #fafafa;
-      border-radius: 8px;
+      background: var(--bg-color);
+      border-radius: var(--border-radius-md);
       padding: 16px;
 
       .grade-header {
@@ -323,9 +327,9 @@ function getScoreTagType(score: number): '' | 'success' | 'warning' | 'danger' |
         margin-bottom: 12px;
 
         .subject {
-          font-size: 16px;
+          font-size: 15px;
           font-weight: 600;
-          color: #303133;
+          color: var(--text-color);
         }
       }
 
@@ -342,14 +346,14 @@ function getScoreTagType(score: number): '' | 'success' | 'warning' | 'danger' |
           .unit {
             font-size: 14px;
             font-weight: 400;
-            color: #909399;
+            color: var(--text-color-secondary);
           }
         }
       }
 
       .grade-footer {
         font-size: 13px;
-        color: #909399;
+        color: var(--text-color-secondary);
       }
     }
   }

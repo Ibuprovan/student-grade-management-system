@@ -10,6 +10,7 @@
         </el-button>
         <el-button
           type="danger"
+          plain
           :disabled="selectedStudents.length === 0"
           @click="handleBatchDelete"
         >
@@ -115,7 +116,7 @@
           sortable="custom"
         >
           <template #default="{ row }">
-            <el-tag :type="row.gender === '男' ? '' : 'danger'" size="small">
+            <el-tag :type="row.gender === '男' ? '' : 'danger'" size="small" effect="plain">
               {{ row.gender }}
             </el-tag>
           </template>
@@ -175,23 +176,23 @@
         >
           <div class="card-header">
             <div class="student-avatar">
-              <el-icon :size="24"><User /></el-icon>
+              <el-icon :size="20"><User /></el-icon>
             </div>
             <div class="student-info">
               <div class="student-name">{{ student.name }}</div>
               <div class="student-id">{{ student.student_id }}</div>
             </div>
-            <el-tag :type="student.gender === '男' ? '' : 'danger'" size="small">
+            <el-tag :type="student.gender === '男' ? '' : 'danger'" size="small" effect="plain">
               {{ student.gender }}
             </el-tag>
           </div>
           <div class="card-body">
             <div class="info-item">
-              <span class="label">班级：</span>
+              <span class="label">班级</span>
               <span class="value">{{ student.class_name }}</span>
             </div>
             <div class="info-item">
-              <span class="label">入学年份：</span>
+              <span class="label">入学年份</span>
               <span class="value">{{ student.enrollment_year }}</span>
             </div>
           </div>
@@ -342,8 +343,6 @@ function handleSelectionChange(selection: Student[]) {
 /** 排序变化 */
 function handleSortChange(sort: { prop: string; order: string }) {
   sortParams.value = sort
-  // 前端排序（如果后端不支持排序）
-  // 这里可以根据实际需求决定是前端排序还是后端排序
 }
 
 /** 查看详情 */
@@ -378,7 +377,6 @@ async function confirmDelete() {
   deleteLoading.value = true
   try {
     if (isBatchDelete.value) {
-      // 批量删除
       const promises = selectedStudents.value.map((student) =>
         studentStore.deleteStudent(student.student_id)
       )
@@ -386,7 +384,6 @@ async function confirmDelete() {
       ElMessage.success(`成功删除 ${selectedStudents.value.length} 名学生`)
       selectedStudents.value = []
     } else if (deleteTarget.value) {
-      // 单个删除
       await studentStore.deleteStudent(deleteTarget.value.student_id)
     }
     deleteDialogVisible.value = false
@@ -398,7 +395,6 @@ async function confirmDelete() {
 
 /** 导出数据 */
 function handleExport() {
-  // 构建导出数据
   const headers = ['学号', '姓名', '性别', '班级', '入学年份', '创建时间']
   const data = studentStore.students.map((student) => [
     student.student_id,
@@ -409,13 +405,11 @@ function handleExport() {
     formatDateTime(student.created_at),
   ])
 
-  // 生成 CSV 内容
   const csvContent = [
     headers.join(','),
     ...data.map((row) => row.join(',')),
   ].join('\n')
 
-  // 创建下载链接
   const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' })
   const link = document.createElement('a')
   link.href = URL.createObjectURL(blob)
@@ -429,6 +423,8 @@ function handleExport() {
 
 <style lang="scss" scoped>
 .student-list {
+  animation: fadeIn 0.3s ease;
+
   .page-header {
     display: flex;
     justify-content: space-between;
@@ -437,8 +433,8 @@ function handleExport() {
 
     .page-title {
       margin: 0;
-      font-size: 20px;
-      font-weight: 600;
+      font-size: 22px;
+      font-weight: 700;
     }
 
     .header-actions {
@@ -447,59 +443,74 @@ function handleExport() {
     }
   }
 
+  // ===== 搜索区域 =====
   .search-section {
-    background: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    background: var(--surface-color);
+    padding: 20px 24px;
+    border-radius: var(--border-radius-lg);
+    margin-bottom: 16px;
+    border: 1px solid var(--border-color-light);
+    box-shadow: var(--shadow-xs);
 
     :deep(.el-form-item) {
       margin-bottom: 0;
       margin-right: 16px;
     }
+
+    :deep(.el-form-item__label) {
+      font-weight: 500;
+      color: var(--text-color);
+    }
   }
 
+  // ===== 表格 =====
   .table-view {
-    background: #fff;
-    border-radius: 8px;
+    background: var(--surface-color);
+    border-radius: var(--border-radius-lg);
     overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    border: 1px solid var(--border-color-light);
+    box-shadow: var(--shadow-xs);
   }
 
   .table-actions {
     display: flex;
     justify-content: center;
-    gap: 8px;
+    gap: 4px;
   }
 
-  // 移动端卡片视图
+  // ===== 移动端卡片 =====
   .card-view {
     .student-cards {
       display: grid;
-      gap: 16px;
+      gap: 12px;
     }
 
     .student-card {
-      background: #fff;
-      border-radius: 8px;
-      padding: 16px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      background: var(--surface-color);
+      border-radius: var(--border-radius-lg);
+      padding: 18px;
+      border: 1px solid var(--border-color-light);
+      box-shadow: var(--shadow-xs);
+      transition: box-shadow var(--transition-fast);
+
+      &:hover {
+        box-shadow: var(--shadow-sm);
+      }
 
       .card-header {
         display: flex;
         align-items: center;
-        margin-bottom: 12px;
+        margin-bottom: 14px;
 
         .student-avatar {
           width: 40px;
           height: 40px;
-          border-radius: 50%;
-          background: #e8f4fd;
+          border-radius: 12px;
+          background: var(--primary-light);
           display: flex;
           align-items: center;
           justify-content: center;
-          color: #409eff;
+          color: var(--primary-color);
           margin-right: 12px;
         }
 
@@ -507,37 +518,38 @@ function handleExport() {
           flex: 1;
 
           .student-name {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 600;
-            color: #303133;
+            color: var(--text-color);
           }
 
           .student-id {
             font-size: 13px;
-            color: #909399;
-            margin-top: 4px;
+            color: var(--text-color-secondary);
+            margin-top: 2px;
           }
         }
       }
 
       .card-body {
         padding: 12px 0;
-        border-top: 1px solid #f0f0f0;
-        border-bottom: 1px solid #f0f0f0;
+        border-top: 1px solid var(--border-color-light);
+        border-bottom: 1px solid var(--border-color-light);
 
         .info-item {
           display: flex;
           justify-content: space-between;
-          padding: 8px 0;
+          padding: 6px 0;
 
           .label {
-            color: #909399;
-            font-size: 14px;
+            color: var(--text-color-secondary);
+            font-size: 13px;
           }
 
           .value {
-            color: #303133;
-            font-size: 14px;
+            color: var(--text-color);
+            font-size: 13px;
+            font-weight: 500;
           }
         }
       }
@@ -545,7 +557,7 @@ function handleExport() {
       .card-footer {
         display: flex;
         justify-content: flex-end;
-        gap: 12px;
+        gap: 8px;
         margin-top: 12px;
       }
     }
@@ -581,6 +593,8 @@ function handleExport() {
     }
 
     .search-section {
+      padding: 16px;
+
       :deep(.el-form-item) {
         width: 100%;
         margin-right: 0;

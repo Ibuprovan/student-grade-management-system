@@ -155,7 +155,7 @@
         :data="top10Rankings"
         border
         stripe
-        :header-cell-style="{ background: '#f5f7fa', color: '#606266' }"
+        :header-cell-style="{ background: 'var(--bg-color)', color: 'var(--text-color)' }"
       >
         <el-table-column type="index" label="排名" width="80" align="center">
           <template #default="{ $index }">
@@ -218,6 +218,8 @@ const top10Rankings = computed(() => rankings.value.slice(0, 10))
 
 <style lang="scss" scoped>
 .statistics-overview {
+  animation: fadeIn 0.3s ease;
+
   .stat-cards {
     margin-bottom: 16px;
   }
@@ -226,26 +228,28 @@ const top10Rankings = computed(() => rankings.value.slice(0, 10))
     display: flex;
     align-items: center;
     padding: 20px;
-    background: #fff;
-    border-radius: var(--border-radius-md);
-    box-shadow: var(--shadow-sm);
+    background: var(--surface-color);
+    border-radius: var(--border-radius-lg);
+    border: 1px solid var(--border-color-light);
+    box-shadow: var(--shadow-xs);
     margin-bottom: 16px;
-    transition: all 0.3s ease;
+    transition: all 0.25s ease;
 
     &:hover {
-      box-shadow: var(--shadow-md);
+      box-shadow: var(--shadow-sm);
       transform: translateY(-2px);
     }
 
     &__icon {
       width: 48px;
       height: 48px;
-      border-radius: 12px;
-      background: rgba(64, 158, 255, 0.1);
+      border-radius: 14px;
+      background: var(--primary-light);
       display: flex;
       align-items: center;
       justify-content: center;
       margin-right: 16px;
+      flex-shrink: 0;
     }
 
     &__content {
@@ -257,12 +261,14 @@ const top10Rankings = computed(() => rankings.value.slice(0, 10))
       font-weight: 700;
       color: var(--text-color);
       line-height: 1.2;
+      letter-spacing: -0.02em;
     }
 
     &__label {
       font-size: 13px;
       color: var(--text-color-secondary);
       margin-top: 4px;
+      font-weight: 500;
     }
   }
 
@@ -294,11 +300,11 @@ const top10Rankings = computed(() => rankings.value.slice(0, 10))
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
     font-size: 12px;
-    font-weight: bold;
+    font-weight: 700;
     color: #fff;
 
     &.rank-1 {

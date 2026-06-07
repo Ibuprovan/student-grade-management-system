@@ -182,12 +182,13 @@ class StudentService:
         """
         搜索学生
 
-        支持按学号或姓名模糊搜索，可选按班级筛选
+        支持按学号或姓名模糊搜索，可选按班级筛选。
+        使用数据库层面的 LIMIT/OFFSET 分页，避免将所有记录加载到内存。
 
         Args:
             keyword: 搜索关键词（匹配学号或姓名）
             class_name: 班级筛选（可选）
-            page: 页码
+            page: 页码（从 1 开始）
             page_size: 每页数量
 
         Returns:
@@ -195,19 +196,14 @@ class StudentService:
         """
         skip = (page - 1) * page_size
 
-        # 使用 Repository 的搜索方法，传入分页参数
-        # 先获取所有匹配的学生（不带分页）来计算总数
-        all_students = self.repo.search(keyword=keyword, skip=0, limit=10000)
-
-        # 如果指定了班级，进一步过滤
-        if class_name:
-            all_students = [s for s in all_students if s.class_name == class_name]
-
-        # 计算总数
-        total = len(all_students)
-
-        # 应用分页
-        students = all_students[skip:skip + page_size]
+        # 直接在数据库层面进行分页和筛选，避免内存分页
+        students = self.repo.search(
+            keyword=keyword,
+            class_name=class_name,
+            skip=skip,
+            limit=page_size,
+        )
+        total = self.repo.count_search(keyword=keyword, class_name=class_name)
 
         return students, total
 
@@ -222,3 +218,15 @@ class StudentService:
             bool: 存在返回 True，否则返回 False
         """
         return self.repo.student_id_exists(student_id)
+
+    def get_all_classes(self) -> List[str]:
+        """
+        获取所有去重的班级名称列表
+
+        通过 Repository 调用数据库 DISTINCT 查询，在数据库层面完成去重，
+        避免将所有学生记录加载到内存后再去重。
+
+        Returns:
+            List[str]: 去重后的班级名称列表（已排序）
+        """
+        return self.repo.get_all_classes()

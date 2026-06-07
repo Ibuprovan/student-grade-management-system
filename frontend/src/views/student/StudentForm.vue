@@ -223,7 +223,6 @@ const rules: FormRules = {
 
 /** 初始化（编辑模式时加载数据） */
 onMounted(async () => {
-  // 获取班级列表
   studentStore.fetchClassList()
 
   if (isEdit.value) {
@@ -280,7 +279,6 @@ async function handleSubmit() {
 
     router.push('/student/list')
   } catch (error) {
-    // 错误已在 store 中处理
     console.error('提交失败:', error)
   } finally {
     loading.value = false
@@ -314,6 +312,8 @@ function handleCancel() {
 
 <style lang="scss" scoped>
 .student-form {
+  animation: fadeIn 0.3s ease;
+
   .page-header {
     display: flex;
     justify-content: space-between;
@@ -322,23 +322,24 @@ function handleCancel() {
 
     .page-title {
       margin: 0;
-      font-size: 20px;
-      font-weight: 600;
+      font-size: 22px;
+      font-weight: 700;
     }
   }
 
   .form-card {
-    background: #fff;
-    padding: 32px;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    background: var(--surface-color);
+    padding: 36px 40px;
+    border-radius: var(--border-radius-lg);
+    border: 1px solid var(--border-color-light);
+    box-shadow: var(--shadow-xs);
     max-width: 700px;
   }
 
   .form-tip {
     font-size: 12px;
-    color: #909399;
-    margin-top: 4px;
+    color: var(--text-color-placeholder);
+    margin-top: 6px;
     line-height: 1.4;
   }
 
@@ -349,24 +350,46 @@ function handleCancel() {
 
   :deep(.el-form-item__label) {
     font-weight: 500;
+    color: var(--text-color);
+  }
+
+  :deep(.el-form-item) {
+    margin-bottom: 24px;
+  }
+
+  :deep(.el-input__wrapper) {
+    border-radius: var(--border-radius-md);
+  }
+
+  :deep(.el-select .el-input__wrapper) {
+    border-radius: var(--border-radius-md);
   }
 
   :deep(.el-radio) {
-    margin-right: 24px;
+    margin-right: 28px;
+  }
+
+  :deep(.el-radio__input.is-checked .el-radio__inner) {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+  }
+
+  :deep(.el-radio__input.is-checked + .el-radio__label) {
+    color: var(--primary-color);
   }
 }
 
 @media (max-width: 768px) {
   .student-form {
     .form-card {
-      padding: 20px;
+      padding: 24px 20px;
     }
 
     :deep(.el-form-item__label) {
       float: none;
       display: block;
       text-align: left;
-      padding-bottom: 8px;
+      padding-bottom: 6px;
     }
 
     :deep(.el-form-item__content) {

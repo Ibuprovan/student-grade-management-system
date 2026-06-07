@@ -1,12 +1,12 @@
 """
 学生数据访问 Repository
 
-提供学生相关的数据库操作，包括学号查询、班级查询等
+提供学生相关的数据库操作，包括学号查询、班级查询、搜索等
 """
 
 from typing import Optional, List
 
-from sqlalchemy import select, or_
+from sqlalchemy import select, func, distinct, or_
 from sqlalchemy.orm import Session
 
 from src.models.student import Student
@@ -83,8 +83,6 @@ class StudentRepository(BaseRepository[Student]):
         Returns:
             int: 班级学生数量
         """
-        from sqlalchemy import func
-
         stmt = (
             select(func.count())
             .select_from(Student)
@@ -96,45 +94,103 @@ class StudentRepository(BaseRepository[Student]):
     def search(
         self,
         keyword: str,
+        class_name: Optional[str] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> List[Student]:
         """
         搜索学生（按学号或姓名模糊匹配）
 
+        支持在数据库层面进行分页和班级筛选，避免将所有记录加载到内存。
+
         Args:
-            keyword: 搜索关键词
-            skip: 跳过的记录数
+            keyword: 搜索关键词（匹配学号或姓名）
+            class_name: 班级筛选（可选）
+            skip: 跳过的记录数（分页偏移量）
             limit: 返回的最大记录数
 
         Returns:
             List[Student]: 匹配的学生列表
         """
+        stmt = self._build_search_stmt(keyword, class_name)
+        stmt = stmt.offset(skip).limit(limit)
+        result = self.db.execute(stmt)
+        return list(result.scalars().all())
+
+    def count_search(
+        self,
+        keyword: str,
+        class_name: Optional[str] = None,
+    ) -> int:
+        """
+        统计搜索结果总数
+
+        与 search 方法使用相同的过滤条件，用于分页计算。
+        通过数据库 COUNT 聚合函数实现，无需将记录加载到内存。
+
+        Args:
+            keyword: 搜索关键词（匹配学号或姓名）
+            class_name: 班级筛选（可选）
+
+        Returns:
+            int: 满足条件的学生总数
+        """
         search_pattern = f"%{keyword}%"
         stmt = (
-            select(Student)
+            select(func.count())
+            .select_from(Student)
             .where(
                 or_(
                     Student.student_id.like(search_pattern),
                     Student.name.like(search_pattern),
                 )
             )
-            .offset(skip)
-            .limit(limit)
         )
+        if class_name:
+            stmt = stmt.where(Student.class_name == class_name)
+
         result = self.db.execute(stmt)
-        return list(result.scalars().all())
+        return result.scalar() or 0
+
+    def _build_search_stmt(self, keyword: str, class_name: Optional[str] = None):
+        """
+        构建搜索查询语句（内部方法）
+
+        将搜索条件构建逻辑抽取为内部方法，供 search 和 count_search 复用，
+        避免重复编写过滤条件。
+
+        Args:
+            keyword: 搜索关键词
+            class_name: 班级筛选（可选）
+
+        Returns:
+            SQLAlchemy Select 语句对象
+        """
+        search_pattern = f"%{keyword}%"
+        stmt = select(Student).where(
+            or_(
+                Student.student_id.like(search_pattern),
+                Student.name.like(search_pattern),
+            )
+        )
+        if class_name:
+            stmt = stmt.where(Student.class_name == class_name)
+        return stmt
 
     def get_all_classes(self) -> List[str]:
         """
-        获取所有班级名称列表
+        获取所有去重的班级名称列表
+
+        使用 SQL DISTINCT 从数据库层面去重，避免将所有记录加载到内存。
+        返回结果按班级名称排序，确保接口返回顺序一致。
 
         Returns:
-            List[str]: 去重后的班级名称列表
+            List[str]: 去重后的班级名称列表（已排序）
         """
-        from sqlalchemy import distinct
-
-        stmt = select(distinct(Student.class_name))
+        stmt = (
+            select(distinct(Student.class_name))
+            .order_by(Student.class_name)
+        )
         result = self.db.execute(stmt)
         return list(result.scalars().all())
 

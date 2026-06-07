@@ -85,7 +85,7 @@
         :data="classStats"
         border
         stripe
-        :header-cell-style="{ background: '#f5f7fa', color: '#606266' }"
+        :header-cell-style="{ background: 'var(--bg-color)', color: 'var(--text-color)' }"
         @row-click="handleRowClick"
         highlight-current-row
       >
@@ -212,10 +212,14 @@ function getProgressColor(value: number): string {
 
 <style lang="scss" scoped>
 .class-statistics {
+  animation: fadeIn 0.3s ease;
+
   .class-overview {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #1B2A3D 0%, #233B55 50%, #1F5C55 100%);
     color: #fff;
     margin-bottom: 16px;
+    border: none;
+    box-shadow: var(--shadow-md);
 
     .overview-item {
       text-align: center;
@@ -223,8 +227,9 @@ function getProgressColor(value: number): string {
 
       &__label {
         font-size: 13px;
-        opacity: 0.9;
+        opacity: 0.8;
         margin-bottom: 8px;
+        font-weight: 500;
       }
 
       &__value {

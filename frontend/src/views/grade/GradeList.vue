@@ -206,6 +206,8 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .grade-list {
+  animation: fadeIn 0.3s ease;
+
   .header-actions {
     display: flex;
     gap: 8px;
@@ -228,6 +230,7 @@ onMounted(() => {
   .student-id-link {
     color: var(--primary-color);
     cursor: pointer;
+    font-weight: 500;
 
     &:hover {
       text-decoration: underline;
@@ -277,7 +280,6 @@ onMounted(() => {
       }
     }
 
-    /* 隐藏部分列 */
     :deep(.el-table) {
       .el-table__header-wrapper {
         overflow-x: auto;

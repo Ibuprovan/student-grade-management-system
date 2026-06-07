@@ -174,15 +174,15 @@ function handleSizeChange(size: number) {
 
 <style lang="scss" scoped>
 .data-table {
-  background: #fff;
-  border-radius: var(--border-radius-md);
+  background: var(--surface-color);
+  border-radius: var(--border-radius-lg);
   overflow: hidden;
 }
 
 .table-pagination {
   display: flex;
   justify-content: flex-end;
-  padding: 16px;
-  border-top: 1px solid var(--border-color);
+  padding: 16px 20px;
+  border-top: 1px solid var(--border-color-light);
 }
 </style>

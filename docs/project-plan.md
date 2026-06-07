@@ -1,10 +1,10 @@
 # 学生成绩管理系统 - 项目计划
 
-> **文档版本：** V2.0  
+> **文档版本：** V3.0  
 > **创建日期：** 2026-06-05  
-> **更新日期：** 2026-06-06  
+> **更新日期：** 2026-06-07  
 > **PMO Agent**  
-> **文档状态：** 已更新（添加前端和部署任务）
+> **文档状态：** 已更新（添加全面检查后的修复任务）
 
 ---
 
@@ -48,25 +48,42 @@
 
 | 优先级 | 任务数量 | 说明 |
 |--------|---------|------|
-| P0 | 8 | 核心功能，必须实现 |
-| P1 | 1 | 重要功能，应该实现 |
-| P2 | 0 | 增强功能，可以实现 |
+| P0 | 11 | 核心功能，必须实现 |
+| P1 | 4 | 重要功能，应该实现 |
+| P2 | 1 | 增强功能，可以实现 |
 
 ### 2.2 任务列表
 
+#### 原始开发任务
+
 | 任务编号 | 任务名称 | 优先级 | 负责人 | 预估工时 | 状态 | 依赖 |
 |---------|---------|--------|--------|---------|------|------|
-| TASK-001 | 数据库模型实现 | P0 | backend-dev | 12h | TODO | 无 |
-| TASK-002 | 学生信息管理 API | P0 | backend-dev | 11h | TODO | TASK-001 |
-| TASK-003 | 成绩管理 API | P0 | backend-dev | 12h | TODO | TASK-001 |
-| TASK-004 | 统计分析功能 | P0 | backend-dev | 14h | TODO | TASK-001, TASK-003 |
-| TASK-005 | 前端项目初始化与基础架构 | P0 | frontend-dev | 16h | TODO | 无 |
-| TASK-006 | 学生信息管理前端页面 | P0 | frontend-dev | 16.5h | TODO | TASK-005, TASK-001, TASK-002 |
-| TASK-007 | 成绩管理前端页面 | P0 | frontend-dev | 18.5h | TODO | TASK-005, TASK-006, TASK-001, TASK-003 |
-| TASK-008 | 统计分析前端页面 | P1 | frontend-dev | 24.5h | TODO | TASK-005, TASK-007, TASK-004 |
+| TASK-001 | 数据库模型实现 | P0 | backend-dev | 12h | DONE | 无 |
+| TASK-002 | 学生信息管理 API | P0 | backend-dev | 11h | DONE | TASK-001 |
+| TASK-003 | 成绩管理 API | P0 | backend-dev | 12h | DONE | TASK-001 |
+| TASK-004 | 统计分析功能 | P0 | backend-dev | 14h | DONE | TASK-001, TASK-003 |
+| TASK-005 | 前端项目初始化与基础架构 | P0 | frontend-dev | 16h | DONE | 无 |
+| TASK-006 | 学生信息管理前端页面 | P0 | frontend-dev | 16.5h | DONE | TASK-005, TASK-001, TASK-002 |
+| TASK-007 | 成绩管理前端页面 | P0 | frontend-dev | 18.5h | DONE | TASK-005, TASK-006, TASK-001, TASK-003 |
+| TASK-008 | 统计分析前端页面 | P1 | frontend-dev | 24.5h | DONE | TASK-005, TASK-007, TASK-004 |
 | TASK-009 | Docker 部署配置 | P1 | devops | 10h | TODO | TASK-005, TASK-001, TASK-002, TASK-003, TASK-004 |
 
-**总预估工时：** 135 小时
+#### 全面检查后的修复任务（2026-06-07 新增）
+
+| 任务编号 | 任务名称 | 优先级 | 负责人 | 预估工时 | 状态 | 依赖 |
+|---------|---------|--------|--------|---------|------|------|
+| TASK-010 | 前端登录页面与认证流程 | P0 | frontend-dev | 8h | DONE | 无 |
+| TASK-011 | 路由守卫与 Token 管理 | P0 | frontend-dev | 4h | DONE | TASK-010 |
+| TASK-012 | Dashboard 真实数据接入 | P0 | frontend-dev | 4h | DONE | TASK-011 |
+| TASK-013 | UI 美化 - 温馨友好风格 | P1 | frontend-dev | 16h | DONE | 无 |
+| TASK-014 | 后端性能优化 | P1 | backend-dev | 4h | DONE | 无 |
+| TASK-015 | AppHeader 用户信息与退出功能 | P1 | frontend-dev | 3h | DONE | TASK-011 |
+| TASK-016 | 安全增强 - 速率限制与批量限制 | P2 | backend-dev | 4h | DONE | 无 |
+
+**原始任务总预估工时：** 135 小时  
+**修复任务总预估工时：** 43 小时  
+**修复任务实际完成：** 7/7 (100%)  
+**总预估工时：** 178 小时
 
 ---
 
@@ -333,6 +350,7 @@ PMO 协调资源（1小时）
 |------|---------|------|--------|
 | 2026-06-05 | 项目计划创建 | 无 | PMO |
 | 2026-06-06 | 添加前端和部署任务 | 新增 TASK-005 ~ TASK-009 | PMO |
+| 2026-06-07 | 全面检查后添加修复任务 | 新增 TASK-010 ~ TASK-016，更新任务状态 | PMO |
 
 ---
 

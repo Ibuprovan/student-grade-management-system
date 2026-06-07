@@ -606,7 +606,7 @@ class StatisticsService:
         stmt = (
             select(
                 Student.class_name,
-                func.count(Grade.id).label("total_count"),
+                func.count(Grade.grade_id).label("total_count"),
                 func.avg(Grade.score).label("average"),
                 func.max(Grade.score).label("max_score"),
                 func.min(Grade.score).label("min_score"),
@@ -667,7 +667,7 @@ class StatisticsService:
         stmt = (
             select(
                 Grade.subject,
-                func.count(Grade.id).label("total_count"),
+                func.count(Grade.grade_id).label("total_count"),
                 func.avg(Grade.score).label("average"),
                 func.max(Grade.score).label("max_score"),
                 func.min(Grade.score).label("min_score"),
