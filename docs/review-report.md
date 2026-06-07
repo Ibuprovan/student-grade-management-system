@@ -1,9 +1,10 @@
-﻿# 代码审查报告 - 登录按钮点击无响应修复
+﻿# 代码审查报告 - 登录按钮修复（第二轮）
 
-> **审查日期：** 2026-06-08
-> **审查人：** Reviewer Agent
-> **审查范围：** 响应拦截器修复（request.ts）、Auth Store 修复（auth.ts）、Login 页面修复（Login.vue）
-> **审查结果：** ✅ 通过
+> **审查日期：** 2026-06-08  
+> **审查人：** Reviewer Agent  
+> **审查轮次：** 第二轮  
+> **审查范围：** Login.vue handleLogin、auth.ts login/decodeTokenToUser、request.ts 响应拦截器  
+> **审查结果：** ❌ 拒绝
 
 ---
 
@@ -11,337 +12,417 @@
 
 ### 1.1 问题背景
 
-登录按钮点击无响应。根因是响应拦截器对 /auth/login 接口返回的 401 状态码处理不当：拦截器捕获 401 后触发 Token 刷新逻辑（调用 /auth/refresh），刷新失败后执行 handleAuthError()，通过 window.location.href = '/login' 导致整个页面重新加载，从而丢失了登录页面的错误处理上下文。
+第一轮审查通过后，用户反馈登录按钮仍然无响应。frontend-dev 重新排查后发现三个问题：
+1. Element Plus 2.x 的 alidate() 在验证失败时 **rejects** 而非 resolve alse
+2. decodeTokenToUser 兜底函数的 base64url 解码可能失败
+3. isAuthRequest 变量作用域问题
 
-### 1.2 修复方案
-
-在响应拦截器中识别认证接口（/auth/login、/auth/refresh），对这些接口的 401 错误跳过 Token 刷新逻辑，直接将错误 reject 给调用方处理。同时在 Auth Store 和 Login 页面中正确处理 reject 的错误。
-
-### 1.3 审查文件清单
+### 1.2 审查文件清单
 
 | 文件 | 类型 | 修改内容 |
 |------|------|---------|
-| rontend/src/utils/request.ts | 修改 | 响应拦截器增加认证接口判断，跳过 Token 刷新 |
-| rontend/src/stores/auth.ts | 修改 | login 方法增加 FastAPI detail 字段兼容 |
-| rontend/src/views/login/Login.vue | 修改 | handleLogin 函数增加 try-catch 和表单验证修正 |
+| rontend/src/views/login/Login.vue | 修改 | validate() 改为 try-catch 模式 |
+| rontend/src/stores/auth.ts | 修改 | 增加 decodeTokenToUser 兜底函数 |
+| rontend/src/utils/request.ts | 修改 | isAuthRequest 作用域修正 |
 
 ---
 
 ## 2. 审查结论
 
-### ✅ 审查通过
+### ❌ 审查拒绝
 
-代码修复逻辑正确，解决了登录按钮点击无响应的根因问题。三个文件的修改协调一致，错误处理链路完整，未引入新的安全风险。
+三个修复方向正确，但存在 **一个严重问题** 和 **一个中等问题** 未被发现和修复，这些问题是导致"登录按钮无响应"的真正根因。
 
 ---
 
-## 3. 逐文件详细审查
+## 3. 逐文件严格审查
 
-### 3.1 rontend/src/utils/request.ts — 响应拦截器修改
+### 3.1 rontend/src/views/login/Login.vue — handleLogin 函数
 
-#### 3.1.1 认证接口判断（第 105-107 行）✅ 正确
-
-`	ypescript
-const isAuthRequest =
-  originalRequest.url?.includes('/auth/login') ||
-  originalRequest.url?.includes('/auth/refresh')
-`
-
-- **判断方式：** 使用 URL 路径包含匹配，简单有效
-- **覆盖范围：** 正确覆盖了 /auth/login 和 /auth/refresh 两个认证接口
-- **不影响其他接口：** /auth/me、/auth/logout 等非认证核心接口不受影响，401 时仍走 Token 刷新逻辑（符合预期）
-
-#### 3.1.2 401 跳过逻辑（第 110 行）✅ 正确
+#### 3.1.1 validate() 返回值处理 ✅ 正确
 
 `	ypescript
-if (status === 401 && !originalRequest._retry && !isAuthRequest) {
-`
-
-- 认证接口的 401 不会进入 Token 刷新分支，直接跳到下方的 switch-case 错误消息处理
-- 非认证接口的 401 仍然正常执行 Token 刷新流程
-
-#### 3.1.3 错误消息提取（第 169 行）✅ 正确
-
-`	ypescript
-case 401:
-  message = data?.detail || data?.error?.message || '用户名或密码错误'
-`
-
-- **兼容 FastAPI 格式：** 优先读取 data.detail（FastAPI HTTPException 标准格式）
-- **兼容自定义格式：** 回退读取 data.error.message（项目统一响应格式）
-- **友好默认值：** 最终回退为 '用户名或密码错误'
-
-**后端实际返回格式验证：**
-`python
-# src/api/routes/auth.py 第 61-64 行
-raise HTTPException(
-    status_code=status.HTTP_401_UNAUTHORIZED,
-    detail="用户名或密码错误",
-)
-`
-FastAPI 的 HTTPException 返回格式为 { "detail": "用户名或密码错误" }，与前端提取逻辑完全匹配。
-
-#### 3.1.4 认证接口错误抑制（第 191-193 行）✅ 正确
-
-`	ypescript
-if (isAuthRequest) {
-  return Promise.reject(error)
+try {
+    await formRef.value.validate()
+} catch {
+    return
 }
 `
 
-- 认证接口的错误不在拦截器中弹出 ElMessage，而是直接 reject 给调用方
-- 避免了拦截器和调用方的**双重错误提示**
-- 错误消息已在 switch-case 中赋值给 message 变量，但此分支提前返回，不会执行到第 200 行的 ElMessage.error(message) — **无副作用**
+**Element Plus 2.x 行为验证：**
+- FormInstance.validate() 返回 Promise<boolean>
+- 验证通过：resolve 	rue
+- 验证失败：**reject**（不是 resolve alse）
 
-#### 3.1.5 Token 刷新流程安全性 ✅ 无变化
+try-catch 模式正确处理了两种状态。第一轮审查中 const valid = await formRef.value.validate(); if (!valid) return 的写法**无法捕获 rejection**，本次修复正确。
 
-- Token 刷新逻辑（第 110-162 行）未做任何修改，仅增加了 !isAuthRequest 条件
-- 刷新 Token 使用原始 axios 直接调用（第 137-140 行），不经过拦截器，避免无限递归
-- 刷新成功后更新 localStorage 中的双 Token
-- 刷新失败后清除认证状态并跳转登录页
+#### 3.1.2 登录调用与路由跳转 ⚠️ 存在隐患
+
+`	ypescript
+const success = await authStore.login(loginForm.username, loginForm.password)
+if (success) {
+    const redirect = (route.query.redirect as string) || '/dashboard'
+    await router.push(redirect)
+}
+`
+
+**问题：** uthStore.login() 返回 	rue 不代表 user.value 已设置。如果 user.value 为 null，isAuthenticated 为 false，路由守卫会将用户重定向回 /login，导致 outer.push() reject，catch 块显示"登录失败，请稍后重试"。
+
+**这不是 Login.vue 的问题**，而是 auth.ts login() 的返回值语义问题（见 3.2.3）。
 
 ---
 
-### 3.2 rontend/src/stores/auth.ts — Auth Store login 方法修改
+### 3.2 rontend/src/stores/auth.ts — login 方法和 decodeTokenToUser
 
-#### 3.2.1 错误消息提取（第 174-175 行）✅ 正确
+#### 3.2.1 decodeTokenToUser 函数 ❌ 严重问题
+
+`	ypescript
+function decodeTokenToUser(token: string): UserInfo | null {
+    try {
+      const parts = token.split('.')
+      if (parts.length !== 3) return null
+
+      const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')))
+      return {
+        id: Number(payload.sub),
+        username: payload.username || '',
+        role: payload.role || 'student',
+        is_active: true,
+      }
+    } catch (e) {
+      console.error('解析 Token 失败:', e)
+      return null
+    }
+}
+`
+
+**❌ 严重问题：缺少 base64 padding 补全**
+
+tob() 要求输入是标准 base64 格式（带 = padding）。JWT 的 base64url 编码通常**去除 padding**。当前代码只做了字符替换（- → +, _ → /），但没有补全 padding。
+
+**后果：** 在严格实现 tob() 的环境中（部分浏览器、Node.js），解析会抛出 InvalidCharacterError，被 catch 捕获后返回 null。这意味着 decodeTokenToUser **在这些环境中永远返回 null**，兜底机制完全失效。
+
+**修复方案：**
+`	ypescript
+const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+const padded = base64 + '='.repeat((4 - base64.length % 4) % 4)
+const payload = JSON.parse(atob(padded))
+`
+
+**验证：** 后端 JWT payload 示例（base64url 编码）：
+`
+eyJzdWIiOiIxIiwidXNlcm5hbWUiOiJhZG1pbiIsInJvbGUiOiJhZG1pbiIsImV4cCI6...
+`
+如果长度不是 4 的倍数，tob() 会失败。
+
+#### 3.2.2 login() 返回值语义 ❌ 严重问题
+
+`	ypescript
+async function login(username: string, password: string): Promise<boolean> {
+    // ...
+    if (response.success && response.data) {
+        const tokenResponse = response.data
+        updateTokenResponse(tokenResponse)  // 存储 Token
+
+        try {
+            const userResponse = await authApi.getCurrentUser()
+            if (userResponse.success && userResponse.data) {
+                user.value = userResponse.data
+            } else {
+                const fallbackUser = decodeTokenToUser(tokenResponse.access_token)
+                if (fallbackUser) {
+                    user.value = fallbackUser
+                }
+                // ⚠️ 如果 fallbackUser 为 null，user.value 仍为 null！
+            }
+        } catch (userError) {
+            const fallbackUser = decodeTokenToUser(tokenResponse.access_token)
+            if (fallbackUser) {
+                user.value = fallbackUser
+            }
+            // ⚠️ 如果 fallbackUser 为 null，user.value 仍为 null！
+        }
+
+        ElMessage.success('登录成功')  // ⚠️ 即使 user.value 为 null 也显示成功
+        return true  // ⚠️ 即使 user.value 为 null 也返回 true
+    }
+}
+`
+
+**❌ 严重问题：login() 在 user.value 为 null 时仍返回 true**
+
+**问题链路：**
+1. getCurrentUser() 失败（网络问题、后端异常等）
+2. decodeTokenToUser() 失败（base64 padding 问题）
+3. user.value 仍为 null
+4. login() 返回 	rue，显示"登录成功"
+5. Login.vue 调用 outer.push('/dashboard')
+6. 路由守卫检查 isAuthenticated → !!accessToken && !!user → 	rue && false → alse
+7. 路由守卫重定向到 /login
+8. outer.push() reject
+9. catch 块显示"登录失败，请稍后重试"
+10. 用户看到"登录成功"后立即看到"登录失败"，且停留在登录页
+
+**这就是"登录按钮无响应"的真正根因！** 用户点击登录后，看到"登录成功"但页面不跳转（因为被路由守卫挡回来了），看起来像是按钮无响应。
+
+**修复方案：**
+`	ypescript
+// 在 return true 之前检查 user.value
+if (!user.value) {
+    // 获取用户信息失败，清除已存储的 Token
+    user.value = null
+    accessToken.value = null
+    refreshTokenValue.value = null
+    clearStorage()
+    ElMessage.error('获取用户信息失败，请重试')
+    return false
+}
+
+ElMessage.success('登录成功')
+return true
+`
+
+#### 3.2.3 错误消息提取 ✅ 正确
 
 `	ypescript
 const errData = (error as { response?: { data?: { detail?: string; error?: { message?: string } } } })?.response?.data
 const message = errData?.detail || errData?.error?.message || '登录失败，请检查用户名和密码'
 `
 
-- **类型断言方式：** 使用内联类型断言而非独立 interface，代码紧凑但可读性稍差（可接受）
-- **兼容性好：** 同时兼容 FastAPI detail 格式和自定义 error.message 格式
-- **防御性编程：** 全链路可选链 ?. 访问，任何层级为 null/undefined 都不会抛异常
+- 兼容 FastAPI detail 格式 ✅
+- 兼容自定义 error.message 格式 ✅
+- 全链路可选链防御 ✅
 
-#### 3.2.2 错误提示时机 ✅ 正确
+#### 3.2.4 未使用的 Token 刷新队列代码 ⚠️ 轻微
+
+isRefreshing、efreshSubscribers、ddRefreshSubscriber、onRefreshed 在 auth.ts 中定义但未使用。Token 刷新由 request.ts 的拦截器处理。建议后续清理。
+
+---
+
+### 3.3 rontend/src/utils/request.ts — 响应拦截器
+
+#### 3.3.1 isAuthRequest 变量作用域 ✅ 正确
 
 `	ypescript
-catch (error: unknown) {
-  // ...
-  ElMessage.error(message)  // 在 catch 中统一显示错误
-  return false
+async (error) => {
+    const originalRequest = error.config
+    // ...
+    const isAuthRequest =
+      originalRequest.url?.includes('/auth/login') ||
+      originalRequest.url?.includes('/auth/refresh')
+    // ... 后续代码均可访问 isAuthRequest
 }
 `
 
-- 修复后，由于拦截器不再对认证接口弹出错误提示，**只有** Auth Store 的 catch 块会弹出错误消息
-- 解决了之前拦截器和 Store 双重弹消息的问题
+isAuthRequest 在错误处理函数顶部声明，整个函数内可访问。✅
 
-#### 3.2.3 返回值语义 ✅ 正确
+#### 3.3.2 网络错误时认证请求处理 ✅ 正确
 
-- 成功：返回 	rue，显示 '登录成功'
-- 失败（业务错误）：返回 alse，显示具体错误消息
-- 异常：返回 alse，显示提取的错误消息或通用提示
+当网络错误（无 response）时：
+1. error.response 为 undefined → 跳过 if (error.response) 块
+2. 进入 timeout/offline 判断，设置 message
+3. !isAuthRequest → alse → 不弹 ElMessage
+4. eturn Promise.reject(error) → 错误传递给调用方
 
-#### 3.2.4 未使用的代码 ⚠️ 轻微
+认证请求的网络错误正确传递给 authStore.login() 的 catch 块。✅
 
-isRefreshing（第 40 行）、efreshSubscribers（第 43 行）、ddRefreshSubscriber（第 124 行）、onRefreshed（第 131 行）这些 Token 刷新队列相关代码在 Auth Store 中定义但未被使用。Token 刷新实际由 equest.ts 的拦截器处理。
-
-**严重程度：** 低（不影响功能，但增加代码理解成本）
-
----
-
-### 3.3 rontend/src/views/login/Login.vue — handleLogin 函数修改
-
-#### 3.3.1 表单验证（第 116-123 行）✅ 正确
+#### 3.3.3 401 跳过 Token 刷新 ✅ 正确
 
 `	ypescript
-try {
-  const valid = await formRef.value.validate()
-  if (!valid) return
-} catch {
-  return
+if (status === 401 && !originalRequest._retry && !isAuthRequest) {
+    // Token 刷新逻辑
 }
 `
 
-- 使用 wait 等待验证完成，避免异步竞态
-- 正确处理了 Element Plus alidate() 返回 rejected promise 的情况
-- 验证失败时提前返回，不执行登录逻辑
+认证接口的 401 不触发 Token 刷新，避免了第一轮审查中发现的页面重载问题。✅
 
-#### 3.3.2 登录调用（第 126-133 行）✅ 正确
+#### 3.3.4 认证接口错误抑制 ✅ 正确
 
 `	ypescript
-const success = await authStore.login(loginForm.username, loginForm.password)
-if (success) {
-  const redirect = (route.query.redirect as string) || '/dashboard'
-  router.push(redirect)
+if (isAuthRequest) {
+    return Promise.reject(error)
 }
 `
 
-- 根据 uthStore.login() 的返回值（boolean）判断是否跳转
-- 支持登录后跳转到原始目标页面（通过 edirect query 参数）
-
-#### 3.3.3 错误处理（第 134-136 行）✅ 正确
-
-`	ypescript
-catch (error) {
-  console.error('登录异常:', error)
-  ElMessage.error('登录失败，请稍后重试')
-}
-`
-
-- 作为兜底的异常处理，捕获 uthStore.login() 未预期的异常
-- **注意：** 由于 uthStore.login() 内部已 catch 所有异常并返回 alse，此 catch 块实际上**不会被登录失败触发**，仅防御极端异常情况（如内存不足等）
-- 即使触发，显示的是通用提示 '登录失败，请稍后重试'，与 Auth Store 的具体错误提示不冲突
-
-#### 3.3.4 加载状态管理 ✅ 正确
-
-`	ypescript
-loading.value = true   // 第 125 行
-// ... 登录逻辑 ...
-loading.value = false  // 第 138 行（finally 块）
-`
-
-- 使用 inally 块确保 loading 状态一定会被重置
-- 按钮通过 :loading="loading" 绑定状态，防止重复提交
+认证接口的错误不在拦截器中弹 ElMessage，由调用方处理。避免双重错误提示。✅
 
 ---
 
-## 4. 逻辑正确性验证
+## 4. 完整登录流程验证
 
-### 4.1 认证接口 401 跳过 Token 刷新 ✅
+### 4.1 正常流程（getCurrentUser 成功）
 
-| 场景 | 请求 | 状态码 | 行为 | 预期 |
-|------|------|--------|------|------|
-| 登录失败 | /auth/login | 401 | 跳过刷新，reject 给调用方 | ✅ 正确 |
-| Token 刷新失败 | /auth/refresh | 401 | 跳过刷新，reject 给调用方 | ✅ 正确 |
-| 过期 Token 访问 | /students | 401 | 进入刷新流程 | ✅ 正确 |
-| 过期 Token 访问 | /grades | 401 | 进入刷新流程 | ✅ 正确 |
+| 步骤 | 操作 | 结果 |
+|------|------|------|
+| 1 | 用户输入 admin/admin123，点击登录 | handleLogin() 被调用 |
+| 2 | formRef.value.validate() | resolve ✅ |
+| 3 | authStore.login() 被调用 | 发送 POST /auth/login |
+| 4 | 后端返回 200 + Token | response.success === true |
+| 5 | updateTokenResponse() | Token 存入 localStorage ✅ |
+| 6 | getCurrentUser() | GET /auth/me → 返回用户信息 |
+| 7 | user.value = userResponse.data | isAuthenticated = true ✅ |
+| 8 | login() 返回 true | Login.vue 调用 router.push |
+| 9 | 路由守卫检查 isAuthenticated | true → 允许导航 ✅ |
+| 10 | 跳转到 /dashboard | ✅ 成功 |
 
-### 4.2 错误消息传递链路 ✅
+### 4.2 异常流程（getCurrentUser 失败 + decodeTokenToUser 失败）
+
+| 步骤 | 操作 | 结果 |
+|------|------|------|
+| 1 | 用户输入正确密码，点击登录 | handleLogin() 被调用 |
+| 2 | formRef.value.validate() | resolve ✅ |
+| 3 | authStore.login() 被调用 | 发送 POST /auth/login |
+| 4 | 后端返回 200 + Token | response.success === true |
+| 5 | updateTokenResponse() | Token 存入 localStorage ✅ |
+| 6 | getCurrentUser() | ❌ 失败（网络/后端异常） |
+| 7 | decodeTokenToUser() | ❌ 失败（base64 padding 问题） |
+| 8 | user.value 仍为 null | isAuthenticated = false ❌ |
+| 9 | login() 返回 true | 显示"登录成功" ⚠️ |
+| 10 | router.push('/dashboard') | 路由守卫拦截，重定向到 /login |
+| 11 | router.push() reject | catch 块显示"登录失败" |
+| 12 | 用户看到"登录成功"后立即看到"登录失败" | **停留在登录页** ❌ |
+
+**这就是用户反馈的"登录按钮无响应"现象！**
+
+### 4.3 问题根因总结
 
 `
-后端 HTTPException(detail="用户名或密码错误")
-  → Axios 收到 401 响应
-  → 响应拦截器识别为 isAuthRequest
-  → switch(401) 设置 message = data.detail
-  → isAuthRequest 分支：return Promise.reject(error)  // 不弹 ElMessage
-  → authStore.login() 的 catch 块捕获
-  → 提取 errData.detail = "用户名或密码错误"
-  → ElMessage.error("用户名或密码错误")  // 只弹一次
-  → return false
-  → Login.vue：不跳转，停留在登录页
+根因链路：
+decodeTokenToUser 缺少 base64 padding
+    → 兜底函数永远返回 null
+    → getCurrentUser 失败时 user.value 无法设置
+    → login() 仍返回 true（bug）
+    → 路由守卫拦截导航
+    → 用户看到"登录成功"但不跳转
+    → 表现为"登录按钮无响应"
 `
 
-### 4.3 非认证接口 401 仍然正常刷新 ✅
-
-修改仅增加了 !isAuthRequest 条件，非认证接口的 Token 刷新逻辑**完全未变**：
-1. 检测到 401 + 非认证接口 + 未重试
-2. 如果正在刷新，加入队列等待
-3. 否则开始刷新：调用 /auth/refresh（使用原始 axios，不经过拦截器）
-4. 刷新成功：更新 Token，重试原始请求
-5. 刷新失败：清除认证状态，跳转登录页
-
 ---
 
-## 5. 安全性审查
-
-| 检查项 | 状态 | 说明 |
-|-------|------|------|
-| Token 刷新安全性 | ✅ | 逻辑未变化，仅增加了认证接口跳过条件 |
-| Token 泄露风险 | ✅ | Token 仅存储在 localStorage 和请求头中，未暴露在 URL 或日志中 |
-| 错误信息泄露 | ✅ | 错误消息来自后端控制的 detail 字段，不暴露内部实现细节 |
-| 认证接口判断安全 | ✅ | 使用 URL 路径匹配，后端路由前缀固定为 /api/v1/auth/，不易被绕过 |
-
----
-
-## 6. 代码质量审查
-
-### 6.1 代码风格一致性 ✅
-
-- 命名规范：isAuthRequest 使用 camelCase，符合 TypeScript 惯例
-- 注释风格：中文注释与项目整体一致
-- 缩进和格式：与现有代码一致
-
-### 6.2 TypeScript 类型 ✅
-
-- isAuthRequest 类型为 oolean（由 || 运算符推断）
-- error 对象使用 unknown 类型（第 170 行），符合 TypeScript 严格模式
-- 类型断言使用内联方式（第 174 行），可读性可接受
-
-### 6.3 无冗余代码 ✅
-
-- 所有修改都有明确的目的
-- 无重复逻辑
-- 无死代码（本修复范围内）
-
----
-
-## 7. DBA 优先权审查（红线）
+## 5. DBA 优先权审查（红线）
 
 | 检查项 | 状态 | 说明 |
 |-------|------|------|
 | CREATE TABLE | ✅ 无 | 前端代码不涉及数据库操作 |
 | ALTER TABLE | ✅ 无 | 前端代码不涉及数据库操作 |
-| 数据库变更备案 | N/A | 无数据库结构变更 |
-
-**结论：** 本次修改仅涉及前端代码，不涉及任何数据库结构变更，通过 DBA 红线审查。
 
 ---
 
-## 8. 架构合规性审查
+## 6. 问题清单
 
-| 检查项 | 状态 | 说明 |
-|-------|------|------|
-| 架构分层 | ✅ | 修改符合前端分层架构（View → Store → API → Utils） |
-| API 规范 | ✅ | 错误处理兼容项目统一响应格式和 FastAPI 标准格式 |
-| 代码职责 | ✅ | request.ts 处理 HTTP 层，auth.ts 处理业务层，Login.vue 处理视图层 |
+### 6.1 严重问题
 
----
+| 序号 | 文件 | 行号 | 问题描述 | 修复要求 |
+|-----|------|------|---------|---------|
+| 1 | uth.ts | 73 | decodeTokenToUser 缺少 base64 padding 补全，tob() 在严格环境中会抛异常，导致兜底函数永远返回 null | 添加 padding 补全逻辑 |
+| 2 | uth.ts | 202-203 | login() 在 user.value 为 null 时仍返回 true 并显示"登录成功"，导致路由守卫拦截导航，用户看到"成功"但不跳转 | 在 return true 前检查 user.value，为 null 时清除状态并返回 false |
 
-## 9. 问题清单
-
-### 9.1 严重问题
-
-**无。**
-
-### 9.2 中等问题
-
-**无。**
-
-### 9.3 轻微问题（可选修复）
+### 6.2 中等问题
 
 | 序号 | 文件 | 行号 | 问题描述 | 建议 |
 |-----|------|------|---------|------|
-| 1 | uth.ts | 40-43, 124-134 | isRefreshing、efreshSubscribers、ddRefreshSubscriber、onRefreshed 在 Auth Store 中定义但未使用。Token 刷新实际由 equest.ts 的拦截器处理 | 可在后续清理任务中移除，避免误导 |
-| 2 | uth.ts | 174 | 错误对象类型断言使用内联方式，较长 | 可提取为 	ype AxiosErrorData = { response?: { data?: { detail?: string; error?: { message?: string } } } } 提高可读性 |
+| 1 | uth.ts | 75 | Number(payload.sub) 未校验结果是否为 NaN，如果 JWT 的 sub 字段异常会导致 user.id 为 NaN | 添加 isNaN 检查 |
+
+### 6.3 轻微问题
+
+| 序号 | 文件 | 行号 | 问题描述 | 建议 |
+|-----|------|------|---------|------|
+| 1 | uth.ts | 40-43, 146-156 | Token 刷新队列代码（isRefreshing、refreshSubscribers 等）未使用 | 后续清理 |
+| 2 | uth.ts | 213 | 错误类型断言使用内联方式，较长 | 提取为独立 type |
 
 ---
 
-## 10. 测试建议
+## 7. 必须修复的代码
 
-### 10.1 必须测试的场景
+### 7.1 auth.ts — decodeTokenToUser 添加 padding 补全
+
+`	ypescript
+function decodeTokenToUser(token: string): UserInfo | null {
+    try {
+      const parts = token.split('.')
+      if (parts.length !== 3) return null
+
+      // base64url → base64 转换，补全 padding
+      const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+      const padded = base64 + '='.repeat((4 - base64.length % 4) % 4)
+      const payload = JSON.parse(atob(padded))
+
+      const id = Number(payload.sub)
+      if (isNaN(id)) return null
+
+      return {
+        id,
+        username: payload.username || '',
+        role: payload.role || 'student',
+        is_active: true,
+      }
+    } catch (e) {
+      console.error('解析 Token 失败:', e)
+      return null
+    }
+}
+`
+
+### 7.2 auth.ts — login() 检查 user.value
+
+在 ElMessage.success('登录成功') 和 eturn true 之前添加：
+
+`	ypescript
+// 确保用户信息已设置
+if (!user.value) {
+    console.error('登录成功但获取用户信息失败')
+    // 清除已存储的 Token
+    user.value = null
+    accessToken.value = null
+    refreshTokenValue.value = null
+    clearStorage()
+    ElMessage.error('获取用户信息失败，请重试')
+    return false
+}
+
+ElMessage.success('登录成功')
+return true
+`
+
+---
+
+## 8. 测试建议
+
+### 8.1 必须测试的场景
 
 | 场景 | 测试步骤 | 预期结果 |
 |------|---------|---------|
 | 正确凭据登录 | 输入 admin/admin123，点击登录 | 登录成功，跳转到 Dashboard |
 | 错误密码登录 | 输入 admin/wrong，点击登录 | 显示"用户名或密码错误"，停留在登录页 |
-| 不存在的用户 | 输入 nonexistent/password，点击登录 | 显示"用户名或密码错误"，停留在登录页 |
 | 空表单提交 | 不输入任何内容，点击登录 | 表单验证失败，显示验证错误提示 |
-| Token 过期后访问 | 登录后等待 Token 过期，访问受保护页面 | 自动刷新 Token 或跳转登录页 |
-| 网络断开 | 断开网络，点击登录 | 显示网络错误提示 |
 | 重复点击 | 快速多次点击登录按钮 | 按钮显示 loading 状态，防止重复提交 |
+| Token 解析验证 | 登录后检查 console 是否有"解析 Token 失败"日志 | 不应有此日志 |
 
-### 10.2 回归测试
+### 8.2 验证 decodeTokenToUser 修复
 
-| 场景 | 测试步骤 | 预期结果 |
-|------|---------|---------|
-| 正常 API 调用 | 登录后访问学生列表、成绩列表等 | 正常显示数据 |
-| Token 自动刷新 | 登录后长时间操作，Token 过期 | 自动刷新 Token，操作不中断 |
-| 退出登录 | 点击退出登录按钮 | 清除 Token，跳转登录页 |
-
----
-
-## 11. 审查决策
-
-### ✅ 审查通过
-
-- **结论：** 代码修复正确解决了登录按钮点击无响应的根因问题
-- **状态变更：** 任务状态改为 TESTING
-- **下一步：** frontend-dev 执行上述测试建议中的测试用例，验证修复效果
+在浏览器控制台执行：
+`javascript
+// 模拟 base64url 解码
+const token = localStorage.getItem('access_token')
+const parts = token.split('.')
+const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+const padded = base64 + '='.repeat((4 - base64.length % 4) % 4)
+console.log(JSON.parse(atob(padded)))
+// 应输出 {sub: "1", username: "admin", role: "admin", ...}
+`
 
 ---
 
-> **审查人签名：** Reviewer Agent
+## 9. 审查决策
+
+### ❌ 审查拒绝
+
+- **结论：** 三个修复方向正确，但存在两个严重问题未被发现和修复
+- **状态变更：** 任务状态改回 REJECTED
+- **拒绝次数：** 第 2 次
+- **下一步：** frontend-dev 修复上述 7.1 和 7.2 中的代码后重新提交审查
+
+---
+
+> **审查人签名：** Reviewer Agent  
 > **审查日期：** 2026-06-08
