@@ -94,10 +94,11 @@ defineExpose({
 
 <style lang="scss" scoped>
 .search-form {
-  padding: 16px;
-  background: #fff;
-  border-radius: var(--border-radius-md);
-  box-shadow: var(--shadow-sm);
+  padding: 20px 24px;
+  background: var(--surface-color);
+  border-radius: var(--border-radius-lg);
+  border: 1px solid var(--border-color-light);
+  box-shadow: var(--shadow-xs);
   margin-bottom: 16px;
 
   :deep(.el-form-item) {
@@ -107,6 +108,7 @@ defineExpose({
 
   :deep(.el-form-item__label) {
     font-weight: 500;
+    color: var(--text-color);
   }
 }
 

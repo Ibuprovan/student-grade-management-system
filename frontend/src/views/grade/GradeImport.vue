@@ -409,6 +409,8 @@ function handleContinueImport() {
 
 <style lang="scss" scoped>
 .grade-import {
+  animation: fadeIn 0.3s ease;
+
   .steps-card {
     margin-bottom: 16px;
   }
@@ -439,9 +441,9 @@ function handleContinueImport() {
 
   .template-info {
     text-align: left;
-    background: #f5f7fa;
-    border-radius: var(--border-radius-md);
-    padding: 16px 20px;
+    background: var(--bg-color);
+    border-radius: var(--border-radius-lg);
+    padding: 20px 24px;
     margin-bottom: 20px;
 
     h4 {
@@ -480,10 +482,14 @@ function handleContinueImport() {
 
   .upload-params {
     text-align: left;
-    background: #f5f7fa;
-    border-radius: var(--border-radius-md);
-    padding: 20px;
+    background: var(--bg-color);
+    border-radius: var(--border-radius-lg);
+    padding: 24px;
     margin-bottom: 24px;
+
+    :deep(.el-input__wrapper) {
+      border-radius: var(--border-radius-md);
+    }
   }
 
   .upload-area {
@@ -500,7 +506,7 @@ function handleContinueImport() {
     margin-bottom: 24px;
 
     :deep(.invalid-row) {
-      background-color: #fef0f0 !important;
+      background-color: var(--danger-light) !important;
     }
   }
 
@@ -518,6 +524,10 @@ function handleContinueImport() {
       display: flex;
       flex-direction: column;
       align-items: center;
+      padding: 16px 24px;
+      background: var(--bg-color);
+      border-radius: var(--border-radius-lg);
+      min-width: 100px;
 
       .stat-value {
         font-size: 36px;
@@ -525,9 +535,10 @@ function handleContinueImport() {
       }
 
       .stat-label {
-        font-size: 14px;
+        font-size: 13px;
         color: var(--text-color-secondary);
         margin-top: 4px;
+        font-weight: 500;
       }
     }
 
@@ -580,9 +591,12 @@ function handleContinueImport() {
     }
 
     .result-stats {
-      gap: 24px;
+      gap: 16px;
 
       .stat-item {
+        padding: 12px 16px;
+        min-width: 80px;
+
         .stat-value {
           font-size: 28px;
         }

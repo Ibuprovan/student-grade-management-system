@@ -5,6 +5,7 @@
 - POST   /api/v1/students          添加学生（需要认证）
 - GET    /api/v1/students           学生列表（分页，需要认证）
 - GET    /api/v1/students/search    搜索学生（需要认证）
+- GET    /api/v1/students/classes   获取班级列表（需要认证）
 - GET    /api/v1/students/{id}      查询单个学生（需要认证）
 - PUT    /api/v1/students/{id}      修改学生（需要认证）
 - DELETE /api/v1/students/{id}      删除学生（需要管理员权限）
@@ -159,6 +160,32 @@ def search_students(
             "page_size": page_size,
             "total_pages": total_pages,
         },
+    )
+
+
+@router.get(
+    "/classes",
+    response_model=ApiResponse,
+    summary="获取班级列表",
+    description="获取所有去重的班级名称列表（需要认证）",
+    responses={
+        401: {"description": "未认证"},
+    },
+)
+def get_classes(
+    service: StudentService = Depends(get_student_service),
+    current_user: User = Depends(get_current_user),
+) -> ApiResponse:
+    """
+    获取班级列表（需要认证）
+
+    返回系统中所有学生所属的去重班级名称列表，按名称排序。
+    用于前端下拉框、筛选器等场景。
+    """
+    classes = service.get_all_classes()
+    return ApiResponse(
+        success=True,
+        data=classes,
     )
 
 

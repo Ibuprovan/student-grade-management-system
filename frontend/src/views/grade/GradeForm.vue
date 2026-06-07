@@ -375,6 +375,8 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .grade-form {
+  animation: fadeIn 0.3s ease;
+
   .form-layout {
     display: flex;
     gap: 16px;
@@ -422,6 +424,19 @@ onMounted(() => {
       font-weight: 500;
     }
   }
+
+  :deep(.el-input__wrapper) {
+    border-radius: var(--border-radius-md);
+  }
+
+  :deep(.el-select .el-input__wrapper) {
+    border-radius: var(--border-radius-md);
+  }
+
+  :deep(.el-form-item__label) {
+    font-weight: 500;
+    color: var(--text-color);
+  }
 }
 
 /* 响应式布局 */
@@ -450,7 +465,7 @@ onMounted(() => {
     }
 
     .form-card {
-      padding: 16px;
+      padding: 20px;
     }
   }
 }

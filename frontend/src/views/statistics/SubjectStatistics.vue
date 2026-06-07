@@ -118,7 +118,7 @@
         :data="subjectStats"
         border
         stripe
-        :header-cell-style="{ background: '#f5f7fa', color: '#606266' }"
+        :header-cell-style="{ background: 'var(--bg-color)', color: 'var(--text-color)' }"
         @row-click="handleRowClick"
         highlight-current-row
       >
@@ -257,10 +257,14 @@ function handleRowClick(row: SubjectStatistics) {
 
 <style lang="scss" scoped>
 .subject-statistics {
+  animation: fadeIn 0.3s ease;
+
   .subject-overview {
-    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    background: linear-gradient(135deg, #1F5C55 0%, #2A9D8F 50%, #3BBFA0 100%);
     color: #fff;
     margin-bottom: 16px;
+    border: none;
+    box-shadow: var(--shadow-md);
 
     .overview-item {
       display: flex;
@@ -270,12 +274,13 @@ function handleRowClick(row: SubjectStatistics) {
       &__icon {
         width: 56px;
         height: 56px;
-        border-radius: 12px;
-        background: rgba(255, 255, 255, 0.2);
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.15);
         display: flex;
         align-items: center;
         justify-content: center;
         margin-right: 16px;
+        flex-shrink: 0;
       }
 
       &__content {
@@ -290,8 +295,9 @@ function handleRowClick(row: SubjectStatistics) {
 
       &__label {
         font-size: 13px;
-        opacity: 0.9;
+        opacity: 0.8;
         margin-top: 4px;
+        font-weight: 500;
       }
     }
   }

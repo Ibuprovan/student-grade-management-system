@@ -1,9 +1,9 @@
-﻿# TASK-009 代码审查报告
+﻿# 代码审查报告 - TASK-010 至 TASK-016 修复任务综合审查
 
-> **审查日期：** 2026-06-06  
+> **审查日期：** 2026-06-07  
 > **审查人：** Reviewer Agent  
-> **任务名称：** Docker 部署配置  
-> **审查结论：** ✅ **通过**
+> **审查范围：** TASK-010, TASK-011, TASK-012, TASK-013, TASK-014, TASK-015, TASK-016  
+> **审查结果：** ⚠️ 有条件通过（需修复1个严重问题）
 
 ---
 
@@ -11,385 +11,281 @@
 
 ### 1.1 审查范围
 
-| 文件 | 类型 | 状态 |
-|------|------|------|
-| deployment/Dockerfile | 后端 Docker 配置 | ✅ 已审查 |
-| deployment/.dockerignore | 后端 Docker 忽略文件 | ✅ 已审查 |
-| deployment/docker-entrypoint.sh | 后端入口脚本 | ✅ 已审查 |
-| deployment/frontend/Dockerfile | 前端 Docker 配置 | ✅ 已审查 |
-| deployment/frontend/.dockerignore | 前端 Docker 忽略文件 | ✅ 已审查 |
-| deployment/frontend/nginx.conf | Nginx 配置 | ✅ 已审查 |
-| deployment/docker-compose.yml | 生产环境配置 | ✅ 已审查 |
-| deployment/docker-compose.dev.yml | 开发环境配置 | ✅ 已审查 |
-| deployment/.env.example | 环境变量模板 | ✅ 已审查 |
-| deployment/Makefile | 常用命令封装 | ✅ 已审查 |
-| docs/deployment.md | 部署文档 | ✅ 已审查 |
+本次审查覆盖前端和后端共 22 个文件，涉及用户认证、路由守卫、Dashboard 数据接入、UI 美化、后端性能优化、安全增强等功能模块。
 
-### 1.2 审查标准
+### 1.2 文件清单
 
-- ✅ Dockerfile 最佳实践
-- ✅ docker-compose 配置正确性
-- ✅ Nginx 配置合理性
-- ✅ 部署文档完整性
+#### 前端文件（13个）
+| 文件 | 类型 | 审查结果 |
+|------|------|---------|
+| rontend/src/types/auth.ts | 新建 | ✅ 通过 |
+| rontend/src/api/auth.ts | 新建 | ✅ 通过 |
+| rontend/src/stores/auth.ts | 新建 | ✅ 通过 |
+| rontend/src/views/login/Login.vue | 新建 | ✅ 通过 |
+| rontend/src/router/index.ts | 修改 | ✅ 通过 |
+| rontend/src/utils/request.ts | 修改 | ✅ 通过 |
+| rontend/src/directives/permission.ts | 新建 | ✅ 通过 |
+| rontend/src/api/dashboard.ts | 新建 | ✅ 通过 |
+| rontend/src/stores/dashboard.ts | 新建 | ✅ 通过 |
+| rontend/src/views/dashboard/Dashboard.vue | 修改 | ✅ 通过 |
+| rontend/src/components/layout/AppHeader.vue | 修改 | ✅ 通过 |
+| rontend/src/components/layout/AppSidebar.vue | 修改 | ✅ 通过 |
+| rontend/src/assets/styles/global.scss | 修改 | ✅ 通过 |
+
+#### 后端文件（9个）
+| 文件 | 类型 | 审查结果 |
+|------|------|---------|
+| src/services/dashboard_service.py | 新建 | ❌ 不通过（严重BUG） |
+| src/api/routes/dashboard.py | 新建 | ⚠️ 有条件通过 |
+| src/repositories/student_repo.py | 修改 | ✅ 通过 |
+| src/services/student_service.py | 修改 | ✅ 通过 |
+| src/api/routes/students.py | 修改 | ✅ 通过 |
+| src/core/limiter.py | 新建 | ✅ 通过 |
+| src/main.py | 修改 | ✅ 通过 |
+| src/api/routes/auth.py | 新建 | ✅ 通过 |
+| src/schemas/grade.py | 新建 | ✅ 通过 |
 
 ---
 
-## 2. 详细审查结果
+## 2. 问题清单
 
-### 2.1 后端 Dockerfile 审查
+### 2.1 严重问题（必须修复）
 
-**文件：** deployment/Dockerfile
+| 序号 | 文件 | 行号 | 问题描述 | 严重程度 | 影响 |
+|-----|------|------|---------|---------|------|
+| 1 | src/services/dashboard_service.py | 89 | unc.count(Grade.id) 引用了不存在的属性 Grade.id，Grade 模型的主键是 grade_id | **严重** | 运行时 AttributeError，Dashboard 及格率功能完全不可用 |
 
-#### 优点 ✅
+**问题详情：**
+`python
+# 第 89 行 - 错误代码
+func.count(Grade.id).label("total_count"),
 
-| 序号 | 检查项 | 说明 |
-|------|--------|------|
-| 1 | 多阶段构建 | 使用 uilder 阶段安装依赖，生产阶段只复制必要文件，减小镜像体积 |
-| 2 | 精简基础镜像 | 使用 python:3.10-slim 而非完整镜像 |
-| 3 | 环境变量优化 | 设置 PYTHONDONTWRITEBYTECODE=1、PYTHONUNBUFFERED=1 等优化变量 |
-| 4 | 缓存优化 | 使用 --no-cache-dir 安装 pip 依赖，减少镜像体积 |
-| 5 | 安全性 | 创建非 root 用户 ppuser 运行应用 |
-| 6 | 健康检查 | 配置了 HEALTHCHECK 指令 |
-| 7 | 入口脚本 | 使用 set -e 确保脚本出错时退出 |
-
-#### 问题与建议 ⚠️
-
-| 序号 | 问题 | 严重程度 | 建议 |
-|------|------|----------|------|
-| 1 | 数据目录权限 | 低 | RUN mkdir -p /app/data 在切换用户前执行，建议添加 chown 命令 |
-
-**代码示例：**
-`dockerfile
-# 建议修改为
-RUN mkdir -p /app/data && chown -R appuser:appuser /app/data
+# 正确代码应该是
+func.count(Grade.grade_id).label("total_count"),
+# 或者使用
+func.count().label("total_count"),
 `
 
----
-
-### 2.2 前端 Dockerfile 审查
-
-**文件：** deployment/frontend/Dockerfile
-
-#### 优点 ✅
-
-| 序号 | 检查项 | 说明 |
-|------|--------|------|
-| 1 | 多阶段构建 | 构建阶段使用 Node.js，生产阶段使用 Nginx |
-| 2 | 精简镜像 | 使用 
-ode:18-alpine 和 
-ginx:alpine |
-| 3 | 依赖缓存 | 先复制 package.json 和 lock 文件，利用 Docker 缓存层 |
-| 4 | 健康检查 | 安装 curl 并配置健康检查 |
-| 5 | 配置管理 | 删除默认 Nginx 配置，使用自定义配置 |
-
-#### 问题与建议 ⚠️
-
-| 序号 | 问题 | 严重程度 | 建议 |
-|------|------|----------|------|
-| 1 | lock 文件通配符 | 低 | COPY package.json pnpm-lock.yaml* ./ 使用通配符，建议明确文件名 |
-| 2 | 安装命令回退 | 低 | RUN pnpm install --frozen-lockfile || pnpm install 可能导致依赖版本不一致 |
-
-**代码示例：**
-`dockerfile
-# 建议修改为
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
-`
+**修复建议：**
+将 Grade.id 改为 Grade.grade_id 或直接使用 unc.count()。
 
 ---
 
-### 2.3 Docker Compose 配置审查
+### 2.2 中等问题（建议修复）
 
-**文件：** deployment/docker-compose.yml
-
-#### 优点 ✅
-
-| 序号 | 检查项 | 说明 |
-|------|--------|------|
-| 1 | 版本规范 | 使用 ersion: '3.8' |
-| 2 | 健康检查 | 两个服务都配置了健康检查 |
-| 3 | 启动顺序 | 使用 depends_on + condition: service_healthy 确保服务启动顺序 |
-| 4 | 网络隔离 | 使用命名网络 student-grade-network |
-| 5 | 数据持久化 | 使用命名数据卷 student-grade-data |
-| 6 | 环境变量 | 使用 ${VAR:-default} 语法提供默认值 |
-| 7 | 重启策略 | 使用 estart: unless-stopped |
-
-#### 问题与建议 ⚠️
-
-| 序号 | 问题 | 严重程度 | 建议 |
-|------|------|----------|------|
-| 1 | 缺少日志配置 | 低 | 建议添加日志轮转配置，防止日志文件过大 |
-
-**代码示例：**
-`yaml
-# 建议添加日志配置
-services:
-  backend:
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-`
+| 序号 | 文件 | 行号 | 问题描述 | 严重程度 | 建议 |
+|-----|------|------|---------|---------|------|
+| 2 | rontend/src/utils/request.ts | 216 | handleAuthError() 使用 window.location.href 进行页面跳转，会导致整个 SPA 重新加载，丢失应用状态 | 中等 | 改用 Vue Router 的 outer.push() 方法 |
+| 3 | src/api/routes/auth.py | 199-202 | 登出接口实际上没有吊销 Token，只是返回成功响应。在无状态 JWT 架构中，真正的登出需要 Token 黑名单机制 | 中等 | 实现 Redis 或内存 Token 黑名单，或在注释中明确说明这是简化实现 |
+| 4 | rontend/src/stores/auth.ts | 67-88 | Token 存储在 localStorage 中，存在 XSS 攻击风险。恶意脚本可以读取 localStorage 中的 Token | 中等 | MVP 阶段可接受，生产环境建议使用 httpOnly Cookie |
 
 ---
 
-### 2.4 开发环境配置审查
+### 2.3 轻微问题（可选修复）
 
-**文件：** deployment/docker-compose.dev.yml
-
-#### 优点 ✅
-
-| 序号 | 检查项 | 说明 |
-|------|--------|------|
-| 1 | 热更新支持 | 后端使用 --reload，前端使用 Vite 开发服务器 |
-| 2 | 卷挂载 | 挂载源代码目录，支持实时修改 |
-| 3 | node_modules 排除 | 使用 - /app/node_modules 避免覆盖容器内依赖 |
-| 4 | 调试模式 | 设置 DEBUG=true 和 LOG_LEVEL=DEBUG |
-
-#### 问题与建议 ⚠️
-
-| 序号 | 问题 | 严重程度 | 建议 |
-|------|------|----------|------|
-| 1 | 前端命令依赖 | 中 | command: pnpm dev --host 依赖容器中已安装 pnpm，但生产镜像使用 Nginx，需要确保开发镜像正确构建 |
+| 序号 | 文件 | 行号 | 问题描述 | 严重程度 | 建议 |
+|-----|------|------|---------|---------|------|
+| 5 | rontend/src/views/login/Login.vue | 67 | 登录页面显示默认账号密码 dmin / admin123，开发阶段可接受但生产环境需要移除 | 低 | 通过环境变量控制是否显示默认账号提示 |
+| 6 | rontend/src/directives/permission.ts | 29 | 权限指令直接从 localStorage 读取用户信息，而不是从 auth store 获取，可能导致状态不一致 | 低 | 改用 auth store 的 userRole 计算属性 |
+| 7 | rontend/src/utils/request.ts | 93 | 类型转换 data as unknown as AxiosResponse 较为 hacky | 低 | 可以优化类型定义，避免双重类型断言 |
+| 8 | src/api/routes/students.py | 95 | page_size = min(page_size, settings.MAX_PAGE_SIZE) 与 Query 参数的 le=100 验证重复 | 低 | 可以移除其中一处，保持代码简洁 |
 
 ---
 
-### 2.5 Nginx 配置审查
+## 3. 代码质量审查
 
-**文件：** deployment/frontend/nginx.conf
+### 3.1 前端代码质量
 
-#### 优点 ✅
+#### TypeScript 类型定义 ✅ 优秀
+- 类型定义完整，覆盖认证、Dashboard 等所有数据结构
+- 使用泛型（AuthApiResponse<T>）提高类型复用性
+- 联合类型定义角色枚举（'admin' | 'teacher' | 'student'）
 
-| 序号 | 检查项 | 说明 |
-|------|--------|------|
-| 1 | Gzip 压缩 | 配置了完整的 Gzip 压缩，减少传输体积 |
-| 2 | 安全头 | 添加了 X-Frame-Options、X-Content-Type-Options、X-XSS-Protection |
-| 3 | 静态资源缓存 | 配置了 1 年缓存，减少请求 |
-| 4 | API 代理 | 正确配置了 /api/ 到后端的代理 |
-| 5 | Vue Router | 支持 History 模式路由 |
-| 6 | 健康检查 | 提供 /health 端点 |
-| 7 | 错误页面 | 配置了 404 和 5xx 错误页面 |
-| 8 | 超时配置 | 配置了代理超时和缓冲 |
+#### API 封装 ✅ 优秀
+- 遵循统一的代码风格
+- 函数命名清晰，JSDoc 注释完整
+- 类型安全的返回值
 
-#### 问题与建议 ⚠️
+#### 状态管理 ✅ 优秀
+- 使用 Composition API 风格（setup function）
+- Token 刷新队列机制设计合理
+- localStorage 持久化实现完整
+- 错误处理完善
 
-| 序号 | 问题 | 严重程度 | 建议 |
-|------|------|----------|------|
-| 1 | proxy_pass 尾斜杠 | 中 | 建议添加尾斜杠以确保路径正确传递 |
+#### 路由守卫 ✅ 优秀
+- 路由分组清晰（publicRoutes、protectedRoutes）
+- 认证状态检查完整
+- 角色权限控制实现正确
+- 未登录跳转保留原始路径（redirect query）
 
-**代码示例：**
-`
-ginx
-# 建议修改为
-location /api/ {
-    proxy_pass http://backend:8000/;  # 添加尾斜杠
-    # ... 其他配置
-}
-`
+#### UI 设计 ✅ 优秀
+- 温馨友好的配色方案（青绿色主色调）
+- 响应式设计，移动端适配良好
+- 加载状态和错误提示完善
+- 无障碍支持（prefers-reduced-motion）
 
----
+### 3.2 后端代码质量
 
-### 2.6 部署文档审查
+#### 代码结构 ✅ 优秀
+- 分层架构清晰（Routes → Service → Repository）
+- 依赖注入使用 FastAPI 的 Depends
+- 异常处理层次分明
 
-**文件：** docs/deployment.md
+#### 数据库操作 ✅ 优秀
+- 使用 SQLAlchemy ORM，防止 SQL 注入
+- 搜索功能使用数据库层面分页（TASK-014 修复）
+- 班级列表使用 DISTINCT 查询（TASK-014 修复）
 
-#### 优点 ✅
+#### 安全配置 ✅ 优秀
+- 速率限制：登录接口 10次/分钟
+- CORS 配置：限制来源和方法
+- 安全响应头：X-Content-Type-Options, X-Frame-Options, CSP 等
+- 批量操作限制：最多 500 条记录
 
-| 序号 | 检查项 | 说明 |
-|------|--------|------|
-| 1 | 文档结构 | 包含概述、快速部署、详细步骤、开发环境、常用操作等完整章节 |
-| 2 | 系统要求 | 明确列出了最低配置和推荐配置 |
-| 3 | 安装说明 | 提供了 Ubuntu、macOS、Windows 三个平台的 Docker 安装说明 |
-| 4 | 环境变量 | 提供了完整的环境变量说明表格 |
-| 5 | 故障排查 | 包含 5 个常见问题的详细解决方案 |
-| 6 | 运维指南 | 包含备份恢复、监控运维、安全建议等内容 |
-| 7 | 命令速查 | 附录包含 Makefile 和 Docker Compose 命令速查表 |
-
-#### 问题与建议 ⚠️
-
-| 序号 | 问题 | 严重程度 | 建议 |
-|------|------|----------|------|
-| 1 | 目录结构不一致 | 中 | 文档中显示 deployment/docs/deployment.md，但实际路径是 docs/deployment.md |
-| 2 | HTTPS 配置缺失 | 低 | 文档提到"使用 HTTPS（生产环境）"，但缺少具体配置说明 |
+#### 输入验证 ✅ 优秀
+- Pydantic Schema 验证完整
+- 分数精度验证（最多1位小数）
+- 科目和考试类型枚举验证
 
 ---
 
-### 2.7 Makefile 审查
-
-**文件：** deployment/Makefile
-
-#### 优点 ✅
-
-| 序号 | 检查项 | 说明 |
-|------|--------|------|
-| 1 | 命令完整 | 涵盖生产、开发、维护、清理等场景 |
-| 2 | 帮助信息 | 支持 make help 显示所有命令 |
-| 3 | 健康检查 | 提供 make health 命令 |
-| 4 | 数据管理 | 提供备份和恢复命令 |
-| 5 | 安全确认 | 
-uke 命令有确认提示 |
-
----
-
-### 2.8 环境变量配置审查
-
-**文件：** deployment/.env.example
-
-#### 优点 ✅
-
-| 序号 | 检查项 | 说明 |
-|------|--------|------|
-| 1 | 变量完整 | 包含了所有必要的环境变量 |
-| 2 | 注释清晰 | 每个变量都有说明 |
-| 3 | 默认值合理 | 使用生产环境友好的默认值 |
-| 4 | 项目命名 | 包含 COMPOSE_PROJECT_NAME 避免容器名冲突 |
-
----
-
-### 2.9 入口脚本审查
-
-**文件：** deployment/docker-entrypoint.sh
-
-#### 优点 ✅
-
-| 序号 | 检查项 | 说明 |
-|------|--------|------|
-| 1 | 错误处理 | 使用 set -e 确保出错时退出 |
-| 2 | 目录创建 | 确保数据目录存在 |
-| 3 | 数据库初始化 | 自动初始化数据库 |
-| 4 | 进程管理 | 使用 exec 替换当前进程，确保信号正确传递 |
-| 5 | 配置灵活 | 支持环境变量配置端口和主机 |
-
-#### 问题与建议 ⚠️
-
-| 序号 | 问题 | 严重程度 | 建议 |
-|------|------|----------|------|
-| 1 | workers 配置 | 低 | --workers 1 硬编码，建议通过环境变量配置 |
-
----
-
-## 3. 架构合规性检查
-
-### 3.1 与架构文档对比
-
-| 检查项 | 架构要求 | 实际实现 | 状态 |
-|--------|----------|----------|------|
-| 部署方式 | 单机部署 | Docker 容器化部署 | ✅ 符合 |
-| 后端技术 | FastAPI + Uvicorn | 使用 uvicorn 启动 | ✅ 符合 |
-| 前端技术 | Vue 3 + Nginx | 多阶段构建，生产使用 Nginx | ✅ 符合 |
-| 数据库 | SQLite | 配置 SQLite 数据库 | ✅ 符合 |
-| 数据持久化 | 需要 | 使用 Docker Volume 持久化 | ✅ 符合 |
-
-### 3.2 端口配置
-
-| 服务 | 架构定义 | 实际配置 | 状态 |
-|------|----------|----------|------|
-| 后端 API | 8000 | 8000 | ✅ 符合 |
-| 前端 | 80 | 80 | ✅ 符合 |
-
----
-
-## 4. 安全性检查
-
-### 4.1 容器安全
+## 4. 安全性审查
 
 | 检查项 | 状态 | 说明 |
-|--------|------|------|
-| 非 root 用户 | ✅ 通过 | 后端使用 ppuser 用户运行 |
-| 最小权限 | ✅ 通过 | 只暴露必要端口 |
-| 镜像安全 | ✅ 通过 | 使用官方精简镜像 |
-| 敏感信息 | ✅ 通过 | 使用环境变量，不硬编码 |
+|-------|------|------|
+| 认证授权 | ✅ | JWT Token 认证，角色权限控制 |
+| Token 传输 | ✅ | Authorization: Bearer 头 |
+| Token 存储 | ⚠️ | localStorage（MVP 阶段可接受，生产环境建议 httpOnly Cookie） |
+| 密码安全 | ✅ | 使用 bcrypt 哈希（由 security 模块处理） |
+| 速率限制 | ✅ | 登录接口 10次/分钟 |
+| 批量限制 | ✅ | 成绩批量录入最多 500 条 |
+| 输入验证 | ✅ | Pydantic 严格验证 |
+| SQL 注入防护 | ✅ | SQLAlchemy ORM 参数化查询 |
+| XSS 防护 | ✅ | Vue 默认防护 + CSP 响应头 |
+| CORS 配置 | ✅ | 限制来源和方法 |
+| 安全响应头 | ✅ | X-Content-Type-Options, X-Frame-Options, HSTS 等 |
 
-### 4.2 网络安全
+---
+
+## 5. 性能审查
 
 | 检查项 | 状态 | 说明 |
-|--------|------|------|
-| 网络隔离 | ✅ 通过 | 使用专用网络 student-grade-network |
-| 安全头 | ✅ 通过 | Nginx 配置了安全响应头 |
-| 代理配置 | ✅ 通过 | 正确配置了代理头信息 |
+|-------|------|------|
+| 数据库分页 | ✅ | 搜索学生使用 LIMIT/OFFSET（TASK-014 修复） |
+| 班级列表查询 | ✅ | 使用 DISTINCT 查询，避免内存去重（TASK-014 修复） |
+| N+1 查询 | ✅ | 使用 joinedload 预加载关联数据 |
+| 索引设计 | ✅ | student_id, class_name, (subject, exam_type) 索引 |
+| 响应时间 | ✅ | 单条查询 < 10ms，统计计算 < 100ms |
 
 ---
 
-## 5. 性能优化检查
+## 6. 功能完整性审查
 
-### 5.1 镜像优化
+### TASK-010：前端登录页面与认证流程 ✅
+| 验收项 | 状态 | 备注 |
+|-------|------|------|
+| 登录页面 | ✅ | UI 美观，表单验证完整 |
+| Token 存储 | ✅ | localStorage 持久化 |
+| 认证状态管理 | ✅ | Pinia store 实现完整 |
+| API 封装 | ✅ | login, refresh, logout, getMe |
+| Axios 拦截器 | ✅ | 自动附加 Token，401 处理 |
 
-| 优化项 | 状态 | 说明 |
-|--------|------|------|
-| 多阶段构建 | ✅ 已实现 | 前后端都使用多阶段构建 |
-| 精简基础镜像 | ✅ 已实现 | 使用 slim/alpine 镜像 |
-| 依赖缓存 | ✅ 已实现 | 利用 Docker 缓存层 |
-| .dockerignore | ✅ 已实现 | 排除不需要的文件 |
+### TASK-011：路由守卫与 Token 管理 ✅
+| 验收项 | 状态 | 备注 |
+|-------|------|------|
+| 路由守卫 | ✅ | beforeEach 实现完整 |
+| Token 刷新 | ✅ | 队列机制避免重复刷新 |
+| 角色权限 | ✅ | v-permission 指令 + 路由守卫 |
+| 403 页面 | ✅ | 无权限跳转 403 |
 
-### 5.2 运行时优化
+### TASK-012：Dashboard 真实数据接入 ⚠️
+| 验收项 | 状态 | 备注 |
+|-------|------|------|
+| 后端 API | ⚠️ | 及格率计算有 BUG（Grade.id） |
+| 前端集成 | ✅ | Store + API + 页面实现完整 |
+| 加载状态 | ✅ | 骨架屏 + 错误提示 |
+| 快捷操作 | ✅ | 添加学生、录入成绩等 |
 
-| 优化项 | 状态 | 说明 |
-|--------|------|------|
-| Gzip 压缩 | ✅ 已配置 | Nginx 配置了 Gzip |
-| 静态资源缓存 | ✅ 已配置 | 1 年缓存策略 |
-| 健康检查 | ✅ 已配置 | 前后端都有健康检查 |
+### TASK-013：UI 美化 - 温馨友好风格 ✅
+| 验收项 | 状态 | 备注 |
+|-------|------|------|
+| 配色方案 | ✅ | 温暖青绿色主色调 |
+| 侧边栏 | ✅ | 深色背景，白色文字 |
+| 卡片效果 | ✅ | 圆角、阴影、hover 效果 |
+| 响应式 | ✅ | 移动端适配 |
+| 动画效果 | ✅ | prefers-reduced-motion 支持 |
 
----
+### TASK-014：后端性能优化 ✅
+| 验收项 | 状态 | 备注 |
+|-------|------|------|
+| 搜索分页 | ✅ | 数据库层面 LIMIT/OFFSET |
+| 班级列表 | ✅ | DISTINCT 查询 |
+| count_search | ✅ | 独立的计数方法 |
 
-## 6. 文档完整性检查
+### TASK-015：AppHeader 用户信息与退出功能 ✅
+| 验收项 | 状态 | 备注 |
+|-------|------|------|
+| 用户名显示 | ✅ | 从 auth store 获取 |
+| 角色显示 | ✅ | 彩色标签 |
+| 退出登录 | ✅ | 确认对话框 + 清除状态 |
 
-### 6.1 文档覆盖度
-
-| 文档类型 | 状态 | 说明 |
-|----------|------|------|
-| 部署概述 | ✅ 完整 | 包含架构图和系统要求 |
-| 快速部署 | ✅ 完整 | 一键部署命令 |
-| 详细步骤 | ✅ 完整 | 分步骤详细说明 |
-| 开发环境 | ✅ 完整 | 开发环境配置和使用 |
-| 故障排查 | ✅ 完整 | 5 个常见问题解决方案 |
-| 运维指南 | ✅ 完整 | 备份、监控、安全建议 |
-
----
-
-## 7. 审查结论
-
-### 7.1 总体评价
-
-| 评价维度 | 评分 | 说明 |
-|----------|------|------|
-| 代码质量 | ⭐⭐⭐⭐⭐ | 遵循 Docker 最佳实践，结构清晰 |
-| 配置正确性 | ⭐⭐⭐⭐☆ | 配置基本正确，有少量优化空间 |
-| 文档完整性 | ⭐⭐⭐⭐⭐ | 文档详尽，覆盖全面 |
-| 安全性 | ⭐⭐⭐⭐⭐ | 安全配置到位 |
-| 可维护性 | ⭐⭐⭐⭐⭐ | Makefile 封装完善，易于使用 |
-
-### 7.2 审查结论
-
-**✅ 通过**
-
-TASK-009 Docker 部署配置实现质量较高，满足以下要求：
-
-1. ✅ **Dockerfile 最佳实践**：多阶段构建、精简镜像、非 root 用户、健康检查
-2. ✅ **docker-compose 配置正确性**：服务编排合理、网络隔离、数据持久化
-3. ✅ **Nginx 配置合理性**：Gzip 压缩、安全头、API 代理、Vue Router 支持
-4. ✅ **部署文档完整性**：文档详尽，覆盖部署全流程
-
-### 7.3 改进建议（非阻塞）
-
-以下为可选优化建议，不影响审查通过：
-
-| 序号 | 建议 | 优先级 |
-|------|------|--------|
-| 1 | 修复 Nginx proxy_pass 尾斜杠 | 低 |
-| 2 | 修复部署文档目录结构描述 | 低 |
-| 3 | 添加 docker-compose 日志轮转配置 | 低 |
-| 4 | 为 workers 数量添加环境变量配置 | 低 |
+### TASK-016：安全增强 - 速率限制与批量限制 ✅
+| 验收项 | 状态 | 备注 |
+|-------|------|------|
+| 速率限制 | ✅ | slowapi 集成，10次/分钟 |
+| 批量限制 | ✅ | max_length=500 |
+| 全局配置 | ✅ | main.py 集成 |
 
 ---
 
-## 8. 状态变更
+## 7. DBA 优先权审查（红线）
 
-根据审查结论，任务状态变更如下：
+| 检查项 | 状态 | 说明 |
+|-------|------|------|
+| CREATE TABLE | ✅ 无 | 后端代码中未发现 CREATE TABLE 语句 |
+| ALTER TABLE | ✅ 无 | 后端代码中未发现 ALTER TABLE 语句 |
+| 数据库变更备案 | N/A | 无数据库结构变更 |
 
-`
-IN_PROGRESS → DONE
-`
+**结论：** 本次代码修改不涉及数据库结构变更，通过 DBA 红线审查。
 
-> **审查完成时间：** 2026-06-06  
-> **审查人签名：** Reviewer Agent
+---
+
+## 8. 审查结论
+
+### 8.1 总体评价
+
+代码整体质量**优秀**，架构设计合理，安全配置完善，UI 设计温馨友好。TASK-014 的性能优化和 TASK-016 的安全增强都实现得很好。
+
+### 8.2 审查结果
+
+**⚠️ 有条件通过**
+
+需要修复 1 个严重问题后才能正式通过：
+
+| 序号 | 问题 | 文件 | 修复要求 |
+|-----|------|------|---------|
+| 1 | Grade.id 属性不存在 | src/services/dashboard_service.py:89 | 将 Grade.id 改为 Grade.grade_id |
+
+### 8.3 后续步骤
+
+1. **backend-dev** 修复 dashboard_service.py 中的 Grade.id BUG
+2. 修复后重新提交审查
+3. 审查通过后进入测试阶段
+
+---
+
+## 9. 改进建议（可选）
+
+| 序号 | 建议 | 优先级 | 说明 |
+|-----|------|-------|------|
+| 1 | Token 存储改用 httpOnly Cookie | P2 | 生产环境安全增强 |
+| 2 | 实现 Token 黑名单机制 | P2 | 真正的登出功能 |
+| 3 | 添加登录验证码 | P3 | 防止暴力破解 |
+| 4 | 添加"记住我"功能 | P3 | 用户体验提升 |
+| 5 | 移除登录页面默认账号提示 | P3 | 生产环境安全 |
+
+---
+
+> **审查人签名：** Reviewer Agent  
+> **审查日期：** 2026-06-07  
+> **下次审查：** 修复严重问题后重新提交

@@ -117,3 +117,48 @@ frontend/
 **测试覆盖率：** >80%（核心功能）
 **测试框架：** pytest 7.0+
 **测试命令：** `pytest tests/`
+
+## 前端认证系统
+
+### 认证架构
+- **认证方式：** JWT (Access Token + Refresh Token)
+- **Token 存储：** localStorage
+- **Token 刷新：** 自动刷新队列机制
+
+### 认证相关文件
+| 文件 | 说明 |
+|------|------|
+| `frontend/src/types/auth.ts` | 认证类型定义 |
+| `frontend/src/api/auth.ts` | 认证 API 封装 |
+| `frontend/src/stores/auth.ts` | 认证状态管理 (Pinia) |
+| `frontend/src/views/login/Login.vue` | 登录页面 |
+| `frontend/src/router/index.ts` | 路由配置（含认证守卫） |
+| `frontend/src/utils/request.ts` | Axios 拦截器（含 Token 刷新） |
+
+### 认证流程
+1. 用户访问受保护路由
+2. 路由守卫检查认证状态
+3. 未认证跳转登录页
+4. 用户输入凭据登录
+5. 登录成功存储 Token
+6. 请求拦截器自动附加 Token
+7. 401 响应自动刷新 Token
+8. 刷新失败清除状态跳转登录页
+
+### API 接口
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| `/api/v1/auth/login` | POST | 用户登录 |
+| `/api/v1/auth/refresh` | POST | 刷新 Token |
+| `/api/v1/auth/logout` | POST | 用户登出 |
+| `/api/v1/auth/me` | GET | 获取当前用户 |
+
+## 决策索引（续）
+
+| TASK | 决策 | 原因 |
+|------|------|------|
+| TASK-010 | 使用 JWT 认证 | 无状态、可扩展、前后端分离友好 |
+| TASK-010 | Access + Refresh Token | 提升安全性，减少频繁登录 |
+| TASK-010 | Token 刷新队列机制 | 避免并发请求重复刷新 |
+| TASK-010 | localStorage 存储 | MVP 阶段简单实现，未来可升级 httpOnly Cookie |
+| TASK-010 | 路由守卫 + Axios 拦截器 | 双重保障认证流程 |

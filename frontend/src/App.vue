@@ -1,13 +1,27 @@
 <template>
   <el-config-provider :locale="zhCn">
-    <router-view />
+    <!-- 登录页面：不显示布局 -->
+    <template v-if="isLoginPage">
+      <router-view />
+    </template>
+
+    <!-- 其他页面：显示完整布局 -->
+    <template v-else>
+      <AppLayout />
+    </template>
   </el-config-provider>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
+import AppLayout from '@/components/layout/AppLayout.vue'
 
-// 根组件 - 配置 Element Plus 中文语言包
+const route = useRoute()
+
+/** 是否是登录页面 */
+const isLoginPage = computed(() => route.path === '/login')
 </script>
 
 <style>
@@ -16,8 +30,9 @@ body {
   margin: 0;
   padding: 0;
   height: 100%;
-  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB',
-    'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial,
+    sans-serif;
 }
 
 #app {

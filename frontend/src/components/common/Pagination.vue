@@ -125,10 +125,11 @@ function handleNextClick(page: number) {
   padding: 16px 0;
 
   &.pagination-background {
-    padding: 16px;
-    background: #fff;
-    border-radius: var(--border-radius-md);
-    box-shadow: var(--shadow-sm);
+    padding: 16px 20px;
+    background: var(--surface-color);
+    border-radius: var(--border-radius-lg);
+    border: 1px solid var(--border-color-light);
+    box-shadow: var(--shadow-xs);
   }
 }
 
