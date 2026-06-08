@@ -7,5 +7,6 @@
 from src.repositories.base import BaseRepository
 from src.repositories.student_repo import StudentRepository
 from src.repositories.grade_repo import GradeRepository
+from src.repositories.user_repo import UserRepository
 
-__all__ = ["BaseRepository", "StudentRepository", "GradeRepository"]
+__all__ = ["BaseRepository", "StudentRepository", "GradeRepository", "UserRepository"]

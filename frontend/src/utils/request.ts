@@ -12,6 +12,7 @@
 import axios from 'axios'
 import type { AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
 import { ElMessage } from 'element-plus'
+import { refreshToken as refreshTokenApi } from '@/api/auth'
 
 /** 后端统一响应格式 */
 interface BackendResponse<T = unknown> {
@@ -134,12 +135,9 @@ service.interceptors.response.use(
         }
 
         try {
-          const response = await axios.post(
-            `${import.meta.env.VITE_API_BASE_URL || '/api/v1'}/auth/refresh`,
-            { refresh_token: refreshToken },
-          )
+          const response = await refreshTokenApi({ refresh_token: refreshToken })
 
-          const { access_token, refresh_token: newRefreshToken } = response.data.data
+          const { access_token, refresh_token: newRefreshToken } = response.data
 
           // 更新 Token
           localStorage.setItem('access_token', access_token)

@@ -11,7 +11,6 @@
 - DELETE /api/v1/students/{id}      删除学生（需要管理员权限）
 """
 
-import math
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query, Path, status
@@ -19,6 +18,7 @@ from fastapi import APIRouter, Depends, Query, Path, status
 from src.api.dependencies import get_student_service
 from src.api.auth import get_current_user, require_admin, require_teacher_or_admin
 from src.core.config import settings
+from src.core.utils import build_paginated_response
 from src.schemas.student import StudentCreate, StudentUpdate, StudentResponse
 from src.schemas.common import ApiResponse, PaginatedResponse, SuccessResponse
 from src.services.student_service import StudentService
@@ -100,17 +100,11 @@ def get_student_list(
         class_name=class_name,
     )
 
-    # 计算总页数
-    total_pages = math.ceil(total / page_size) if total > 0 else 0
-
-    return PaginatedResponse(
-        data={
-            "items": [StudentResponse.model_validate(s) for s in students],
-            "total": total,
-            "page": page,
-            "page_size": page_size,
-            "total_pages": total_pages,
-        },
+    return build_paginated_response(
+        items=[StudentResponse.model_validate(s) for s in students],
+        total=total,
+        page=page,
+        page_size=page_size,
     )
 
 
@@ -149,17 +143,11 @@ def search_students(
         page_size=page_size,
     )
 
-    # 计算总页数
-    total_pages = math.ceil(total / page_size) if total > 0 else 0
-
-    return PaginatedResponse(
-        data={
-            "items": [StudentResponse.model_validate(s) for s in students],
-            "total": total,
-            "page": page,
-            "page_size": page_size,
-            "total_pages": total_pages,
-        },
+    return build_paginated_response(
+        items=[StudentResponse.model_validate(s) for s in students],
+        total=total,
+        page=page,
+        page_size=page_size,
     )
 
 

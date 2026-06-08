@@ -146,15 +146,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useGradeForm } from '@/composables/useGrade'
 import { getScoreColor, formatScore } from '@/utils/format'
-import { getStudentList, getStudentDetail } from '@/api/student'
-import { getGradeDetail } from '@/api/grade'
 import type { FormInstance, FormRules } from 'element-plus'
 import type { Subject, ExamType } from '@/types/grade'
-import type { Student } from '@/types/student'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const route = useRoute()
@@ -163,6 +160,10 @@ const {
   subjectOptions,
   examTypeOptions,
   recentRecords,
+  studentSearching,
+  studentOptions,
+  searchStudents,
+  loadGradeForEdit,
   checkDuplicate,
   addRecentRecord,
   goBack,
@@ -178,12 +179,6 @@ const submitting = ref(false)
 
 /** 表单引用 */
 const formRef = ref<FormInstance>()
-
-/** 学生搜索状态 */
-const studentSearching = ref(false)
-
-/** 学生选项 */
-const studentOptions = ref<Student[]>([])
 
 /** 表单数据 */
 const form = reactive({
@@ -221,24 +216,6 @@ const rules: FormRules = {
   exam_date: [
     { required: true, message: '请选择考试日期', trigger: 'change' },
   ],
-}
-
-/** 搜索学生 */
-async function searchStudents(query: string) {
-  if (!query || query.length < 1) {
-    studentOptions.value = []
-    return
-  }
-
-  studentSearching.value = true
-  try {
-    const result = await getStudentList({ keyword: query, page_size: 20 })
-    studentOptions.value = result.items
-  } catch (error) {
-    console.error('搜索学生失败:', error)
-  } finally {
-    studentSearching.value = false
-  }
 }
 
 /** 学生选择变化 */
@@ -354,16 +331,12 @@ async function loadEditData() {
   if (!route.query.id) return
 
   try {
-    const grade = await getGradeDetail(Number(route.query.id))
+    const { grade } = await loadGradeForEdit(Number(route.query.id))
     form.student_id = grade.student_id
     form.subject = grade.subject
     form.exam_type = grade.exam_type
     form.score = grade.score
     form.exam_date = grade.exam_date
-
-    // 通过 API 获取完整的学生信息
-    const student = await getStudentDetail(grade.student_id)
-    studentOptions.value = [student]
   } catch (error) {
     console.error('加载成绩详情失败:', error)
     ElMessage.error('加载成绩详情失败')

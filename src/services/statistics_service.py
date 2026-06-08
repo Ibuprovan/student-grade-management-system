@@ -15,6 +15,7 @@ from typing import Optional, List, Dict, Any, Tuple
 from sqlalchemy import func, and_, select, case
 from sqlalchemy.orm import Session
 
+from src.core.constants import PASS_SCORE, EXCELLENT_SCORE
 from src.models.grade import Grade
 from src.models.student import Student
 from src.repositories.grade_repo import GradeRepository
@@ -35,10 +36,6 @@ class StatisticsService:
         student_repo: StudentRepository 实例
         db: 数据库会话
     """
-
-    # 常量定义
-    PASS_SCORE = 60.0
-    EXCELLENT_SCORE = 90.0
 
     def __init__(self, db: Session):
         """
@@ -257,7 +254,7 @@ class StatisticsService:
             }
 
         scores = [s[0] for s in score_data]
-        passed_count = sum(1 for s in scores if s >= self.PASS_SCORE)
+        passed_count = sum(1 for s in scores if s >= PASS_SCORE)
         pass_rate = round((passed_count / len(scores)) * 100, 2)
 
         return {
@@ -299,7 +296,7 @@ class StatisticsService:
             }
 
         scores = [s[0] for s in score_data]
-        excellent_count = sum(1 for s in scores if s >= self.EXCELLENT_SCORE)
+        excellent_count = sum(1 for s in scores if s >= EXCELLENT_SCORE)
         excellent_rate = round((excellent_count / len(scores)) * 100, 2)
 
         return {
@@ -388,8 +385,8 @@ class StatisticsService:
         average = round(sum(scores) / count, 2)
         max_score = max(scores)
         min_score = min(scores)
-        passed_count = sum(1 for s in scores if s >= self.PASS_SCORE)
-        excellent_count = sum(1 for s in scores if s >= self.EXCELLENT_SCORE)
+        passed_count = sum(1 for s in scores if s >= PASS_SCORE)
+        excellent_count = sum(1 for s in scores if s >= EXCELLENT_SCORE)
         pass_rate = round((passed_count / count) * 100, 2)
         excellent_rate = round((excellent_count / count) * 100, 2)
         score_distribution = self._calculate_score_distribution(scores)
@@ -610,8 +607,8 @@ class StatisticsService:
                 func.avg(Grade.score).label("average"),
                 func.max(Grade.score).label("max_score"),
                 func.min(Grade.score).label("min_score"),
-                func.sum(case((Grade.score >= self.PASS_SCORE, 1), else_=0)).label("passed_count"),
-                func.sum(case((Grade.score >= self.EXCELLENT_SCORE, 1), else_=0)).label("excellent_count"),
+                func.sum(case((Grade.score >= PASS_SCORE, 1), else_=0)).label("passed_count"),
+                func.sum(case((Grade.score >= EXCELLENT_SCORE, 1), else_=0)).label("excellent_count"),
             )
             .join(Student, Grade.student_id == Student.student_id)
             .group_by(Student.class_name)
@@ -671,8 +668,8 @@ class StatisticsService:
                 func.avg(Grade.score).label("average"),
                 func.max(Grade.score).label("max_score"),
                 func.min(Grade.score).label("min_score"),
-                func.sum(case((Grade.score >= self.PASS_SCORE, 1), else_=0)).label("passed_count"),
-                func.sum(case((Grade.score >= self.EXCELLENT_SCORE, 1), else_=0)).label("excellent_count"),
+                func.sum(case((Grade.score >= PASS_SCORE, 1), else_=0)).label("passed_count"),
+                func.sum(case((Grade.score >= EXCELLENT_SCORE, 1), else_=0)).label("excellent_count"),
             )
             .join(Student, Grade.student_id == Student.student_id)
             .group_by(Grade.subject)
@@ -774,10 +771,10 @@ class StatisticsService:
             elif metric == "min":
                 result_metrics["min"] = min(scores)
             elif metric == "pass_rate":
-                passed = sum(1 for s in scores if s >= self.PASS_SCORE)
+                passed = sum(1 for s in scores if s >= PASS_SCORE)
                 result_metrics["pass_rate"] = round((passed / count) * 100, 2)
             elif metric == "excellent_rate":
-                excellent = sum(1 for s in scores if s >= self.EXCELLENT_SCORE)
+                excellent = sum(1 for s in scores if s >= EXCELLENT_SCORE)
                 result_metrics["excellent_rate"] = round((excellent / count) * 100, 2)
             elif metric == "median":
                 result_metrics["median"] = round(statistics.median(scores), 2)

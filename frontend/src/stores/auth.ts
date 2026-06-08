@@ -5,7 +5,8 @@
  * - 用户信息
  * - Token 存储和管理
  * - 登录/登出操作
- * - Token 刷新机制
+ *
+ * Token 刷新由 request.ts 拦截器统一处理，Store 中不再重复实现。
  */
 
 import { defineStore } from 'pinia'
@@ -35,12 +36,6 @@ export const useAuthStore = defineStore('auth', () => {
 
   /** 加载状态 */
   const loading = ref(false)
-
-  /** 是否正在刷新 Token */
-  const isRefreshing = ref(false)
-
-  /** Token 刷新队列 */
-  let refreshSubscribers: Array<(token: string) => void> = []
 
   // ========== 计算属性 ==========
 
@@ -142,21 +137,6 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokenResponse.refresh_token)
   }
 
-  /**
-   * 将刷新失败的请求加入队列
-   */
-  function addRefreshSubscriber(callback: (token: string) => void) {
-    refreshSubscribers.push(callback)
-  }
-
-  /**
-   * 执行刷新队列中的请求
-   */
-  function onRefreshed(token: string) {
-    refreshSubscribers.forEach((callback) => callback(token))
-    refreshSubscribers = []
-  }
-
   // ========== 操作 ==========
 
   /**
@@ -254,52 +234,6 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   /**
-   * 刷新 Token
-   * @returns 是否刷新成功
-   */
-  async function refreshToken(): Promise<boolean> {
-    if (isRefreshing.value) {
-      // 如果正在刷新，等待刷新完成
-      return new Promise((resolve) => {
-        addRefreshSubscriber((token) => {
-          resolve(!!token)
-        })
-      })
-    }
-
-    if (!refreshTokenValue.value) {
-      return false
-    }
-
-    isRefreshing.value = true
-
-    try {
-      const response = await authApi.refreshToken({
-        refresh_token: refreshTokenValue.value,
-      })
-
-      if (response.success && response.data) {
-        updateTokenResponse(response.data)
-        onRefreshed(response.data.access_token)
-        return true
-      }
-
-      return false
-    } catch (error) {
-      console.error('Token 刷新失败:', error)
-      // 刷新失败，清除认证状态
-      user.value = null
-      accessToken.value = null
-      refreshTokenValue.value = null
-      clearStorage()
-      onRefreshed('')
-      return false
-    } finally {
-      isRefreshing.value = false
-    }
-  }
-
-  /**
    * 获取当前用户信息
    */
   async function fetchCurrentUser() {
@@ -322,21 +256,16 @@ export const useAuthStore = defineStore('auth', () => {
   /**
    * 检查认证状态
    * 尝试从 localStorage 恢复状态，并验证 Token 是否有效
+   * Token 刷新由 request.ts 拦截器统一处理（401 时自动刷新重试）
    */
   async function checkAuth() {
     // 从 localStorage 加载状态
     loadFromStorage()
 
     // 如果有 Token，尝试获取用户信息
+    // 如果 Token 过期，request.ts 拦截器会自动刷新 Token 并重试请求
     if (accessToken.value) {
-      const userInfo = await fetchCurrentUser()
-      if (!userInfo) {
-        // Token 无效，尝试刷新
-        const refreshed = await refreshToken()
-        if (refreshed) {
-          await fetchCurrentUser()
-        }
-      }
+      await fetchCurrentUser()
     }
   }
 
@@ -369,7 +298,6 @@ export const useAuthStore = defineStore('auth', () => {
     accessToken,
     refreshTokenValue,
     loading,
-    isRefreshing,
 
     // 计算属性
     isAuthenticated,
@@ -381,7 +309,6 @@ export const useAuthStore = defineStore('auth', () => {
     // 操作
     login,
     logout,
-    refreshToken,
     fetchCurrentUser,
     checkAuth,
     setAuth,
