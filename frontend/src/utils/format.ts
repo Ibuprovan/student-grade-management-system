@@ -3,6 +3,14 @@
  * 日期、数字、分数等格式化
  */
 
+/** 分数等级阈值常量 */
+export const SCORE_THRESHOLDS = {
+  FAIL: 60,
+  PASS: 70,
+  GOOD: 80,
+  EXCELLENT: 90,
+} as const
+
 /**
  * 格式化日期
  * @param date 日期字符串或 Date 对象
@@ -69,10 +77,10 @@ export function formatPercent(value: number | null | undefined, decimals = 1): s
  * @returns 等级文本
  */
 export function getScoreLevel(score: number): string {
-  if (score >= 90) return '优秀'
-  if (score >= 80) return '良好'
-  if (score >= 70) return '中等'
-  if (score >= 60) return '及格'
+  if (score >= SCORE_THRESHOLDS.EXCELLENT) return '优秀'
+  if (score >= SCORE_THRESHOLDS.GOOD) return '良好'
+  if (score >= SCORE_THRESHOLDS.PASS) return '中等'
+  if (score >= SCORE_THRESHOLDS.FAIL) return '及格'
   return '不及格'
 }
 
@@ -82,11 +90,11 @@ export function getScoreLevel(score: number): string {
  * @returns 颜色值
  */
 export function getScoreColor(score: number): string {
-  if (score >= 90) return '#67C23A'  // 优秀 - 绿色
-  if (score >= 80) return '#409EFF'  // 良好 - 蓝色
-  if (score >= 70) return '#E6A23C'  // 中等 - 橙色
-  if (score >= 60) return '#909399'  // 及格 - 灰色
-  return '#F56C6C'                   // 不及格 - 红色
+  if (score >= SCORE_THRESHOLDS.EXCELLENT) return '#67C23A'  // 优秀 - 绿色
+  if (score >= SCORE_THRESHOLDS.GOOD) return '#409EFF'       // 良好 - 蓝色
+  if (score >= SCORE_THRESHOLDS.PASS) return '#E6A23C'       // 中等 - 橙色
+  if (score >= SCORE_THRESHOLDS.FAIL) return '#909399'       // 及格 - 灰色
+  return '#F56C6C'                                           // 不及格 - 红色
 }
 
 /**

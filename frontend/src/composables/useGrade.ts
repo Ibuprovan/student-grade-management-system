@@ -8,7 +8,11 @@ import { useRouter } from 'vue-router'
 import { useGradeStore } from '@/stores/grade'
 import { useStudentStore } from '@/stores/student'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { downloadCSV } from '@/utils/export'
+import { getStudentList, getStudentDetail } from '@/api/student'
+import { getGradeDetail } from '@/api/grade'
 import type { Grade, GradeCreate, GradeListParams, Subject, ExamType, ImportPreviewItem } from '@/types/grade'
+import type { Student } from '@/types/student'
 import { SUBJECTS, EXAM_TYPES } from '@/types/grade'
 
 /**
@@ -133,20 +137,7 @@ export function useGradeList() {
         grade.exam_date,
       ])
 
-      const csvContent = [
-        headers.join(','),
-        ...rows.map((row) => row.map((cell) => `"${cell}"`).join(',')),
-      ].join('\n')
-
-      // 下载 CSV 文件
-      const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' })
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `成绩列表_${new Date().toISOString().slice(0, 10)}.csv`
-      link.click()
-      URL.revokeObjectURL(url)
-
+      downloadCSV(headers, rows, '成绩列表')
       ElMessage.success(`成功导出 ${grades.length} 条成绩记录`)
     } catch (error) {
       console.error('导出失败:', error)
@@ -197,6 +188,41 @@ export function useGradeForm() {
     status: 'success' | 'error'
   }>>([])
 
+  /** 学生搜索状态 */
+  const studentSearching = ref(false)
+
+  /** 学生选项（搜索结果） */
+  const studentOptions = ref<Student[]>([])
+
+  /** 搜索学生（用于表单下拉选择） */
+  async function searchStudents(query: string) {
+    if (!query || query.length < 1) {
+      studentOptions.value = []
+      return
+    }
+
+    studentSearching.value = true
+    try {
+      const result = await getStudentList({ keyword: query, page_size: 20 })
+      studentOptions.value = result.items
+    } catch (error) {
+      console.error('搜索学生失败:', error)
+    } finally {
+      studentSearching.value = false
+    }
+  }
+
+  /**
+   * 加载成绩详情（编辑模式）
+   * 同时加载关联的学生信息
+   */
+  async function loadGradeForEdit(gradeId: number) {
+    const grade = await getGradeDetail(gradeId)
+    const student = await getStudentDetail(grade.student_id)
+    studentOptions.value = [student]
+    return { grade, student }
+  }
+
   /** 检查重复 */
   async function checkDuplicate(studentId: string, subject: string, examType: string) {
     return await gradeStore.checkDuplicate(studentId, subject, examType)
@@ -229,6 +255,10 @@ export function useGradeForm() {
     subjectOptions,
     examTypeOptions,
     recentRecords,
+    studentSearching,
+    studentOptions,
+    searchStudents,
+    loadGradeForEdit,
     checkDuplicate,
     addRecentRecord,
     goBack,

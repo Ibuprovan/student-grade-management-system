@@ -13,7 +13,6 @@
 - GET    /api/v1/grades/search              组合条件查询成绩（需要认证）
 """
 
-import math
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query, Path, status
@@ -21,6 +20,7 @@ from fastapi import APIRouter, Depends, Query, Path, status
 from src.api.dependencies import get_grade_service
 from src.api.auth import get_current_user, require_admin, require_teacher_or_admin
 from src.core.config import settings
+from src.core.utils import build_paginated_response
 from src.schemas.grade import (
     GradeCreate,
     GradeUpdate,
@@ -142,17 +142,11 @@ def search_grades(
         page_size=page_size,
     )
 
-    # 计算总页数
-    total_pages = math.ceil(total / page_size) if total > 0 else 0
-
-    return PaginatedResponse(
-        data={
-            "items": [GradeResponse.model_validate(g) for g in grades],
-            "total": total,
-            "page": page,
-            "page_size": page_size,
-            "total_pages": total_pages,
-        },
+    return build_paginated_response(
+        items=[GradeResponse.model_validate(g) for g in grades],
+        total=total,
+        page=page,
+        page_size=page_size,
     )
 
 
@@ -232,17 +226,11 @@ def get_grades_by_class(
         exam_type=exam_type,
     )
 
-    # 计算总页数
-    total_pages = math.ceil(total / page_size) if total > 0 else 0
-
-    return PaginatedResponse(
-        data={
-            "items": [GradeResponse.model_validate(g) for g in grades],
-            "total": total,
-            "page": page,
-            "page_size": page_size,
-            "total_pages": total_pages,
-        },
+    return build_paginated_response(
+        items=[GradeResponse.model_validate(g) for g in grades],
+        total=total,
+        page=page,
+        page_size=page_size,
     )
 
 
@@ -285,17 +273,11 @@ def get_grades_by_subject(
         exam_type=exam_type,
     )
 
-    # 计算总页数
-    total_pages = math.ceil(total / page_size) if total > 0 else 0
-
-    return PaginatedResponse(
-        data={
-            "items": [GradeResponse.model_validate(g) for g in grades],
-            "total": total,
-            "page": page,
-            "page_size": page_size,
-            "total_pages": total_pages,
-        },
+    return build_paginated_response(
+        items=[GradeResponse.model_validate(g) for g in grades],
+        total=total,
+        page=page,
+        page_size=page_size,
     )
 
 

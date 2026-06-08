@@ -17,6 +17,37 @@ from src.core.constants import (
 )
 
 
+def _validate_score_precision(v: float) -> float:
+    """
+    验证分数精度和范围（公共验证函数）
+
+    分数最多支持 1 位小数，且必须在 SCORE_MIN ~ SCORE_MAX 之间。
+    此函数供 GradeBase、GradeBatchItem、GradeUpdate 共同复用，
+    避免在多个 Schema 类中重复相同的验证逻辑。
+
+    Args:
+        v: 分数值
+
+    Returns:
+        float: 四舍五入到 1 位小数后的分数
+
+    Raises:
+        ValueError: 小数位数超过 1 位，或分数超出允许范围
+    """
+    # 检查小数位数
+    score_str = str(v)
+    if "." in score_str:
+        decimal_places = len(score_str.split(".")[1])
+        if decimal_places > 1:
+            raise ValueError("分数最多支持1位小数")
+
+    # 检查范围
+    if v < SCORE_MIN or v > SCORE_MAX:
+        raise ValueError(f"分数必须在{SCORE_MIN}-{SCORE_MAX}之间")
+
+    return round(v, 1)
+
+
 class GradeBase(BaseModel):
     """
     成绩基础模式
@@ -109,13 +140,7 @@ class GradeBase(BaseModel):
         Raises:
             ValueError: 分数小数位数超过1位
         """
-        # 检查小数位数
-        score_str = str(v)
-        if "." in score_str:
-            decimal_places = len(score_str.split(".")[1])
-            if decimal_places > 1:
-                raise ValueError("分数最多支持1位小数")
-        return v
+        return _validate_score_precision(v)
 
 
 class GradeCreate(GradeBase):
@@ -164,12 +189,7 @@ class GradeBatchItem(BaseModel):
         Raises:
             ValueError: 分数小数位数超过1位
         """
-        score_str = str(v)
-        if "." in score_str:
-            decimal_places = len(score_str.split(".")[1])
-            if decimal_places > 1:
-                raise ValueError("分数最多支持1位小数")
-        return v
+        return _validate_score_precision(v)
 
 
 class GradeBatchCreate(BaseModel):
@@ -249,12 +269,7 @@ class GradeUpdate(BaseModel):
         Raises:
             ValueError: 分数小数位数超过1位
         """
-        score_str = str(v)
-        if "." in score_str:
-            decimal_places = len(score_str.split(".")[1])
-            if decimal_places > 1:
-                raise ValueError("分数最多支持1位小数")
-        return v
+        return _validate_score_precision(v)
 
 
 class GradeResponse(GradeBase):

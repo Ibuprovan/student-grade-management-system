@@ -7,28 +7,14 @@
 
 from fastapi import APIRouter, Depends
 
-from src.api.dependencies import get_db
+from src.api.dependencies import get_dashboard_service
 from src.api.auth import get_current_user
 from src.schemas.common import ApiResponse
 from src.services.dashboard_service import DashboardService
 from src.models.user import User
-from sqlalchemy.orm import Session
 
 # 创建路由器
 router = APIRouter(prefix="/api/v1/dashboard", tags=["仪表盘"])
-
-
-def get_dashboard_service(db: Session = Depends(get_db)) -> DashboardService:
-    """
-    获取 DashboardService 实例的依赖注入函数
-
-    Args:
-        db: 数据库会话（由 get_db 依赖注入）
-
-    Returns:
-        DashboardService: 仪表盘业务逻辑服务实例
-    """
-    return DashboardService(db)
 
 
 @router.get(

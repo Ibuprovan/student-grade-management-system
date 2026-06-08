@@ -18,6 +18,7 @@ from src.core.database import get_db
 from src.core.security import jwt_service, hash_password, verify_password
 from src.core.config import settings
 from src.models.user import User
+from src.repositories.user_repo import UserRepository
 from src.schemas.auth import (
     LoginRequest,
     TokenResponse,
@@ -25,7 +26,7 @@ from src.schemas.auth import (
     UserInfo,
 )
 from src.schemas.common import ApiResponse, SuccessResponse
-from src.api.auth import get_current_user, security
+from src.api.auth import get_current_user, security, get_user_repository
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +46,7 @@ router = APIRouter(prefix="/api/v1/auth", tags=["认证管理"])
 )
 def login(
     data: LoginRequest,
-    db: Session = Depends(get_db),
+    user_repo: UserRepository = Depends(get_user_repository),
 ) -> ApiResponse:
     """
     用户登录
@@ -55,8 +56,8 @@ def login(
 
     返回 Access Token 和 Refresh Token。
     """
-    # 查询用户
-    user = db.query(User).filter(User.username == data.username).first()
+    # 查询用户（通过 Repository）
+    user = user_repo.get_by_username(data.username)
 
     if user is None:
         logger.warning(f"登录失败：用户不存在 - {data.username}")
@@ -117,7 +118,7 @@ def login(
 )
 def refresh_token(
     data: RefreshRequest,
-    db: Session = Depends(get_db),
+    user_repo: UserRepository = Depends(get_user_repository),
 ) -> ApiResponse:
     """
     刷新 Token
@@ -136,10 +137,10 @@ def refresh_token(
                 detail="无效的 Token 类型，请使用 Refresh Token",
             )
 
-        # 查询用户
-        user = db.query(User).filter(User.id == int(payload.sub)).first()
+        # 查询用户（通过 Repository，同时检查启用状态）
+        user = user_repo.get_active_by_id(int(payload.sub))
 
-        if user is None or not user.is_active:
+        if user is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="用户不存在或已被禁用",

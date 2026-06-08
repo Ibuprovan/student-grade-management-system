@@ -19,8 +19,8 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from src.core.security import jwt_service
 from src.models.user import User
-from src.core.database import get_db
-from sqlalchemy.orm import Session
+from src.repositories.user_repo import UserRepository
+from src.api.dependencies import get_user_repository
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +34,7 @@ security = HTTPBearer(
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: Session = Depends(get_db),
+    user_repo: UserRepository = Depends(get_user_repository),
 ) -> User:
     """
     获取当前认证用户
@@ -51,7 +51,7 @@ async def get_current_user(
 
     Args:
         credentials: HTTP Bearer 认证凭据（自动注入）
-        db: 数据库会话（自动注入）
+        user_repo: 用户数据访问 Repository（自动注入）
 
     Returns:
         User: 当前认证的用户对象
@@ -73,23 +73,14 @@ async def get_current_user(
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
-        # 从数据库查询用户
-        user = db.query(User).filter(User.id == int(payload.sub)).first()
+        # 从数据库查询用户（通过 Repository）
+        user = user_repo.get_active_by_id(int(payload.sub))
 
         if user is None:
-            logger.warning(f"Token 中的用户不存在: user_id={payload.sub}")
+            logger.warning(f"Token 中的用户不存在或已被禁用: user_id={payload.sub}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="用户不存在或已被删除",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
-
-        # 检查用户是否启用
-        if not user.is_active:
-            logger.warning(f"用户账户已被禁用: user_id={user.id}")
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="用户账户已被禁用，请联系管理员",
+                detail="用户不存在或已被禁用",
                 headers={"WWW-Authenticate": "Bearer"},
             )
 

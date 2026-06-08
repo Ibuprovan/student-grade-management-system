@@ -13,6 +13,7 @@ from typing import Dict, Any
 from sqlalchemy import func, select, case
 from sqlalchemy.orm import Session
 
+from src.core.constants import PASS_SCORE
 from src.models.grade import Grade
 from src.models.student import Student
 from src.repositories.grade_repo import GradeRepository
@@ -33,9 +34,6 @@ class DashboardService:
         grade_repo: GradeRepository 实例
         db: 数据库会话
     """
-
-    # 常量定义
-    PASS_SCORE = 60.0
 
     def __init__(self, db: Session):
         """
@@ -87,7 +85,7 @@ class DashboardService:
         """
         stmt = select(
             func.count(Grade.grade_id).label("total_count"),
-            func.sum(case((Grade.score >= self.PASS_SCORE, 1), else_=0)).label("passed_count"),
+            func.sum(case((Grade.score >= PASS_SCORE, 1), else_=0)).label("passed_count"),
         )
         result = self.db.execute(stmt)
         row = result.one()

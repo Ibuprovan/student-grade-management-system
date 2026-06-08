@@ -7,6 +7,7 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useStudentStore } from '@/stores/student'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { downloadCSV } from '@/utils/export'
 import type { Student, StudentCreate, StudentUpdate, StudentListParams } from '@/types/student'
 
 export interface UseStudentOptions {
@@ -254,18 +255,7 @@ export function useStudent(options: UseStudentOptions = {}) {
       student.created_at,
     ])
 
-    const csvContent = [
-      headers.join(','),
-      ...rows.map((row) => row.join(',')),
-    ].join('\n')
-
-    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' })
-    const link = document.createElement('a')
-    link.href = URL.createObjectURL(blob)
-    link.download = filename || `学生列表_${new Date().toISOString().slice(0, 10)}.csv`
-    link.click()
-    URL.revokeObjectURL(link.href)
-
+    downloadCSV(headers, rows, filename || '学生列表')
     ElMessage.success('导出成功')
   }
 
