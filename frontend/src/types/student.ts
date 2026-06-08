@@ -36,6 +36,8 @@ export interface StudentListParams {
   page_size?: number
   class_name?: string
   keyword?: string
+  sort_by?: string
+  sort_order?: 'asc' | 'desc'
 }
 
 /** 分页响应 */

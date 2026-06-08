@@ -280,48 +280,54 @@ async function handleDuplicateCheck() {
 async function handleSubmit(continueAfter: boolean) {
   if (!formRef.value) return
 
-  await formRef.value.validate(async (valid) => {
-    if (!valid) return
+  try {
+    await formRef.value.validate()
+  } catch {
+    return
+  }
 
-    // 重复检测
+  // 重复检测（编辑模式跳过）
+  if (!isEdit.value) {
     const canProceed = await handleDuplicateCheck()
     if (!canProceed) return
+  }
 
-    submitting.value = true
-    try {
-      const data = {
+  submitting.value = true
+  try {
+    const data = {
+      student_id: form.student_id,
+      subject: form.subject as Subject,
+      score: form.score,
+      exam_type: form.exam_type as ExamType,
+      exam_date: form.exam_date,
+    }
+
+    if (isEdit.value) {
+      await updateGrade(Number(route.query.id), data)
+    } else {
+      await createGrade(data)
+
+      // 添加到最近记录
+      const student = studentOptions.value.find((s) => s.student_id === form.student_id)
+      addRecentRecord({
         student_id: form.student_id,
-        subject: form.subject as Subject,
+        student_name: student?.name || '-',
+        subject: form.subject as string,
         score: form.score,
-        exam_type: form.exam_type as ExamType,
-        exam_date: form.exam_date,
-      }
+        status: 'success',
+      })
+    }
 
-      if (isEdit.value) {
-        await updateGrade(Number(route.query.id), data)
-      } else {
-        await createGrade(data)
-
-        // 添加到最近记录
-        const student = studentOptions.value.find((s) => s.student_id === form.student_id)
-        addRecentRecord({
-          student_id: form.student_id,
-          student_name: student?.name || '-',
-          subject: form.subject as string,
-          score: form.score,
-          status: 'success',
-        })
-      }
-
-      if (continueAfter) {
-        // 提交并继续：重置表单但保留部分字段
-        handleReset()
-        ElMessage.success('录入成功，请继续')
-      } else {
-        goBack()
-      }
-    } catch (error) {
-      if (!continueAfter) return
+    if (continueAfter) {
+      // 提交并继续：重置表单但保留部分字段
+      handleReset()
+      ElMessage.success('录入成功，请继续')
+    } else {
+      goBack()
+    }
+  } catch (error) {
+    ElMessage.error('提交失败，请稍后重试')
+    if (continueAfter) {
       // 添加失败记录
       addRecentRecord({
         student_id: form.student_id,
@@ -330,10 +336,10 @@ async function handleSubmit(continueAfter: boolean) {
         score: form.score,
         status: 'error',
       })
-    } finally {
-      submitting.value = false
     }
-  })
+  } finally {
+    submitting.value = false
+  }
 }
 
 /** 重置表单 */

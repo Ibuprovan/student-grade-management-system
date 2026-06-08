@@ -360,7 +360,7 @@ async function handleParseFile() {
 
   try {
     previewData.value = await parseCSV(selectedFile.value)
-    currentStep = ImportStep.DATA_PREVIEW
+    currentStep.value = ImportStep.DATA_PREVIEW
   } catch (error) {
     ElMessage.error((error as Error).message || '文件解析失败')
   }
@@ -383,9 +383,10 @@ async function handleStartImport() {
       importForm.exam_date,
     )
     importResult.value = result
-    currentStep = ImportStep.IMPORT_RESULT
+    currentStep.value = ImportStep.IMPORT_RESULT
   } catch (error) {
     console.error('导入失败:', error)
+    ElMessage.error('导入失败，请稍后重试')
   } finally {
     importing.value = false
   }
@@ -399,7 +400,7 @@ function handleDownloadFailed() {
 
 /** 继续导入 */
 function handleContinueImport() {
-  currentStep = ImportStep.DOWNLOAD_TEMPLATE
+    currentStep.value = ImportStep.DOWNLOAD_TEMPLATE
   selectedFile.value = null
   previewData.value = []
   importResult.value = null

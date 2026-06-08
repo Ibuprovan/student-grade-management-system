@@ -1,430 +1,333 @@
-# 登录功能测试报告（第二轮）
+# Bug 修复验证测试报告
 
 > **测试日期：** 2026-06-08  
 > **测试工程师：** QA Agent  
-> **测试类型：** 功能修复验证（第二轮）  
-> **测试结果：** ✅ 全部通过
+> **测试类型：** 全面 Bug 修复验证（第三轮）  
+> **测试结果：** ❌ 未通过（存在阻断性问题）
 
 ---
 
 ## 1. 测试执行摘要
 
-### 1.1 测试环境状态
+### 1.1 测试结果总览
 
-| 服务 | 地址 | 状态 | PID |
-|------|------|------|-----|
-| 后端 (FastAPI) | http://localhost:8000 | ✅ 运行中 | 36672 |
-| 前端 (Vite Dev) | http://localhost:3000 | ✅ 运行中 | 26180 |
-| 数据库 | data/grades.db | ✅ 已初始化 | - |
+| 测试类别 | 总数 | 通过 | 失败 | 通过率 |
+|---------|------|------|------|-------|
+| 后端单元测试 | 119 | 119 | 0 | **100%** ✅ |
+| 后端集成测试 - Auth | 31 | 31 | 0 | **100%** ✅ |
+| 后端集成测试 - Students | 16 | 0 | 16 | **0%** ❌ |
+| 后端集成测试 - Grades | 23 | 0 | 23 | **0%** ❌ |
+| 后端集成测试 - Statistics | 28 | 0 | 28 | **0%** ❌ |
+| **后端总计** | **217** | **150** | **67** | **69.1%** ❌ |
+| 前端构建 (vite build) | 1 | 1 | 0 | **100%** ✅ |
+| 前端构建 (vue-tsc + vite build) | 1 | 0 | 1 | **0%** ❌ |
+| Pydantic 弃用警告 | 1 | 1 | 0 | **100%** ✅ |
 
-### 1.2 测试结果总览
+### 1.2 总体通过率
 
-| 指标 | 值 |
-|------|-----|
-| 总测试数 | 27 |
-| 通过 | 27 |
-| 失败 | 0 |
-| 通过率 | **100%** |
-
----
-
-## 2. 后端 API 测试结果
-
-### 2.1 测试用例详情
-
-#### API-01: 正确密码登录 ✅
-
-```
-请求: POST /api/v1/auth/login
-Body: {"username": "admin", "password": "admin123"}
-响应: 200 OK
-{
-  "success": true,
-  "data": {
-    "access_token": "eyJhbGciOiJIUzI1NiIs...",
-    "refresh_token": "eyJhbGciOiJIUzI1NiIs...",
-    "token_type": "bearer",
-    "expires_in": 1800
-  },
-  "message": "登录成功"
-}
-```
-
-**结果：** ✅ 通过 - 返回有效的 access_token 和 refresh_token
-
-#### API-02: 错误密码登录 ✅
-
-```
-请求: POST /api/v1/auth/login
-Body: {"username": "admin", "password": "wrongpassword"}
-响应: 401 Unauthorized
-{
-  "detail": "用户名或密码错误"
-}
-```
-
-**结果：** ✅ 通过 - 正确返回 401 状态码和错误消息
-
-#### API-03: 不存在用户 ✅
-
-```
-请求: POST /api/v1/auth/login
-Body: {"username": "nonexistent", "password": "admin123"}
-响应: 401 Unauthorized
-{
-  "detail": "用户名或密码错误"
-}
-```
-
-**结果：** ✅ 通过 - 不泄露用户是否存在
-
-#### API-04: 空请求体 ✅
-
-```
-请求: POST /api/v1/auth/login
-Body: {}
-响应: 422 Unprocessable Entity
-{
-  "success": false,
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "参数错误 (body -> username): ..."
-  }
-}
-```
-
-**结果：** ✅ 通过 - Pydantic 验证正确拦截
-
-#### API-05: 用户名过短 ✅
-
-```
-请求: POST /api/v1/auth/login
-Body: {"username": "ab", "password": "admin123"}
-响应: 422 Unprocessable Entity
-```
-
-**结果：** ✅ 通过 - min_length=3 验证生效
-
-#### API-06: 密码过短 ✅
-
-```
-请求: POST /api/v1/auth/login
-Body: {"username": "admin", "password": "12345"}
-响应: 422 Unprocessable Entity
-```
-
-**结果：** ✅ 通过 - min_length=6 验证生效
-
-#### API-07: 获取用户信息 ✅
-
-```
-请求: GET /api/v1/auth/me
-Header: Authorization: Bearer <valid_token>
-响应: 200 OK
-{
-  "success": true,
-  "data": {
-    "id": 1,
-    "username": "admin",
-    "role": "admin",
-    "is_active": true
-  }
-}
-```
-
-**结果：** ✅ 通过 - 正确返回用户信息
-
-#### API-08: 无 Token 访问 ✅
-
-```
-请求: GET /api/v1/auth/me (无 Authorization 头)
-响应: 401 Unauthorized
-```
-
-**结果：** ✅ 通过 - HTTPBearer 正确拦截
-
-#### API-09: 无效 Token ✅
-
-```
-请求: GET /api/v1/auth/me
-Header: Authorization: Bearer invalid_token_here
-响应: 401 Unauthorized
-```
-
-**结果：** ✅ 通过 - JWT 验证正确拒绝无效 token
-
-#### API-10: Token 刷新 ✅
-
-```
-请求: POST /api/v1/auth/refresh
-Body: {"refresh_token": "<valid_refresh_token>"}
-响应: 200 OK
-{
-  "success": true,
-  "data": {
-    "access_token": "<new_access_token>",
-    "refresh_token": "<new_refresh_token>",
-    "token_type": "bearer",
-    "expires_in": 1800
-  }
-}
-新旧 token 不同: True
-```
-
-**结果：** ✅ 通过 - Token 刷新正常工作
+- **后端测试通过率：** 150/217 = **69.1%** ❌
+- **前端构建：** vue-tsc 类型检查失败，vite build 成功 ⚠️
+- **Pydantic 弃用警告：** 已消除 ✅
 
 ---
 
-## 3. 端到端流程测试结果
+## 2. 后端单元测试结果
 
-### 3.1 E2E-01: 完整登录流程 ✅
+### 2.1 执行命令
 
-**测试步骤：**
-1. POST /api/v1/auth/login → 获取 tokens
-2. GET /api/v1/auth/me → 获取用户信息
+```bash
+python -m pytest tests/unit/ -v --tb=short
+```
 
-**结果：**
-- 登录状态码: 200
-- 登录成功: true
-- has_access_token: true
-- has_refresh_token: true
-- 用户信息: id=1, username=admin, role=admin, is_active=true
+### 2.2 结果详情
 
-**结论：** ✅ 通过
+```
+119 passed in 1.52s
+```
 
-### 3.2 E2E-02: 错误密码处理 ✅
+| 测试模块 | 通过 | 总数 | 状态 |
+|---------|------|------|------|
+| test_models/test_grade.py | 7 | 7 | ✅ |
+| test_models/test_student.py | 7 | 7 | ✅ |
+| test_repositories/test_repositories.py | 19 | 19 | ✅ |
+| test_services/test_grade_service.py | 20 | 20 | ✅ |
+| test_services/test_statistics_service.py | 40 | 40 | ✅ |
+| test_services/test_student_service.py | 20 | 20 | ✅ |
 
-**结果：**
-- 状态码: 401
-- 错误消息: "用户名或密码错误"
-- has_error_message: true
-
-**结论：** ✅ 通过
-
-### 3.3 E2E-03: 空表单提交 ✅
-
-**结果：**
-- 状态码: 422
-- 前端应在 API 调用前进行表单验证
-
-**结论：** ✅ 通过
-
-### 3.4 E2E-04: Dashboard 访问 ✅
-
-**测试步骤：**
-1. 登录获取 token
-2. GET /api/v1/dashboard/stats
-
-**结果：**
-- Dashboard 状态码: 200
-- 返回数据: total_students=0, total_grades=0, average_score=0.0, pass_rate=0.0
-
-**结论：** ✅ 通过
-
-### 3.5 E2E-05: 未认证访问保护路由 ✅
-
-**结果：**
-- 状态码: 401
-- 前端路由守卫应重定向到 /login
-
-**结论：** ✅ 通过
-
-### 3.6 E2E-06: Token 自动刷新 ✅
-
-**结果：**
-- 刷新状态码: 200
-- has_new_access_token: true
-- has_new_refresh_token: true
-- tokens_are_different: true
-
-**结论：** ✅ 通过
-
-### 3.7 E2E-07: 登出流程 ✅
-
-**结果：**
-- 登出状态码: 200
-- 返回消息: "登出成功"
-
-**结论：** ✅ 通过
-
-### 3.8 E2E-08: 教师账号登录 ✅
-
-**结果：**
-- 登录状态码: 200
-- 用户角色: teacher
-- 用户名: teacher
-
-**结论：** ✅ 通过
-
-### 3.9 E2E-09: 学生账号登录 ✅
-
-**结果：**
-- 登录状态码: 200
-- 用户角色: student
-- 用户名: student
-
-**结论：** ✅ 通过
-
-### 3.10 E2E-10: CORS 配置 ✅
-
-**结果：**
-- OPTIONS 状态码: 204
-- CORS Origin: http://localhost:3000
-- CORS Methods: GET,HEAD,PUT,PATCH,POST,DELETE
-
-**结论：** ✅ 通过
+**结论：** 所有单元测试通过，后端业务逻辑层实现正确。
 
 ---
 
-## 4. 前端代码审查结果
+## 3. 后端集成测试结果
 
-### 4.1 Login.vue 表单验证 ✅
+### 3.1 执行命令
 
-```typescript
-const rules: FormRules = {
-  username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 3, max: 50, message: '用户名长度在 3 到 50 个字符', trigger: 'blur' },
-  ],
-  password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, max: 128, message: '密码长度在 6 到 128 个字符', trigger: 'blur' },
-  ],
-}
+```bash
+python -m pytest tests/integration/ -v --tb=short
 ```
 
-**审查结果：** ✅ 表单验证规则正确
+### 3.2 结果详情
 
-### 4.2 auth store login 函数 ✅
-
-**流程：**
-1. 调用 authApi.login()
-2. 保存 tokens (updateTokenResponse)
-3. 获取用户信息 (getCurrentUser)
-4. 如果获取失败，从 JWT 解析兜底
-5. 返回 boolean
-
-**审查结果：** ✅ 逻辑正确，有完善的错误处理
-
-### 4.3 request.ts 拦截器 ✅
-
-**功能：**
-- 请求拦截器：自动附加 Authorization header
-- 响应拦截器：处理业务错误
-- 401 处理：自动刷新 token（非认证接口）
-- 认证接口错误：直接 reject，由调用方处理
-
-**审查结果：** ✅ 拦截器逻辑正确
-
-### 4.4 路由守卫 ✅
-
-**逻辑：**
-1. 公开路由直接放行
-2. 已登录用户访问 /login 重定向到 /dashboard
-3. 未认证用户尝试从 localStorage 恢复
-4. 有 token 但未认证，调用 checkAuth()
-5. 验证失败重定向到 /login
-6. 检查角色权限
-
-**审查结果：** ✅ 守卫逻辑完善
-
-### 4.5 错误处理 ✅
-
-```typescript
-catch (error: unknown) {
-  const errData = (error as { response?: { data?: { detail?: string } } })?.response?.data
-  const message = errData?.detail || errData?.error?.message || '登录失败，请检查用户名和密码'
-  ElMessage.error(message)
-  return false
-}
+```
+67 failed, 31 passed, 1 warning in 26.43s
 ```
 
-**审查结果：** ✅ 正确提取 FastAPI 的 detail 字段
+### 3.3 认证 API 测试（31/31 通过 ✅）
 
-### 4.6 Vite 代理配置 ✅
+所有认证相关测试通过，覆盖：
 
-```typescript
-proxy: {
-  '/api': {
-    target: 'http://localhost:8000',
-    changeOrigin: true,
-    rewrite: (path) => path.replace(/^\/api/, '/api'),
-  },
-}
+| 测试类 | 用例数 | 通过 | 状态 |
+|-------|-------|------|------|
+| TestLoginAPI | 12 | 12 | ✅ |
+| TestTokenRefreshAPI | 4 | 4 | ✅ |
+| TestGetCurrentUserAPI | 5 | 5 | ✅ |
+| TestLogoutAPI | 2 | 2 | ✅ |
+| TestLoginResponseFormat | 3 | 3 | ✅ |
+| TestAuthEdgeCases | 5 | 5 | ✅ |
+
+关键验证点：
+- ✅ 正确密码登录返回 200 + tokens
+- ✅ 错误密码返回 401
+- ✅ 禁用账户返回 403
+- ✅ Token 刷新成功且旧 Token 被吊销
+- ✅ 登出成功（Token 加入黑名单）
+- ✅ 过期 Token 返回 401
+- ✅ 无效 Token 返回 401
+- ✅ 未认证访问返回 401
+- ✅ SQL 注入攻击被阻止
+- ✅ 特殊字符/Unicode 处理正确
+
+### 3.4 学生 API 测试（0/16 失败 ❌）
+
+**所有 16 个测试全部失败**，失败原因统一为：
+
+```
+E   assert 401 == <expected_status>
+E    +  where 401 = <Response [401 Unauthorized]>.status_code
 ```
 
-**审查结果：** ✅ 代理配置正确
+**根因分析：**
+- 学生 API 路由要求认证（`Depends(require_teacher_or_admin)`）
+- 测试 fixture **未注册 auth 路由**，无法通过登录获取 token
+- 测试 fixture **未种子用户数据**，数据库中无用户记录
+- 测试请求 **未携带 Authorization header**
 
-### 4.7 API Base URL ✅
+### 3.5 成绩 API 测试（0/23 失败 ❌）
 
-```typescript
-baseURL: import.meta.env.VITE_API_BASE_URL || '/api/v1'
-```
+**所有 23 个测试全部失败**，同样的 401 Unauthorized 根因。
 
-**审查结果：** ✅ 默认值 /api/v1 与后端路由匹配
+### 3.6 统计 API 测试（0/28 失败 ❌）
+
+**所有 28 个测试全部失败**，同样的 401 Unauthorized 根因。
+
+### 3.7 失败根因详细说明
+
+`test_students.py`、`test_grades.py`、`test_statistics.py` 三个文件的测试 fixture 存在相同的结构性问题：
+
+1. **缺少 auth 路由注册：** `client` fixture 仅注册了业务路由（students/grades/statistics），未注册 `auth_router`
+2. **缺少用户种子数据：** 没有 `seed_users` fixture 创建 admin/teacher/student 测试用户
+3. **缺少认证头：** 所有 API 调用均未携带 `Authorization: Bearer <token>` 请求头
+
+而 `test_auth.py` 正确实现了这些：
+- 注册了 `auth_router`
+- 使用 `seed_users` autouse fixture 创建了 4 个测试用户
+- 通过登录接口获取 token 并携带在请求头中
 
 ---
 
-## 5. 关键发现
+## 4. Pydantic 弃用警告检查
 
-### 5.1 后端 API 完全正常
+### 4.1 执行命令
 
-所有 10 个 API 测试用例全部通过，包括：
-- 正确密码登录返回有效 tokens
-- 错误密码返回 401 + 错误消息
-- 参数验证正确拦截无效输入
-- Token 刷新机制正常工作
-- CORS 配置正确
+```bash
+python -m pytest tests/unit/ tests/integration/test_api/test_auth.py -v 2>&1 | findstr "PydanticDeprecated"
+```
 
-### 5.2 前端代码逻辑正确
+### 4.2 结果
 
-代码审查发现：
-- 表单验证规则完善
-- 错误处理正确提取 detail 字段
-- Token 存储和刷新机制完善
-- 路由守卫逻辑正确
+```
+（无输出）
+```
 
-### 5.3 代理配置正确
-
-Vite 开发服务器的代理配置正确地将 `/api` 请求转发到后端 8000 端口。
+**结论：** Pydantic 弃用警告已消除 ✅
 
 ---
 
-## 6. 测试结论
+## 5. 前端构建检查
 
-### 6.1 最终判定
+### 5.1 完整构建（vue-tsc + vite build）
 
-**✅ 测试通过**
+```bash
+cd frontend && npm run build
+```
 
-所有 27 项测试（10 个 API 测试 + 10 个 E2E 测试 + 7 个代码审查）全部通过。
+**结果：** ❌ 失败
 
-### 6.2 登录功能状态
+```
+Search string not found: "/supportedTSExtensions = .*(?=;)/"
+```
 
-| 功能 | 状态 |
-|------|------|
-| 正确密码登录 | ✅ 正常 |
-| 错误密码提示 | ✅ 正常 |
-| 空表单验证 | ✅ 正常 |
-| Token 生成 | ✅ 正常 |
-| Token 刷新 | ✅ 正常 |
-| 用户信息获取 | ✅ 正常 |
-| 路由守卫 | ✅ 正常 |
-| CORS 配置 | ✅ 正常 |
+**根因：** `vue-tsc@1.8.x` 与 `TypeScript@5.9.3` 版本不兼容。vue-tsc 1.8.x 内部尝试通过字符串搜索修补 TypeScript 编译器，但 TypeScript 5.9.3 的内部实现已变更，导致搜索失败。
 
-### 6.3 建议
+### 5.2 Vite 生产构建（跳过类型检查）
 
-如果用户在浏览器中仍然遇到登录问题，可能的原因：
+```bash
+cd frontend && npx vite build
+```
 
-1. **浏览器缓存** - 清除 localStorage 和 cookies
-2. **前端未启动** - 确认 http://localhost:3000 可访问
-3. **后端未启动** - 确认 http://localhost:8000/health 返回 200
-4. **网络问题** - 检查浏览器控制台是否有网络错误
+**结果：** ✅ 成功
+
+```
+✓ built in 8.51s
+✓ 2387 modules transformed
+```
+
+输出 `dist/` 目录包含完整的 HTML、CSS、JS 文件。
+
+**警告：**
+- `GradeImport.vue` 中 `currentStep` 是常量却被赋值（3 处），运行时会抛出异常
+- Dart Sass legacy JS API 弃用警告（非阻断）
+- 部分 chunk 超过 500KB（echarts、element-plus）
 
 ---
 
-## 7. 测试脚本位置
+## 6. 特定修复场景验证
 
-| 脚本 | 用途 | 测试数 |
-|------|------|--------|
-| `C:\Users\Ibuprofen\AppData\Local\Temp\opencode\test_login_api.py` | 后端 API 测试 | 10 |
-| `C:\Users\Ibuprofen\AppData\Local\Temp\opencode\test_e2e.py` | 端到端测试 | 10 |
+### 6.1 通过集成测试验证的修复
+
+| 编号 | 场景 | 验证方式 | 结果 |
+|------|------|---------|------|
+| V-01 | 登录功能 | test_login_admin_success | ✅ 200 + tokens |
+| V-02 | 登出功能 | test_logout_success | ✅ Token 吊销 + "登出成功" |
+| V-03 | 登出后 Token 失效 | test_refresh_token_reuse_old_token | ✅ 旧 Token 返回 401 |
+| V-07 | Pydantic 弃用 | findstr 检查 | ✅ 无警告输出 |
+
+### 6.2 无法通过集成测试验证的修复
+
+| 编号 | 场景 | 原因 |
+|------|------|------|
+| V-04 | 学生删除失败提示 | 集成测试因 401 全部失败，无法验证 |
+| V-05 | 成绩表单验证 | 集成测试因 401 全部失败，无法验证 |
+| V-06 | CSV 导出 | 前端功能，需手动浏览器测试 |
+
+---
+
+## 7. 代码覆盖率报告
+
+### 7.1 执行命令
+
+```bash
+python -m pytest tests/unit/ tests/integration/test_api/test_auth.py --cov=src --cov-report=term-missing
+```
+
+### 7.2 覆盖率总览
+
+```
+TOTAL: 2259 statements, 1083 missed, 52% coverage
+```
+
+### 7.3 模块覆盖率详情
+
+| 模块 | 语句数 | 未覆盖 | 覆盖率 | 状态 |
+|------|-------|-------|-------|------|
+| src/core/security.py | 69 | 1 | 99% | ✅ |
+| src/services/student_service.py | 51 | 1 | 98% | ✅ |
+| src/api/routes/auth.py | 55 | 2 | 96% | ✅ |
+| src/repositories/base.py | 58 | 3 | 95% | ✅ |
+| src/schemas/grade.py | 80 | 7 | 91% | ✅ |
+| src/services/grade_service.py | 108 | 8 | 93% | ✅ |
+| src/core/exceptions.py | 28 | 3 | 89% | ✅ |
+| src/models/user.py | 17 | 2 | 88% | ✅ |
+| src/schemas/student.py | 43 | 6 | 86% | ✅ |
+| src/core/config.py | 33 | 6 | 82% | ✅ |
+| src/schemas/statistics.py | 101 | 0 | 100% | ✅ |
+| src/models/grade.py | 21 | 0 | 100% | ✅ |
+| src/models/student.py | 20 | 0 | 100% | ✅ |
+| src/repositories/student_repo.py | 44 | 0 | 100% | ✅ |
+| src/schemas/auth.py | 16 | 0 | 100% | ✅ |
+| src/schemas/common.py | 30 | 0 | 100% | ✅ |
+| src/services/statistics_service.py | 221 | 51 | 77% | ⚠️ |
+| src/api/routes/grades.py | 58 | 29 | 50% | ❌ |
+| src/api/routes/statistics.py | 56 | 25 | 55% | ❌ |
+| src/api/routes/students.py | 43 | 18 | 58% | ❌ |
+| src/services/dashboard_service.py | 33 | 18 | 45% | ❌ |
+| src/api/auth.py | 36 | 13 | 64% | ❌ |
+| src/main.py | 48 | 48 | 0% | ❌ |
+| src/cli/* | 511 | 511 | 0% | ❌ |
+| src/sorting_algorithms.py | 251 | 251 | 0% | ❌ |
+
+**整体覆盖率：52%** — 未达到 80% 门禁标准 ❌
+
+---
+
+## 8. DBA 审查结果
+
+| 审查项 | 结果 |
+|-------|------|
+| 源码中 `CREATE TABLE` | 未发现 |
+| 源码中 `ALTER TABLE` | 未发现 |
+| `docs/database.md` 备案 | 文件不存在（无需备案） |
+
+**结论：** ✅ 无未备案的数据库结构变更
+
+---
+
+## 9. 问题汇总与建议
+
+### 9.1 阻断性问题（P0）
+
+| # | 问题 | 影响范围 | 修复建议 |
+|---|------|---------|---------|
+| 1 | 集成测试 fixture 缺少认证基础设施 | 67 个测试全部失败 | 为 test_students.py、test_grades.py、test_statistics.py 添加：<br>1. 注册 auth_router<br>2. seed_users autouse fixture<br>3. 认证 header fixture |
+| 2 | vue-tsc 与 TypeScript 版本不兼容 | 前端 `npm run build` 失败 | 升级 vue-tsc 至 ^2.0 或降级 TypeScript 至 ~5.2 |
+| 3 | GradeImport.vue 常量赋值 | 运行时导入功能崩溃 | 将 `const currentStep` 改为 `let currentStep` 或改用 `ref()` |
+
+### 9.2 重要问题（P1）
+
+| # | 问题 | 影响范围 | 修复建议 |
+|---|------|---------|---------|
+| 4 | 代码覆盖率仅 52% | 未达到 80% 门禁 | 增加 CLI、main.py、dashboard_service、sorting_algorithms 的测试 |
+
+### 9.3 建议（P2）
+
+| # | 建议 |
+|---|------|
+| 1 | 升级 vue-tsc 和 TypeScript 版本兼容性 |
+| 2 | 为大 chunk (echarts/element-plus) 启用动态导入 |
+| 3 | 将 Dart Sass legacy JS API 配置迁移至新 API |
+
+---
+
+## 10. 最终结论
+
+### 测试判定：❌ REJECTED
+
+| 门禁项 | 标准 | 实际结果 | 状态 |
+|-------|------|---------|------|
+| 单元测试通过率 | 100% | 119/119 = 100% | ✅ 通过 |
+| 集成测试通过率 | 100% | 150/217 = 69.1% | ❌ 未通过 |
+| 代码覆盖率 | >= 80% | 52% | ❌ 未通过 |
+| Pydantic 弃用警告 | 0 | 0 | ✅ 通过 |
+| 前端构建 | 成功 | vue-tsc 失败 | ❌ 未通过 |
+| DBA 审查 | 无未备案 DDL | 无 | ✅ 通过 |
+
+### 测试状态：REJECTED
+
+本轮测试 **未通过**。主要阻断项：
+
+1. **67 个集成测试因缺少认证基础设施全部失败** — 测试 fixture 未适配认证路由和用户种子数据
+2. **代码覆盖率 52%** — 远低于 80% 门禁标准
+3. **前端 `npm run build` 失败** — vue-tsc 版本不兼容 TypeScript 5.9.3
+
+### 后续行动
+
+1. **立即修复：** 更新 test_students.py、test_grades.py、test_statistics.py 的 fixture，添加认证基础设施
+2. **立即修复：** 升级 vue-tsc 或降级 TypeScript 解决版本兼容性
+3. **短期修复：** 修复 GradeImport.vue 的常量赋值问题
+4. **中期改进：** 提高代码覆盖率至 80% 以上
+
+---
+
+> **报告生成时间：** 2026-06-08  
+> **测试工具：** pytest 9.0.3, pytest-cov 7.1.0, Vite 4.5.14  
+> **测试环境：** Windows, Python 3.12.4, Node.js 24.16.0

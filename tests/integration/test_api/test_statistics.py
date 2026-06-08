@@ -22,6 +22,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from src.core.database import Base, get_db
+from src.core.security import hash_password
 from src.core.exceptions import AppException
 from src.api.exception_handlers import (
     app_exception_handler,
@@ -30,6 +31,7 @@ from src.api.exception_handlers import (
 )
 from fastapi.exceptions import RequestValidationError
 from src.models import Student, Grade
+from src.models.user import User
 
 
 @pytest.fixture(scope="function")
@@ -61,6 +63,46 @@ def test_engine():
 
 
 @pytest.fixture(scope="function")
+def db_session(test_engine):
+    """创建测试数据库会话"""
+    TestSessionLocal = sessionmaker(bind=test_engine)
+    session = TestSessionLocal()
+    yield session
+    session.rollback()
+    session.close()
+
+
+@pytest.fixture(autouse=True)
+def seed_users(db_session):
+    """创建测试用户数据
+
+    每个测试前自动创建三个默认用户：admin、teacher、student。
+    """
+    users = [
+        User(
+            username="admin",
+            hashed_password=hash_password("admin123"),
+            role="admin",
+            is_active=True,
+        ),
+        User(
+            username="teacher",
+            hashed_password=hash_password("teacher123"),
+            role="teacher",
+            is_active=True,
+        ),
+        User(
+            username="student",
+            hashed_password=hash_password("student123"),
+            role="student",
+            is_active=True,
+        ),
+    ]
+    db_session.add_all(users)
+    db_session.commit()
+
+
+@pytest.fixture(scope="function")
 def client(test_engine):
     """创建测试客户端"""
     TestSessionLocal = sessionmaker(bind=test_engine)
@@ -83,10 +125,12 @@ def client(test_engine):
     test_app.add_exception_handler(RequestValidationError, validation_exception_handler)
     test_app.add_exception_handler(Exception, general_exception_handler)
 
-    # 注册路由
+    # 注册路由（包含认证路由，用于登录获取 Token）
+    from src.api.routes.auth import router as auth_router
     from src.api.routes.students import router as students_router
     from src.api.routes.grades import router as grades_router
     from src.api.routes.statistics import router as statistics_router
+    test_app.include_router(auth_router)
     test_app.include_router(students_router)
     test_app.include_router(grades_router)
     test_app.include_router(statistics_router)
@@ -99,6 +143,20 @@ def client(test_engine):
 
     # 清理
     test_app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def auth_headers(client):
+    """获取管理员认证请求头
+
+    通过登录接口获取 Access Token，返回 Authorization 请求头。
+    """
+    response = client.post(
+        "/api/v1/auth/login",
+        json={"username": "admin", "password": "admin123"},
+    )
+    token = response.json()["data"]["access_token"]
+    return {"Authorization": f"Bearer {token}"}
 
 
 @pytest.fixture
@@ -133,28 +191,28 @@ def sample_grades():
 class TestStatisticsAPI:
     """统计分析 API 测试类"""
 
-    def _create_student(self, client, student_data):
+    def _create_student(self, client, student_data, headers):
         """辅助方法：创建学生"""
-        return client.post("/api/v1/students", json=student_data)
+        return client.post("/api/v1/students", json=student_data, headers=headers)
 
-    def _create_grade(self, client, grade_data):
+    def _create_grade(self, client, grade_data, headers):
         """辅助方法：创建成绩"""
-        return client.post("/api/v1/grades", json=grade_data)
+        return client.post("/api/v1/grades", json=grade_data, headers=headers)
 
-    def _setup_test_data(self, client, students, grades):
+    def _setup_test_data(self, client, students, grades, headers):
         """辅助方法：创建测试数据"""
         for student in students:
-            self._create_student(client, student)
+            self._create_student(client, student, headers)
         for grade in grades:
-            self._create_grade(client, grade)
+            self._create_grade(client, grade, headers)
 
     # ==================== 平均分统计测试 ====================
 
-    def test_get_average(self, client, sample_students, sample_grades):
+    def test_get_average(self, client, auth_headers, sample_students, sample_grades):
         """测试平均分统计"""
-        self._setup_test_data(client, sample_students, sample_grades)
+        self._setup_test_data(client, sample_students, sample_grades, auth_headers)
 
-        response = client.get("/api/v1/statistics/average")
+        response = client.get("/api/v1/statistics/average", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -162,11 +220,11 @@ class TestStatisticsAPI:
         assert data["data"]["count"] == 10
         assert data["data"]["average"] == 75.9
 
-    def test_get_average_by_class(self, client, sample_students, sample_grades):
+    def test_get_average_by_class(self, client, auth_headers, sample_students, sample_grades):
         """测试按班级统计平均分"""
-        self._setup_test_data(client, sample_students, sample_grades)
+        self._setup_test_data(client, sample_students, sample_grades, auth_headers)
 
-        response = client.get("/api/v1/statistics/average?class_name=三年一班")
+        response = client.get("/api/v1/statistics/average?class_name=三年一班", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -174,20 +232,20 @@ class TestStatisticsAPI:
         assert data["data"]["count"] == 6
         assert data["data"]["class_name"] == "三年一班"
 
-    def test_get_average_by_subject(self, client, sample_students, sample_grades):
+    def test_get_average_by_subject(self, client, auth_headers, sample_students, sample_grades):
         """测试按科目统计平均分"""
-        self._setup_test_data(client, sample_students, sample_grades)
+        self._setup_test_data(client, sample_students, sample_grades, auth_headers)
 
-        response = client.get("/api/v1/statistics/average?subject=数学")
+        response = client.get("/api/v1/statistics/average?subject=数学", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
         assert data["success"] is True
         assert data["data"]["count"] == 5
 
-    def test_get_average_no_data(self, client):
+    def test_get_average_no_data(self, client, auth_headers):
         """测试无数据时平均分统计"""
-        response = client.get("/api/v1/statistics/average")
+        response = client.get("/api/v1/statistics/average", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -197,11 +255,11 @@ class TestStatisticsAPI:
 
     # ==================== 最高分统计测试 ====================
 
-    def test_get_max_score(self, client, sample_students, sample_grades):
+    def test_get_max_score(self, client, auth_headers, sample_students, sample_grades):
         """测试最高分统计"""
-        self._setup_test_data(client, sample_students, sample_grades)
+        self._setup_test_data(client, sample_students, sample_grades, auth_headers)
 
-        response = client.get("/api/v1/statistics/max")
+        response = client.get("/api/v1/statistics/max", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -210,11 +268,11 @@ class TestStatisticsAPI:
         assert data["data"]["student_id"] == "20260001"
         assert data["data"]["student_name"] == "张三"
 
-    def test_get_max_score_by_class(self, client, sample_students, sample_grades):
+    def test_get_max_score_by_class(self, client, auth_headers, sample_students, sample_grades):
         """测试按班级统计最高分"""
-        self._setup_test_data(client, sample_students, sample_grades)
+        self._setup_test_data(client, sample_students, sample_grades, auth_headers)
 
-        response = client.get("/api/v1/statistics/max?class_name=三年二班")
+        response = client.get("/api/v1/statistics/max?class_name=三年二班", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -223,11 +281,11 @@ class TestStatisticsAPI:
 
     # ==================== 最低分统计测试 ====================
 
-    def test_get_min_score(self, client, sample_students, sample_grades):
+    def test_get_min_score(self, client, auth_headers, sample_students, sample_grades):
         """测试最低分统计"""
-        self._setup_test_data(client, sample_students, sample_grades)
+        self._setup_test_data(client, sample_students, sample_grades, auth_headers)
 
-        response = client.get("/api/v1/statistics/min")
+        response = client.get("/api/v1/statistics/min", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -237,11 +295,11 @@ class TestStatisticsAPI:
 
     # ==================== 及格率统计测试 ====================
 
-    def test_get_pass_rate(self, client, sample_students, sample_grades):
+    def test_get_pass_rate(self, client, auth_headers, sample_students, sample_grades):
         """测试及格率统计"""
-        self._setup_test_data(client, sample_students, sample_grades)
+        self._setup_test_data(client, sample_students, sample_grades, auth_headers)
 
-        response = client.get("/api/v1/statistics/pass-rate")
+        response = client.get("/api/v1/statistics/pass-rate", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -250,11 +308,11 @@ class TestStatisticsAPI:
         assert data["data"]["passed_count"] == 8
         assert data["data"]["pass_rate"] == 80.0
 
-    def test_get_pass_rate_by_class(self, client, sample_students, sample_grades):
+    def test_get_pass_rate_by_class(self, client, auth_headers, sample_students, sample_grades):
         """测试按班级统计及格率"""
-        self._setup_test_data(client, sample_students, sample_grades)
+        self._setup_test_data(client, sample_students, sample_grades, auth_headers)
 
-        response = client.get("/api/v1/statistics/pass-rate?class_name=三年一班")
+        response = client.get("/api/v1/statistics/pass-rate?class_name=三年一班", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -262,11 +320,11 @@ class TestStatisticsAPI:
 
     # ==================== 优秀率统计测试 ====================
 
-    def test_get_excellent_rate(self, client, sample_students, sample_grades):
+    def test_get_excellent_rate(self, client, auth_headers, sample_students, sample_grades):
         """测试优秀率统计"""
-        self._setup_test_data(client, sample_students, sample_grades)
+        self._setup_test_data(client, sample_students, sample_grades, auth_headers)
 
-        response = client.get("/api/v1/statistics/excellent-rate")
+        response = client.get("/api/v1/statistics/excellent-rate", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -277,11 +335,11 @@ class TestStatisticsAPI:
 
     # ==================== 综合统计报告测试 ====================
 
-    def test_get_report(self, client, sample_students, sample_grades):
+    def test_get_report(self, client, auth_headers, sample_students, sample_grades):
         """测试综合统计报告"""
-        self._setup_test_data(client, sample_students, sample_grades)
+        self._setup_test_data(client, sample_students, sample_grades, auth_headers)
 
-        response = client.get("/api/v1/statistics/report")
+        response = client.get("/api/v1/statistics/report", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -303,21 +361,21 @@ class TestStatisticsAPI:
         # 检查优秀学生
         assert len(data["data"]["top_students"]) == 5
 
-    def test_get_report_with_top_n(self, client, sample_students, sample_grades):
+    def test_get_report_with_top_n(self, client, auth_headers, sample_students, sample_grades):
         """测试综合统计报告（指定优秀学生数量）"""
-        self._setup_test_data(client, sample_students, sample_grades)
+        self._setup_test_data(client, sample_students, sample_grades, auth_headers)
 
-        response = client.get("/api/v1/statistics/report?top_n=3")
+        response = client.get("/api/v1/statistics/report?top_n=3", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
         assert len(data["data"]["top_students"]) == 3
 
-    def test_get_report_by_class(self, client, sample_students, sample_grades):
+    def test_get_report_by_class(self, client, auth_headers, sample_students, sample_grades):
         """测试班级综合统计报告"""
-        self._setup_test_data(client, sample_students, sample_grades)
+        self._setup_test_data(client, sample_students, sample_grades, auth_headers)
 
-        response = client.get("/api/v1/statistics/report?class_name=三年一班")
+        response = client.get("/api/v1/statistics/report?class_name=三年一班", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -326,11 +384,11 @@ class TestStatisticsAPI:
 
     # ==================== 单科排名测试 ====================
 
-    def test_get_subject_ranking(self, client, sample_students, sample_grades):
+    def test_get_subject_ranking(self, client, auth_headers, sample_students, sample_grades):
         """测试单科排名"""
-        self._setup_test_data(client, sample_students, sample_grades)
+        self._setup_test_data(client, sample_students, sample_grades, auth_headers)
 
-        response = client.get("/api/v1/statistics/ranking/subject?subject=数学&exam_type=期中")
+        response = client.get("/api/v1/statistics/ranking/subject?subject=数学&exam_type=期中", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -344,12 +402,13 @@ class TestStatisticsAPI:
         assert rankings[0]["student_id"] == "20260001"
         assert rankings[0]["rank"] == 1
 
-    def test_get_subject_ranking_by_class(self, client, sample_students, sample_grades):
+    def test_get_subject_ranking_by_class(self, client, auth_headers, sample_students, sample_grades):
         """测试班级单科排名"""
-        self._setup_test_data(client, sample_students, sample_grades)
+        self._setup_test_data(client, sample_students, sample_grades, auth_headers)
 
         response = client.get(
-            "/api/v1/statistics/ranking/subject?subject=数学&exam_type=期中&class_name=三年一班"
+            "/api/v1/statistics/ranking/subject?subject=数学&exam_type=期中&class_name=三年一班",
+            headers=auth_headers,
         )
 
         assert response.status_code == 200
@@ -357,12 +416,13 @@ class TestStatisticsAPI:
         assert data["data"]["total_count"] == 3
         assert data["data"]["class_name"] == "三年一班"
 
-    def test_get_subject_ranking_asc(self, client, sample_students, sample_grades):
+    def test_get_subject_ranking_asc(self, client, auth_headers, sample_students, sample_grades):
         """测试单科排名（升序）"""
-        self._setup_test_data(client, sample_students, sample_grades)
+        self._setup_test_data(client, sample_students, sample_grades, auth_headers)
 
         response = client.get(
-            "/api/v1/statistics/ranking/subject?subject=数学&exam_type=期中&order=asc"
+            "/api/v1/statistics/ranking/subject?subject=数学&exam_type=期中&order=asc",
+            headers=auth_headers,
         )
 
         assert response.status_code == 200
@@ -370,12 +430,13 @@ class TestStatisticsAPI:
         rankings = data["data"]["rankings"]
         assert rankings[0]["score"] == 45.0
 
-    def test_get_subject_ranking_with_limit(self, client, sample_students, sample_grades):
+    def test_get_subject_ranking_with_limit(self, client, auth_headers, sample_students, sample_grades):
         """测试单科排名限制数量"""
-        self._setup_test_data(client, sample_students, sample_grades)
+        self._setup_test_data(client, sample_students, sample_grades, auth_headers)
 
         response = client.get(
-            "/api/v1/statistics/ranking/subject?subject=数学&exam_type=期中&limit=3"
+            "/api/v1/statistics/ranking/subject?subject=数学&exam_type=期中&limit=3",
+            headers=auth_headers,
         )
 
         assert response.status_code == 200
@@ -384,11 +445,11 @@ class TestStatisticsAPI:
 
     # ==================== 总分排名测试 ====================
 
-    def test_get_total_ranking(self, client, sample_students, sample_grades):
+    def test_get_total_ranking(self, client, auth_headers, sample_students, sample_grades):
         """测试总分排名"""
-        self._setup_test_data(client, sample_students, sample_grades)
+        self._setup_test_data(client, sample_students, sample_grades, auth_headers)
 
-        response = client.get("/api/v1/statistics/ranking/total?exam_type=期中")
+        response = client.get("/api/v1/statistics/ranking/total?exam_type=期中", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -400,12 +461,13 @@ class TestStatisticsAPI:
         assert rankings[0]["student_id"] == "20260001"
         assert rankings[0]["total_score"] == 183.0
 
-    def test_get_total_ranking_by_class(self, client, sample_students, sample_grades):
+    def test_get_total_ranking_by_class(self, client, auth_headers, sample_students, sample_grades):
         """测试班级总分排名"""
-        self._setup_test_data(client, sample_students, sample_grades)
+        self._setup_test_data(client, sample_students, sample_grades, auth_headers)
 
         response = client.get(
-            "/api/v1/statistics/ranking/total?exam_type=期中&class_name=三年一班"
+            "/api/v1/statistics/ranking/total?exam_type=期中&class_name=三年一班",
+            headers=auth_headers,
         )
 
         assert response.status_code == 200
@@ -413,11 +475,11 @@ class TestStatisticsAPI:
         assert data["data"]["total_count"] == 3
         assert data["data"]["class_name"] == "三年一班"
 
-    def test_get_total_ranking_with_subject_scores(self, client, sample_students, sample_grades):
+    def test_get_total_ranking_with_subject_scores(self, client, auth_headers, sample_students, sample_grades):
         """测试总分排名包含各科成绩"""
-        self._setup_test_data(client, sample_students, sample_grades)
+        self._setup_test_data(client, sample_students, sample_grades, auth_headers)
 
-        response = client.get("/api/v1/statistics/ranking/total?exam_type=期中")
+        response = client.get("/api/v1/statistics/ranking/total?exam_type=期中", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -430,11 +492,11 @@ class TestStatisticsAPI:
 
     # ==================== 通用统计查询测试 ====================
 
-    def test_get_statistics_default_metrics(self, client, sample_students, sample_grades):
+    def test_get_statistics_default_metrics(self, client, auth_headers, sample_students, sample_grades):
         """测试通用统计查询（默认指标）"""
-        self._setup_test_data(client, sample_students, sample_grades)
+        self._setup_test_data(client, sample_students, sample_grades, auth_headers)
 
-        response = client.get("/api/v1/statistics")
+        response = client.get("/api/v1/statistics", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -445,11 +507,11 @@ class TestStatisticsAPI:
         assert "min" in data["data"]["metrics"]
         assert "pass_rate" in data["data"]["metrics"]
 
-    def test_get_statistics_custom_metrics(self, client, sample_students, sample_grades):
+    def test_get_statistics_custom_metrics(self, client, auth_headers, sample_students, sample_grades):
         """测试通用统计查询（自定义指标）"""
-        self._setup_test_data(client, sample_students, sample_grades)
+        self._setup_test_data(client, sample_students, sample_grades, auth_headers)
 
-        response = client.get("/api/v1/statistics?metrics=avg,excellent_rate,median")
+        response = client.get("/api/v1/statistics?metrics=avg,excellent_rate,median", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -457,12 +519,13 @@ class TestStatisticsAPI:
         assert "excellent_rate" in data["data"]["metrics"]
         assert "median" in data["data"]["metrics"]
 
-    def test_get_statistics_with_filters(self, client, sample_students, sample_grades):
+    def test_get_statistics_with_filters(self, client, auth_headers, sample_students, sample_grades):
         """测试带筛选条件的通用统计查询"""
-        self._setup_test_data(client, sample_students, sample_grades)
+        self._setup_test_data(client, sample_students, sample_grades, auth_headers)
 
         response = client.get(
-            "/api/v1/statistics?class_name=三年一班&subject=数学&metrics=avg,max"
+            "/api/v1/statistics?class_name=三年一班&subject=数学&metrics=avg,max",
+            headers=auth_headers,
         )
 
         assert response.status_code == 200
@@ -471,9 +534,9 @@ class TestStatisticsAPI:
         assert data["data"]["metrics"]["avg"] == 75.0
         assert data["data"]["metrics"]["max"] == 95.0
 
-    def test_get_statistics_no_data(self, client):
+    def test_get_statistics_no_data(self, client, auth_headers):
         """测试无数据时通用统计查询"""
-        response = client.get("/api/v1/statistics")
+        response = client.get("/api/v1/statistics", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -482,9 +545,9 @@ class TestStatisticsAPI:
 
     # ==================== 边界条件测试 ====================
 
-    def test_report_no_data(self, client):
+    def test_report_no_data(self, client, auth_headers):
         """测试无数据时综合统计报告"""
-        response = client.get("/api/v1/statistics/report")
+        response = client.get("/api/v1/statistics/report", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -492,10 +555,11 @@ class TestStatisticsAPI:
         assert data["data"]["statistics"]["count"] == 0
         assert data["data"]["top_students"] == []
 
-    def test_ranking_no_data(self, client):
+    def test_ranking_no_data(self, client, auth_headers):
         """测试无数据时排名查询"""
         response = client.get(
-            "/api/v1/statistics/ranking/subject?subject=数学&exam_type=期中"
+            "/api/v1/statistics/ranking/subject?subject=数学&exam_type=期中",
+            headers=auth_headers,
         )
 
         assert response.status_code == 200
@@ -504,10 +568,11 @@ class TestStatisticsAPI:
         assert data["data"]["total_count"] == 0
         assert data["data"]["rankings"] == []
 
-    def test_total_ranking_no_data(self, client):
+    def test_total_ranking_no_data(self, client, auth_headers):
         """测试无数据时总分排名"""
         response = client.get(
-            "/api/v1/statistics/ranking/total?exam_type=期中"
+            "/api/v1/statistics/ranking/total?exam_type=期中",
+            headers=auth_headers,
         )
 
         assert response.status_code == 200
