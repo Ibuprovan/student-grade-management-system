@@ -1,10 +1,10 @@
-﻿# 代码审查报告 - 登录按钮修复（第二轮）
+﻿# 代码审查报告 - 全面 Bug 修复
 
 > **审查日期：** 2026-06-08  
 > **审查人：** Reviewer Agent  
-> **审查轮次：** 第二轮  
-> **审查范围：** Login.vue handleLogin、auth.ts login/decodeTokenToUser、request.ts 响应拦截器  
-> **审查结果：** ❌ 拒绝
+> **审查轮次：** 第一轮  
+> **审查范围：** 前端 8 项修复 + 后端 5 项修复  
+> **审查结果：** ✅ 通过（附建议项）
 
 ---
 
@@ -12,415 +12,381 @@
 
 ### 1.1 问题背景
 
-第一轮审查通过后，用户反馈登录按钮仍然无响应。frontend-dev 重新排查后发现三个问题：
-1. Element Plus 2.x 的 alidate() 在验证失败时 **rejects** 而非 resolve alse
-2. decodeTokenToUser 兜底函数的 base64url 解码可能失败
-3. isAuthRequest 变量作用域问题
+本次审查涵盖前端和后端共 13 项 Bug 修复和问题改进，涉及错误处理、代码规范、安全增强等方面。
 
 ### 1.2 审查文件清单
 
-| 文件 | 类型 | 修改内容 |
-|------|------|---------|
-| rontend/src/views/login/Login.vue | 修改 | validate() 改为 try-catch 模式 |
-| rontend/src/stores/auth.ts | 修改 | 增加 decodeTokenToUser 兜底函数 |
-| rontend/src/utils/request.ts | 修改 | isAuthRequest 作用域修正 |
+#### 前端文件
+
+| 文件 | 修复项 | 修改内容 |
+|------|--------|---------|
+| frontend/src/views/grade/GradeForm.vue | BUG-001, BUG-004, ISSUE-020 | validate() 改为 try-catch；编辑提交添加错误提示；编辑模式跳过重复检测 |
+| frontend/src/views/student/StudentList.vue | BUG-005, ISSUE-005, ISSUE-018 | confirmDelete 添加 catch；排序参数传递；CSV 导出特殊字符处理 |
+| frontend/src/views/student/StudentForm.vue | BUG-006 | 提交添加错误提示 |
+| frontend/src/views/grade/GradeImport.vue | BUG-007 | 导入添加错误提示 |
+
+#### 后端文件
+
+| 文件 | 修复项 | 修改内容 |
+|------|--------|---------|
+| requirements.txt | ISSUE-001 | 添加 pydantic-settings |
+| src/schemas/student.py | ISSUE-002 | class Config → ConfigDict |
+| src/schemas/grade.py | ISSUE-002 | class Config → ConfigDict |
+| src/schemas/statistics.py | ISSUE-002 | class Config → ConfigDict |
+| src/services/statistics_service.py | ISSUE-003 | 移除未使用导入 |
+| src/api/auth.py | ISSUE-004, ISSUE-013 | settings 导入移至顶部；logout 实际吊销 Token |
 
 ---
 
 ## 2. 审查结论
 
-### ❌ 审查拒绝
+### ✅ 审查通过
 
-三个修复方向正确，但存在 **一个严重问题** 和 **一个中等问题** 未被发现和修复，这些问题是导致"登录按钮无响应"的真正根因。
+所有 13 项修复均正确解决了原始问题，代码质量良好，未发现严重缺陷。存在 3 个建议项供后续优化。
 
 ---
 
-## 3. 逐文件严格审查
+## 3. 逐项严格审查
 
-### 3.1 rontend/src/views/login/Login.vue — handleLogin 函数
+### 3.1 前端修复审查
 
-#### 3.1.1 validate() 返回值处理 ✅ 正确
+#### 3.1.1 BUG-001: GradeForm.vue validate() 改为 try-catch ✅ 通过
+
+**位置：** GradeForm.vue 第 283-287 行
 
 `	ypescript
 try {
-    await formRef.value.validate()
+  await formRef.value.validate()
 } catch {
-    return
+  return
 }
 `
 
-**Element Plus 2.x 行为验证：**
-- FormInstance.validate() 返回 Promise<boolean>
-- 验证通过：resolve 	rue
-- 验证失败：**reject**（不是 resolve alse）
-
-try-catch 模式正确处理了两种状态。第一轮审查中 const valid = await formRef.value.validate(); if (!valid) return 的写法**无法捕获 rejection**，本次修复正确。
-
-#### 3.1.2 登录调用与路由跳转 ⚠️ 存在隐患
-
-`	ypescript
-const success = await authStore.login(loginForm.username, loginForm.password)
-if (success) {
-    const redirect = (route.query.redirect as string) || '/dashboard'
-    await router.push(redirect)
-}
-`
-
-**问题：** uthStore.login() 返回 	rue 不代表 user.value 已设置。如果 user.value 为 null，isAuthenticated 为 false，路由守卫会将用户重定向回 /login，导致 outer.push() reject，catch 块显示"登录失败，请稍后重试"。
-
-**这不是 Login.vue 的问题**，而是 auth.ts login() 的返回值语义问题（见 3.2.3）。
+**审查意见：**
+- Element Plus 2.x 的 alidate() 在验证失败时 **rejects** 而非 resolve false
+- try-catch 模式正确处理了 rejection 场景
+- 代码简洁，逻辑清晰 ✅
 
 ---
 
-### 3.2 rontend/src/stores/auth.ts — login 方法和 decodeTokenToUser
+#### 3.1.2 BUG-004: GradeForm.vue 编辑提交添加错误提示 ✅ 通过
 
-#### 3.2.1 decodeTokenToUser 函数 ❌ 严重问题
+**位置：** GradeForm.vue 第 328-329 行
 
 `	ypescript
-function decodeTokenToUser(token: string): UserInfo | null {
-    try {
-      const parts = token.split('.')
-      if (parts.length !== 3) return null
+} catch (error) {
+  ElMessage.error('提交失败，请稍后重试')
+}
+`
 
-      const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')))
-      return {
-        id: Number(payload.sub),
-        username: payload.username || '',
-        role: payload.role || 'student',
-        is_active: true,
-      }
-    } catch (e) {
-      console.error('解析 Token 失败:', e)
-      return null
+**审查意见：**
+- 错误发生时向用户显示友好提示 ✅
+- 不暴露技术细节 ✅
+- 与项目的错误处理风格一致 ✅
+
+---
+
+#### 3.1.3 BUG-005: StudentList.vue confirmDelete 添加 catch ✅ 通过
+
+**位置：** StudentList.vue 第 388-407 行
+
+`	ypescript
+async function confirmDelete() {
+  deleteLoading.value = true
+  try {
+    // ... 删除逻辑
+    deleteDialogVisible.value = false
+    deleteTarget.value = null
+  } catch (error) {
+    ElMessage.error('删除失败，请稍后重试')
+  } finally {
+    deleteLoading.value = false
+  }
+}
+`
+
+**审查意见：**
+- 使用 try-catch-finally 完整结构 ✅
+- finally 中正确重置 loading 状态 ✅
+- catch 中显示用户友好的错误提示 ✅
+- 对话框在失败时不会关闭（正确行为）✅
+
+---
+
+#### 3.1.4 BUG-006: StudentForm.vue 提交添加错误提示 ✅ 通过
+
+**位置：** StudentForm.vue 第 264-286 行
+
+`	ypescript
+try {
+  // ... 提交逻辑
+  router.push('/student/list')
+} catch (error) {
+  console.error('提交失败:', error)
+  ElMessage.error('操作失败，请稍后重试')
+} finally {
+  loading.value = false
+}
+`
+
+**审查意见：**
+- 错误处理完整 ✅
+- 保留 console.error 用于调试 ✅
+- 用户看到友好提示 ✅
+
+---
+
+#### 3.1.5 BUG-007: GradeImport.vue 导入添加错误提示 ✅ 通过
+
+**位置：** GradeImport.vue 第 375-393 行
+
+`	ypescript
+try {
+  const result = await importGrades(...)
+  importResult.value = result
+  currentStep = ImportStep.IMPORT_RESULT
+} catch (error) {
+  console.error('导入失败:', error)
+  ElMessage.error('导入失败，请稍后重试')
+} finally {
+  importing.value = false
+}
+`
+
+**审查意见：**
+- 导入操作的错误处理正确 ✅
+- loading 状态在 finally 中重置 ✅
+
+---
+
+#### 3.1.6 ISSUE-005: StudentList.vue 排序参数传递 ✅ 通过
+
+**位置：** StudentList.vue 第 344-358 行
+
+`	ypescript
+function handleSortChange(sort: { prop: string; order: string }) {
+  sortParams.value = sort
+  if (sort.prop && sort.order) {
+    const orderMap: Record<string, 'asc' | 'desc'> = {
+      ascending: 'asc',
+      descending: 'desc',
     }
+    studentStore.fetchStudents({
+      sort_by: sort.prop,
+      sort_order: orderMap[sort.order] || 'asc',
+    })
+  } else {
+    studentStore.fetchStudents()
+  }
 }
 `
 
-**❌ 严重问题：缺少 base64 padding 补全**
-
-tob() 要求输入是标准 base64 格式（带 = padding）。JWT 的 base64url 编码通常**去除 padding**。当前代码只做了字符替换（- → +, _ → /），但没有补全 padding。
-
-**后果：** 在严格实现 tob() 的环境中（部分浏览器、Node.js），解析会抛出 InvalidCharacterError，被 catch 捕获后返回 null。这意味着 decodeTokenToUser **在这些环境中永远返回 null**，兜底机制完全失效。
-
-**修复方案：**
-`	ypescript
-const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
-const padded = base64 + '='.repeat((4 - base64.length % 4) % 4)
-const payload = JSON.parse(atob(padded))
-`
-
-**验证：** 后端 JWT payload 示例（base64url 编码）：
-`
-eyJzdWIiOiIxIiwidXNlcm5hbWUiOiJhZG1pbiIsInJvbGUiOiJhZG1pbiIsImV4cCI6...
-`
-如果长度不是 4 的倍数，tob() 会失败。
-
-#### 3.2.2 login() 返回值语义 ❌ 严重问题
-
-`	ypescript
-async function login(username: string, password: string): Promise<boolean> {
-    // ...
-    if (response.success && response.data) {
-        const tokenResponse = response.data
-        updateTokenResponse(tokenResponse)  // 存储 Token
-
-        try {
-            const userResponse = await authApi.getCurrentUser()
-            if (userResponse.success && userResponse.data) {
-                user.value = userResponse.data
-            } else {
-                const fallbackUser = decodeTokenToUser(tokenResponse.access_token)
-                if (fallbackUser) {
-                    user.value = fallbackUser
-                }
-                // ⚠️ 如果 fallbackUser 为 null，user.value 仍为 null！
-            }
-        } catch (userError) {
-            const fallbackUser = decodeTokenToUser(tokenResponse.access_token)
-            if (fallbackUser) {
-                user.value = fallbackUser
-            }
-            // ⚠️ 如果 fallbackUser 为 null，user.value 仍为 null！
-        }
-
-        ElMessage.success('登录成功')  // ⚠️ 即使 user.value 为 null 也显示成功
-        return true  // ⚠️ 即使 user.value 为 null 也返回 true
-    }
-}
-`
-
-**❌ 严重问题：login() 在 user.value 为 null 时仍返回 true**
-
-**问题链路：**
-1. getCurrentUser() 失败（网络问题、后端异常等）
-2. decodeTokenToUser() 失败（base64 padding 问题）
-3. user.value 仍为 null
-4. login() 返回 	rue，显示"登录成功"
-5. Login.vue 调用 outer.push('/dashboard')
-6. 路由守卫检查 isAuthenticated → !!accessToken && !!user → 	rue && false → alse
-7. 路由守卫重定向到 /login
-8. outer.push() reject
-9. catch 块显示"登录失败，请稍后重试"
-10. 用户看到"登录成功"后立即看到"登录失败"，且停留在登录页
-
-**这就是"登录按钮无响应"的真正根因！** 用户点击登录后，看到"登录成功"但页面不跳转（因为被路由守卫挡回来了），看起来像是按钮无响应。
-
-**修复方案：**
-`	ypescript
-// 在 return true 之前检查 user.value
-if (!user.value) {
-    // 获取用户信息失败，清除已存储的 Token
-    user.value = null
-    accessToken.value = null
-    refreshTokenValue.value = null
-    clearStorage()
-    ElMessage.error('获取用户信息失败，请重试')
-    return false
-}
-
-ElMessage.success('登录成功')
-return true
-`
-
-#### 3.2.3 错误消息提取 ✅ 正确
-
-`	ypescript
-const errData = (error as { response?: { data?: { detail?: string; error?: { message?: string } } } })?.response?.data
-const message = errData?.detail || errData?.error?.message || '登录失败，请检查用户名和密码'
-`
-
-- 兼容 FastAPI detail 格式 ✅
-- 兼容自定义 error.message 格式 ✅
-- 全链路可选链防御 ✅
-
-#### 3.2.4 未使用的 Token 刷新队列代码 ⚠️ 轻微
-
-isRefreshing、efreshSubscribers、ddRefreshSubscriber、onRefreshed 在 auth.ts 中定义但未使用。Token 刷新由 request.ts 的拦截器处理。建议后续清理。
+**审查意见：**
+- 正确映射 Element Plus 的排序方向到 API 参数 ✅
+- 处理了无排序参数的情况 ✅
+- 默认排序方向为 'asc' ✅
 
 ---
 
-### 3.3 rontend/src/utils/request.ts — 响应拦截器
+#### 3.1.7 ISSUE-018: StudentList.vue CSV 导出特殊字符处理 ✅ 通过
 
-#### 3.3.1 isAuthRequest 变量作用域 ✅ 正确
+**位置：** StudentList.vue 第 422-428 行
 
 `	ypescript
-async (error) => {
-    const originalRequest = error.config
-    // ...
-    const isAuthRequest =
-      originalRequest.url?.includes('/auth/login') ||
-      originalRequest.url?.includes('/auth/refresh')
-    // ... 后续代码均可访问 isAuthRequest
+function escapeCSVField(field: string): string {
+  if (field.includes(',') || field.includes('"') || field.includes('\n')) {
+    return ""
+  }
+  return field
 }
 `
 
-isAuthRequest 在错误处理函数顶部声明，整个函数内可访问。✅
-
-#### 3.3.2 网络错误时认证请求处理 ✅ 正确
-
-当网络错误（无 response）时：
-1. error.response 为 undefined → 跳过 if (error.response) 块
-2. 进入 timeout/offline 判断，设置 message
-3. !isAuthRequest → alse → 不弹 ElMessage
-4. eturn Promise.reject(error) → 错误传递给调用方
-
-认证请求的网络错误正确传递给 authStore.login() 的 catch 块。✅
-
-#### 3.3.3 401 跳过 Token 刷新 ✅ 正确
-
-`	ypescript
-if (status === 401 && !originalRequest._retry && !isAuthRequest) {
-    // Token 刷新逻辑
-}
-`
-
-认证接口的 401 不触发 Token 刷新，避免了第一轮审查中发现的页面重载问题。✅
-
-#### 3.3.4 认证接口错误抑制 ✅ 正确
-
-`	ypescript
-if (isAuthRequest) {
-    return Promise.reject(error)
-}
-`
-
-认证接口的错误不在拦截器中弹 ElMessage，由调用方处理。避免双重错误提示。✅
+**审查意见：**
+- 符合 RFC 4180 CSV 标准 ✅
+- 正确处理逗号、双引号、换行符 ✅
+- 双引号转义为两个双引号 ✅
+- 在第 430-433 行正确应用于 headers 和 data ✅
 
 ---
 
-## 4. 完整登录流程验证
+#### 3.1.8 ISSUE-020: GradeForm.vue 编辑模式跳过重复检测 ✅ 通过
 
-### 4.1 正常流程（getCurrentUser 成功）
+**位置：** GradeForm.vue 第 289-293 行
 
-| 步骤 | 操作 | 结果 |
-|------|------|------|
-| 1 | 用户输入 admin/admin123，点击登录 | handleLogin() 被调用 |
-| 2 | formRef.value.validate() | resolve ✅ |
-| 3 | authStore.login() 被调用 | 发送 POST /auth/login |
-| 4 | 后端返回 200 + Token | response.success === true |
-| 5 | updateTokenResponse() | Token 存入 localStorage ✅ |
-| 6 | getCurrentUser() | GET /auth/me → 返回用户信息 |
-| 7 | user.value = userResponse.data | isAuthenticated = true ✅ |
-| 8 | login() 返回 true | Login.vue 调用 router.push |
-| 9 | 路由守卫检查 isAuthenticated | true → 允许导航 ✅ |
-| 10 | 跳转到 /dashboard | ✅ 成功 |
-
-### 4.2 异常流程（getCurrentUser 失败 + decodeTokenToUser 失败）
-
-| 步骤 | 操作 | 结果 |
-|------|------|------|
-| 1 | 用户输入正确密码，点击登录 | handleLogin() 被调用 |
-| 2 | formRef.value.validate() | resolve ✅ |
-| 3 | authStore.login() 被调用 | 发送 POST /auth/login |
-| 4 | 后端返回 200 + Token | response.success === true |
-| 5 | updateTokenResponse() | Token 存入 localStorage ✅ |
-| 6 | getCurrentUser() | ❌ 失败（网络/后端异常） |
-| 7 | decodeTokenToUser() | ❌ 失败（base64 padding 问题） |
-| 8 | user.value 仍为 null | isAuthenticated = false ❌ |
-| 9 | login() 返回 true | 显示"登录成功" ⚠️ |
-| 10 | router.push('/dashboard') | 路由守卫拦截，重定向到 /login |
-| 11 | router.push() reject | catch 块显示"登录失败" |
-| 12 | 用户看到"登录成功"后立即看到"登录失败" | **停留在登录页** ❌ |
-
-**这就是用户反馈的"登录按钮无响应"现象！**
-
-### 4.3 问题根因总结
-
+`	ypescript
+// 重复检测（编辑模式跳过）
+if (!isEdit.value) {
+  const canProceed = await handleDuplicateCheck()
+  if (!canProceed) return
+}
 `
-根因链路：
-decodeTokenToUser 缺少 base64 padding
-    → 兜底函数永远返回 null
-    → getCurrentUser 失败时 user.value 无法设置
-    → login() 仍返回 true（bug）
-    → 路由守卫拦截导航
-    → 用户看到"登录成功"但不跳转
-    → 表现为"登录按钮无响应"
-`
+
+**审查意见：**
+- 编辑模式下正确跳过重复检测 ✅
+- 逻辑清晰，注释明确 ✅
+- 避免编辑时误报重复 ✅
 
 ---
 
-## 5. DBA 优先权审查（红线）
+### 3.2 后端修复审查
+
+#### 3.2.1 ISSUE-001: requirements.txt 添加 pydantic-settings ✅ 通过
+
+**位置：** requirements.txt 第 5 行
+
+`
+pydantic-settings>=2.0.0
+`
+
+**审查意见：**
+- Pydantic v2 需要独立的 pydantic-settings 包 ✅
+- 版本要求合理 ✅
+- 与 config.py 中的 rom pydantic_settings import BaseSettings 一致 ✅
+
+---
+
+#### 3.2.2 ISSUE-002: 3 个 Schema 文件 class Config → ConfigDict ✅ 通过
+
+**位置：**
+- student.py 第 181 行: model_config = ConfigDict(from_attributes=True)
+- grade.py 第 274 行: model_config = ConfigDict(from_attributes=True)
+- statistics.py 第 105 行: model_config = ConfigDict(populate_by_name=True)
+
+**审查意见：**
+- Pydantic v2 推荐使用 model_config 替代内部 class Config ✅
+- rom_attributes=True 正确替代旧的 orm_mode = True ✅
+- populate_by_name=True 正确替代旧的 llow_population_by_field_name ✅
+- 三个文件均使用 rom pydantic import ConfigDict 导入 ✅
+
+---
+
+#### 3.2.3 ISSUE-003: statistics_service.py 移除未使用导入 ✅ 通过
+
+**位置：** statistics_service.py 第 1-22 行
+
+**审查意见：**
+- import statistics — 用于 statistics.median() 和 statistics.stdev() ✅
+- rom sqlalchemy import func, and_, select, case — 均在查询中使用 ✅
+- rom src.models.grade import Grade — 模型引用 ✅
+- rom src.models.student import Student — 模型引用 ✅
+- rom src.repositories.grade_repo import GradeRepository — 初始化使用 ✅
+- rom src.repositories.student_repo import StudentRepository — 初始化使用 ✅
+- 所有导入均有实际使用，无冗余 ✅
+
+---
+
+#### 3.2.4 ISSUE-004: auth.py settings 导入移至顶部 ✅ 通过
+
+**位置：** src/api/routes/auth.py
+
+`python
+from src.core.config import settings  # 第 19 行
+`
+
+**审查意见：**
+- settings 在文件顶部导入 ✅
+- 在 login 函数中使用 settings.ACCESS_TOKEN_EXPIRE_MINUTES ✅
+- 符合 Python 最佳实践（导入放在文件顶部）✅
+
+---
+
+#### 3.2.5 ISSUE-013: auth.py logout 实际吊销 Token ✅ 通过
+
+**位置：** src/api/routes/auth.py 第 189-208 行
+
+`python
+def logout(
+    current_user: User = Depends(get_current_user),
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+) -> SuccessResponse:
+    # 解码当前 Access Token 获取 jti
+    payload = jwt_service.decode_token(credentials.credentials)
+    # 将 Token 加入黑名单（吊销）
+    jwt_service.blacklist_token(payload.jti)
+    
+    logger.info(f"用户登出: user_id={current_user.id}, jti={payload.jti}")
+    return SuccessResponse(message="登出成功")
+`
+
+**审查意见：**
+- 正确解码 Token 获取 jti ✅
+- 调用 lacklist_token() 将 jti 加入黑名单 ✅
+- erify_token() 方法会检查黑名单 ✅
+- 完整的 Token 吊销流程 ✅
+
+**安全说明：**
+- 当前黑名单基于内存（set），服务器重启后失效
+- 对于 MVP 阶段可接受
+- 生产环境建议使用 Redis 持久化黑名单
+
+---
+
+## 4. DBA 优先权审查（红线）
 
 | 检查项 | 状态 | 说明 |
 |-------|------|------|
-| CREATE TABLE | ✅ 无 | 前端代码不涉及数据库操作 |
-| ALTER TABLE | ✅ 无 | 前端代码不涉及数据库操作 |
+| CREATE TABLE | ✅ 无 | 本次修改不涉及数据库表创建 |
+| ALTER TABLE | ✅ 无 | 本次修改不涉及数据库表结构变更 |
 
 ---
 
-## 6. 问题清单
+## 5. 架构合规性审查
 
-### 6.1 严重问题
-
-| 序号 | 文件 | 行号 | 问题描述 | 修复要求 |
-|-----|------|------|---------|---------|
-| 1 | uth.ts | 73 | decodeTokenToUser 缺少 base64 padding 补全，tob() 在严格环境中会抛异常，导致兜底函数永远返回 null | 添加 padding 补全逻辑 |
-| 2 | uth.ts | 202-203 | login() 在 user.value 为 null 时仍返回 true 并显示"登录成功"，导致路由守卫拦截导航，用户看到"成功"但不跳转 | 在 return true 前检查 user.value，为 null 时清除状态并返回 false |
-
-### 6.2 中等问题
-
-| 序号 | 文件 | 行号 | 问题描述 | 建议 |
-|-----|------|------|---------|------|
-| 1 | uth.ts | 75 | Number(payload.sub) 未校验结果是否为 NaN，如果 JWT 的 sub 字段异常会导致 user.id 为 NaN | 添加 isNaN 检查 |
-
-### 6.3 轻微问题
-
-| 序号 | 文件 | 行号 | 问题描述 | 建议 |
-|-----|------|------|---------|------|
-| 1 | uth.ts | 40-43, 146-156 | Token 刷新队列代码（isRefreshing、refreshSubscribers 等）未使用 | 后续清理 |
-| 2 | uth.ts | 213 | 错误类型断言使用内联方式，较长 | 提取为独立 type |
+| 检查项 | 状态 | 说明 |
+|-------|------|------|
+| 分层架构 | ✅ 符合 | 前端组件 → Store → API；后端 Route → Service → Repository |
+| API 规范 | ✅ 符合 | 错误响应格式一致，使用统一的 ApiResponse 结构 |
+| 代码风格 | ✅ 一致 | 前端 TypeScript 类型完整，后端 docstring 规范 |
+| 错误处理 | ✅ 完善 | 所有异步操作均有 try-catch，用户看到友好提示 |
 
 ---
 
-## 7. 必须修复的代码
+## 6. 建议项（非阻塞）
 
-### 7.1 auth.ts — decodeTokenToUser 添加 padding 补全
+### 6.1 中等建议
 
-`	ypescript
-function decodeTokenToUser(token: string): UserInfo | null {
-    try {
-      const parts = token.split('.')
-      if (parts.length !== 3) return null
+| 序号 | 文件 | 问题描述 | 建议 |
+|-----|------|---------|------|
+| 1 | StudentList.vue | CSV 导出仅导出当前页数据 | 如需导出全部数据，应调用后端导出接口 |
+| 2 | src/api/routes/auth.py | logout 仅吊销 Access Token，未吊销 Refresh Token | 考虑同时吊销关联的 Refresh Token |
 
-      // base64url → base64 转换，补全 padding
-      const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
-      const padded = base64 + '='.repeat((4 - base64.length % 4) % 4)
-      const payload = JSON.parse(atob(padded))
+### 6.2 轻微建议
 
-      const id = Number(payload.sub)
-      if (isNaN(id)) return null
-
-      return {
-        id,
-        username: payload.username || '',
-        role: payload.role || 'student',
-        is_active: true,
-      }
-    } catch (e) {
-      console.error('解析 Token 失败:', e)
-      return null
-    }
-}
-`
-
-### 7.2 auth.ts — login() 检查 user.value
-
-在 ElMessage.success('登录成功') 和 eturn true 之前添加：
-
-`	ypescript
-// 确保用户信息已设置
-if (!user.value) {
-    console.error('登录成功但获取用户信息失败')
-    // 清除已存储的 Token
-    user.value = null
-    accessToken.value = null
-    refreshTokenValue.value = null
-    clearStorage()
-    ElMessage.error('获取用户信息失败，请重试')
-    return false
-}
-
-ElMessage.success('登录成功')
-return true
-`
+| 序号 | 文件 | 问题描述 | 建议 |
+|-----|------|---------|------|
+| 1 | useGrade.ts | downloadFailedRecords 未对字段进行 CSV 转义 | 参考 StudentList.vue 的 escapeCSVField 实现 |
 
 ---
 
-## 8. 测试建议
+## 7. 测试建议
 
-### 8.1 必须测试的场景
+### 7.1 前端测试场景
 
 | 场景 | 测试步骤 | 预期结果 |
 |------|---------|---------|
-| 正确凭据登录 | 输入 admin/admin123，点击登录 | 登录成功，跳转到 Dashboard |
-| 错误密码登录 | 输入 admin/wrong，点击登录 | 显示"用户名或密码错误"，停留在登录页 |
-| 空表单提交 | 不输入任何内容，点击登录 | 表单验证失败，显示验证错误提示 |
-| 重复点击 | 快速多次点击登录按钮 | 按钮显示 loading 状态，防止重复提交 |
-| Token 解析验证 | 登录后检查 console 是否有"解析 Token 失败"日志 | 不应有此日志 |
+| 表单验证失败 | 不填写必填项，点击提交 | 显示验证错误提示，不发送请求 |
+| 编辑提交失败 | 模拟网络错误，提交编辑 | 显示"提交失败，请稍后重试" |
+| 删除失败 | 模拟网络错误，删除学生 | 显示"删除失败，请稍后重试"，对话框保持打开 |
+| CSV 导出 | 导出包含逗号、引号的数据 | CSV 文件格式正确，可正常打开 |
+| 编辑成绩 | 编辑已有成绩 | 不弹出重复检测提示 |
+| 排序 | 点击表头排序 | 数据按正确方向排序 |
 
-### 8.2 验证 decodeTokenToUser 修复
+### 7.2 后端测试场景
 
-在浏览器控制台执行：
-`javascript
-// 模拟 base64url 解码
-const token = localStorage.getItem('access_token')
-const parts = token.split('.')
-const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
-const padded = base64 + '='.repeat((4 - base64.length % 4) % 4)
-console.log(JSON.parse(atob(padded)))
-// 应输出 {sub: "1", username: "admin", role: "admin", ...}
-`
+| 场景 | 测试步骤 | 预期结果 |
+|------|---------|---------|
+| Token 吊销 | 登出后使用旧 Token 访问 | 返回 401 Unauthorized |
+| Schema 验证 | 使用 Pydantic v2 API 创建模型 | 正常工作，无 deprecation 警告 |
 
 ---
 
-## 9. 审查决策
+## 8. 审查决策
 
-### ❌ 审查拒绝
+### ✅ 审查通过
 
-- **结论：** 三个修复方向正确，但存在两个严重问题未被发现和修复
-- **状态变更：** 任务状态改回 REJECTED
-- **拒绝次数：** 第 2 次
-- **下一步：** frontend-dev 修复上述 7.1 和 7.2 中的代码后重新提交审查
+- **结论：** 13 项修复全部正确实现，代码质量良好
+- **状态变更：** 任务状态改为 TESTING
+- **建议项：** 3 项非阻塞建议，可在后续迭代中优化
 
 ---
 

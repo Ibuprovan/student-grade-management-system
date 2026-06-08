@@ -343,6 +343,18 @@ function handleSelectionChange(selection: Student[]) {
 /** 排序变化 */
 function handleSortChange(sort: { prop: string; order: string }) {
   sortParams.value = sort
+  if (sort.prop && sort.order) {
+    const orderMap: Record<string, 'asc' | 'desc'> = {
+      ascending: 'asc',
+      descending: 'desc',
+    }
+    studentStore.fetchStudents({
+      sort_by: sort.prop,
+      sort_order: orderMap[sort.order] || 'asc',
+    })
+  } else {
+    studentStore.fetchStudents()
+  }
 }
 
 /** 查看详情 */
@@ -388,6 +400,8 @@ async function confirmDelete() {
     }
     deleteDialogVisible.value = false
     deleteTarget.value = null
+  } catch (error) {
+    ElMessage.error('删除失败，请稍后重试')
   } finally {
     deleteLoading.value = false
   }
@@ -401,13 +415,21 @@ function handleExport() {
     student.name,
     student.gender,
     student.class_name,
-    student.enrollment_year,
+    String(student.enrollment_year),
     formatDateTime(student.created_at),
   ])
 
+  /** 对包含特殊字符的字段用双引号包裹，内部双引号转义为两个双引号 */
+  function escapeCSVField(field: string): string {
+    if (field.includes(',') || field.includes('"') || field.includes('\n')) {
+      return `"${field.replace(/"/g, '""')}"`
+    }
+    return field
+  }
+
   const csvContent = [
-    headers.join(','),
-    ...data.map((row) => row.join(',')),
+    headers.map(escapeCSVField).join(','),
+    ...data.map((row) => row.map(escapeCSVField).join(',')),
   ].join('\n')
 
   const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' })

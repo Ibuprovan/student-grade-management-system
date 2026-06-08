@@ -12,8 +12,8 @@
 import statistics
 from typing import Optional, List, Dict, Any, Tuple
 
-from sqlalchemy import func, and_, select, case, literal_column
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import func, and_, select, case
+from sqlalchemy.orm import Session
 
 from src.models.grade import Grade
 from src.models.student import Student

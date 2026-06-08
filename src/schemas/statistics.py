@@ -7,7 +7,7 @@
 from enum import Enum
 from typing import Optional, List, Dict
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class StatisticsMetric(str, Enum):
@@ -102,8 +102,7 @@ class ScoreDistribution(BaseModel):
     range_80_89: int = Field(0, alias="80-89", description="80-89分人数")
     range_90_100: int = Field(0, alias="90-100", description="90-100分人数")
 
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class TopStudent(BaseModel):

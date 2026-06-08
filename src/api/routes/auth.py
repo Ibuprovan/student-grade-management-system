@@ -11,10 +11,12 @@
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 
 from src.core.database import get_db
 from src.core.security import jwt_service, hash_password, verify_password
+from src.core.config import settings
 from src.models.user import User
 from src.schemas.auth import (
     LoginRequest,
@@ -23,7 +25,7 @@ from src.schemas.auth import (
     UserInfo,
 )
 from src.schemas.common import ApiResponse, SuccessResponse
-from src.api.auth import get_current_user
+from src.api.auth import get_current_user, security
 
 logger = logging.getLogger(__name__)
 
@@ -186,15 +188,23 @@ def refresh_token(
 )
 def logout(
     current_user: User = Depends(get_current_user),
+    credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> SuccessResponse:
     """
     用户登出
 
     吊销当前 Access Token（通过黑名单机制）。
+
+    1. 从请求头中提取原始 Token
+    2. 解码 Token 获取 jti（唯一标识）
+    3. 将 jti 加入黑名单，使该 Token 失效
     """
-    # 注意：在无状态 JWT 架构中，真正的登出需要 Token 黑名单
-    # 这里简化处理，前端清除 Token 即可
-    logger.info(f"用户登出: user_id={current_user.id}")
+    # 解码当前 Access Token 获取 jti
+    payload = jwt_service.decode_token(credentials.credentials)
+    # 将 Token 加入黑名单（吊销）
+    jwt_service.blacklist_token(payload.jti)
+
+    logger.info(f"用户登出: user_id={current_user.id}, jti={payload.jti}")
     return SuccessResponse(message="登出成功")
 
 
@@ -222,8 +232,3 @@ def get_me(
         ).model_dump(),
     )
 
-
-# ==================== 辅助函数 ====================
-
-# 导入 settings 用于 Token 有效期配置
-from src.core.config import settings

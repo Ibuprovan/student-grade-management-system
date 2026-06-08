@@ -7,7 +7,7 @@
 from datetime import date, datetime
 from typing import Optional, List
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from src.core.constants import (
     SUBJECTS,
@@ -271,6 +271,4 @@ class GradeResponse(GradeBase):
     created_at: datetime = Field(description="创建时间")
     updated_at: Optional[datetime] = Field(None, description="更新时间")
 
-    class Config:
-        """Pydantic 配置"""
-        from_attributes = True  # 支持从 ORM 对象创建
+    model_config = ConfigDict(from_attributes=True)  # 支持从 ORM 对象创建

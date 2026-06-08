@@ -280,6 +280,7 @@ async function handleSubmit() {
     router.push('/student/list')
   } catch (error) {
     console.error('提交失败:', error)
+    ElMessage.error('操作失败，请稍后重试')
   } finally {
     loading.value = false
   }
