@@ -9,6 +9,7 @@ import type {
   StudentUpdate,
   StudentListParams,
   StudentListResponse,
+  ApiResponse,
 } from '@/types/student'
 
 /** API 路径前缀 */
@@ -53,4 +54,12 @@ export function updateStudent(studentId: string, data: StudentUpdate) {
  */
 export function deleteStudent(studentId: string) {
   return del<void>(`${BASE_URL}/${studentId}`)
+}
+
+/**
+ * 获取班级列表
+ * 返回系统中所有学生所属的去重班级名称列表
+ */
+export function getClassList() {
+  return get<ApiResponse<string[]>>(`${BASE_URL}/classes`)
 }
