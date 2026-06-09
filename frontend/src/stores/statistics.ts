@@ -110,7 +110,9 @@ export const useStatisticsStore = defineStore('statistics', () => {
           delete queryParams[key as keyof StatisticsQuery]
         }
       })
-      overview.value = await statisticsApi.getStatistics(queryParams)
+      const response = await statisticsApi.getStatistics(queryParams)
+      // 响应拦截器返回 BackendResponse，实际数据在 .data 中
+      overview.value = (response as any).data || response
     } catch (error) {
       console.error('获取统计数据失败:', error)
       throw error
@@ -133,10 +135,13 @@ export const useStatisticsStore = defineStore('statistics', () => {
     loading.value = true
     try {
       const response = await statisticsApi.getRanking(params)
-      rankings.value = response.rankings
+      // 响应拦截器返回 BackendResponse，实际数据在 .data 中
+      const data = (response as any).data || response
+      rankings.value = data.rankings || []
     } catch (error) {
       console.error('获取排名数据失败:', error)
-      throw error
+      rankings.value = []
+      // 不抛出异常，排名失败不应阻塞页面
     } finally {
       loading.value = false
     }
@@ -152,9 +157,12 @@ export const useStatisticsStore = defineStore('statistics', () => {
       const response = await statisticsApi.getBatchClassStatistics({
         exam_type: examType,
       })
-      classStatistics.value = response.classes
+      // 响应拦截器返回 BackendResponse，实际数据在 .data 中
+      const data = (response as any).data || response
+      classStatistics.value = data.classes || []
     } catch (error) {
       console.error('获取班级统计数据失败:', error)
+      classStatistics.value = []
       throw error
     } finally {
       loading.value = false
@@ -173,9 +181,12 @@ export const useStatisticsStore = defineStore('statistics', () => {
         class_name: className,
         exam_type: examType,
       })
-      subjectStatistics.value = response.subjects
+      // 响应拦截器返回 BackendResponse，实际数据在 .data 中
+      const data = (response as any).data || response
+      subjectStatistics.value = data.subjects || []
     } catch (error) {
       console.error('获取科目统计数据失败:', error)
+      subjectStatistics.value = []
       throw error
     } finally {
       loading.value = false

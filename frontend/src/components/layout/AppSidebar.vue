@@ -39,7 +39,7 @@
             <template #title>学生列表</template>
           </el-menu-item>
           <el-menu-item index="/student/add">
-            <el-icon><UserPlus /></el-icon>
+            <el-icon><CirclePlus /></el-icon>
             <template #title>添加学生</template>
           </el-menu-item>
         </el-sub-menu>

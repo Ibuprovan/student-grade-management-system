@@ -63,42 +63,42 @@ export function useStatisticsOverview() {
   const statCards = computed(() => [
     {
       label: '学生总数',
-      value: statisticsStore.totalStudents,
+      value: reportData.value?.statistics?.count ?? statisticsStore.totalStudents,
       icon: 'User',
       color: '#409EFF',
       format: (v: number) => v.toString(),
     },
     {
       label: '平均分',
-      value: reportData.value?.statistics.average ?? statisticsStore.averageScore,
+      value: reportData.value?.statistics?.average ?? statisticsStore.averageScore,
       icon: 'TrendCharts',
       color: '#67C23A',
       format: (v: number) => formatScore(v),
     },
     {
       label: '最高分',
-      value: reportData.value?.statistics.max_score ?? statisticsStore.maxScore,
+      value: reportData.value?.statistics?.max_score ?? statisticsStore.maxScore,
       icon: 'Trophy',
       color: '#E6A23C',
       format: (v: number) => formatScore(v),
     },
     {
       label: '及格率',
-      value: reportData.value?.statistics.pass_rate ?? statisticsStore.passRate,
+      value: reportData.value?.statistics?.pass_rate ?? statisticsStore.passRate,
       icon: 'CircleCheck',
       color: '#67C23A',
       format: (v: number) => formatPercent(v),
     },
     {
       label: '优秀率',
-      value: reportData.value?.statistics.excellent_rate ?? statisticsStore.excellentRate,
+      value: reportData.value?.statistics?.excellent_rate ?? statisticsStore.excellentRate,
       icon: 'Star',
       color: '#F56C6C',
       format: (v: number) => formatPercent(v),
     },
     {
       label: '参考人数',
-      value: reportData.value?.statistics.count ?? statisticsStore.totalStudents,
+      value: reportData.value?.statistics?.count ?? statisticsStore.totalStudents,
       icon: 'User',
       color: '#909399',
       format: (v: number) => v.toString(),
@@ -107,7 +107,7 @@ export function useStatisticsOverview() {
 
   /** 分数分布数据（用于柱状图） - 使用真实API数据 */
   const scoreDistributionData = computed(() => {
-    const dist = reportData.value?.statistics.score_distribution
+    const dist = reportData.value?.statistics?.score_distribution
     if (!dist) return { xData: [], yData: [] }
     return {
       xData: ['0-59', '60-69', '70-79', '80-89', '90-100'],
@@ -157,26 +157,29 @@ export function useStatisticsOverview() {
       if (filterForm.value.subject) reportParams.subject = filterForm.value.subject
       if (filterForm.value.exam_type) reportParams.exam_type = filterForm.value.exam_type
 
-      const report = await statisticsApi.getReport(reportParams)
-      reportData.value = report
+      const reportResponse = await statisticsApi.getReport(reportParams)
+      // 响应拦截器返回 BackendResponse，实际数据在 .data 中
+      const report = (reportResponse as any).data || reportResponse
+      reportData.value = report || null
 
       // 获取各科目统计数据（用于饼图、雷达图、柱状图）
-      const subjectStats = await statisticsApi.getBatchSubjectStatistics({
+      const subjectStatsResponse = await statisticsApi.getBatchSubjectStatistics({
         class_name: filterForm.value.class_name || undefined,
         exam_type: filterForm.value.exam_type as ExamType || undefined,
       })
-
-      const subjects = subjectStats.subjects
+      // 响应拦截器返回 BackendResponse，实际数据在 .data 中
+      const subjectStatsData = (subjectStatsResponse as any).data || subjectStatsResponse
+      const subjects = subjectStatsData?.subjects || []
       const defaultColors = ['#409EFF', '#67C23A', '#E6A23C', '#F56C6C', '#909399', '#8B5CF6', '#EC4899', '#06B6D4']
 
       // 更新科目平均分柱状图数据
       subjectAverageData.value = {
-        xData: subjects.map((s) => s.subject),
-        yData: subjects.map((s) => s.average_score),
+        xData: subjects.map((s: any) => s.subject),
+        yData: subjects.map((s: any) => s.average_score),
       }
 
       // 更新饼图数据
-      subjectPieData.value = subjects.map((s, i) => ({
+      subjectPieData.value = subjects.map((s: any, i: number) => ({
         name: s.subject,
         value: s.average_score,
         color: defaultColors[i % defaultColors.length],
@@ -184,16 +187,16 @@ export function useStatisticsOverview() {
 
       // 更新雷达图数据
       radarData.value = {
-        indicators: subjects.map((s) => ({ name: s.subject, max: 100 })),
+        indicators: subjects.map((s: any) => ({ name: s.subject, max: 100 })),
         series: [
           {
             name: '平均分',
-            data: subjects.map((s) => s.average_score),
+            data: subjects.map((s: any) => s.average_score),
             color: '#409EFF',
           },
           {
             name: '及格率',
-            data: subjects.map((s) => s.pass_rate),
+            data: subjects.map((s: any) => s.pass_rate),
             color: '#67C23A',
           },
         ],
@@ -203,13 +206,15 @@ export function useStatisticsOverview() {
       const examTypes = EXAM_TYPES
       const trendResults = await Promise.all(
         examTypes.map(async (et) => {
-          const stats = await statisticsApi.getStatistics({
+          const statsResponse = await statisticsApi.getStatistics({
             class_name: filterForm.value.class_name || undefined,
             subject: filterForm.value.subject || undefined,
             exam_type: et,
             metrics: 'avg,max',
           })
-          return { exam_type: et, metrics: stats.metrics }
+          // 响应拦截器返回 BackendResponse，实际数据在 .data 中
+          const statsData = (statsResponse as any).data || statsResponse
+          return { exam_type: et, metrics: statsData?.metrics || {} }
         })
       )
 
