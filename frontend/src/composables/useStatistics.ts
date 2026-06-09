@@ -20,6 +20,12 @@ export function useStatisticsOverview() {
   const statisticsStore = useStatisticsStore()
   const studentStore = useStudentStore()
 
+  /** 是否已查询（区分"未查询"和"查询后为0"） */
+  const queried = ref(false)
+
+  /** 错误状态 */
+  const error = ref<string | null>(null)
+
   /** 筛选表单 */
   const filterForm = ref({
     class_name: '',
@@ -151,6 +157,8 @@ export function useStatisticsOverview() {
   /** 加载图表数据 */
   async function loadChartData() {
     try {
+      error.value = null
+
       // 获取综合报告数据
       const reportParams: Record<string, string | number> = { top_n: 10 }
       if (filterForm.value.class_name) reportParams.class_name = filterForm.value.class_name
@@ -233,8 +241,9 @@ export function useStatisticsOverview() {
           },
         ],
       }
-    } catch (error) {
-      console.error('加载图表数据失败:', error)
+    } catch (err) {
+      console.error('加载图表数据失败:', err)
+      error.value = '加载数据失败，请稍后重试'
     }
   }
 
@@ -245,17 +254,24 @@ export function useStatisticsOverview() {
     if (filterForm.value.subject) params.subject = filterForm.value.subject as Subject
     if (filterForm.value.exam_type) params.exam_type = filterForm.value.exam_type as ExamType
 
-    await Promise.all([
-      statisticsStore.fetchStatistics(params),
-      statisticsStore.fetchRankings({
-        subject: params.subject || '数学',
-        exam_type: params.exam_type || '期中',
-        class_name: params.class_name,
-        scope: 'grade',
-        limit: 10,
-      }),
-      loadChartData(),
-    ])
+    try {
+      error.value = null
+      await Promise.all([
+        statisticsStore.fetchStatistics(params),
+        statisticsStore.fetchRankings({
+          subject: params.subject || '数学',
+          exam_type: params.exam_type || '期中',
+          class_name: params.class_name,
+          scope: 'grade',
+          limit: 10,
+        }),
+        loadChartData(),
+      ])
+      queried.value = true
+    } catch (err) {
+      error.value = '查询失败，请稍后重试'
+      queried.value = true
+    }
   }
 
   /** 重置筛选 */
@@ -292,6 +308,8 @@ export function useStatisticsOverview() {
     statistics,
     rankings,
     loading,
+    queried,
+    error,
     statCards,
     scoreDistributionData,
     subjectAverageData,
@@ -310,6 +328,12 @@ export function useStatisticsOverview() {
 export function useClassStatistics() {
   const statisticsStore = useStatisticsStore()
   const studentStore = useStudentStore()
+
+  /** 是否已查询 */
+  const queried = ref(false)
+
+  /** 错误状态 */
+  const error = ref<string | null>(null)
 
   /** 筛选表单 */
   const filterForm = ref({
@@ -364,9 +388,16 @@ export function useClassStatistics() {
 
   /** 执行查询 */
   async function handleSearch() {
-    await statisticsStore.fetchClassStatistics(
-      filterForm.value.exam_type as ExamType || undefined
-    )
+    try {
+      error.value = null
+      await statisticsStore.fetchClassStatistics(
+        filterForm.value.exam_type as ExamType || undefined
+      )
+      queried.value = true
+    } catch (err) {
+      error.value = '查询失败，请稍后重试'
+      queried.value = true
+    }
   }
 
   /** 重置筛选 */
@@ -375,6 +406,8 @@ export function useClassStatistics() {
       class_name: '',
       exam_type: '',
     }
+    queried.value = false
+    error.value = null
     // 使用 setTimeout 确保状态更新后再查询
     setTimeout(() => {
       handleSearch()
@@ -399,6 +432,8 @@ export function useClassStatistics() {
     classOptions,
     classStats,
     loading,
+    queried,
+    error,
     selectedClassStats,
     classComparisonData,
     classPassRateData,
@@ -414,6 +449,12 @@ export function useClassStatistics() {
 export function useSubjectStatistics() {
   const statisticsStore = useStatisticsStore()
   const studentStore = useStudentStore()
+
+  /** 是否已查询 */
+  const queried = ref(false)
+
+  /** 错误状态 */
+  const error = ref<string | null>(null)
 
   /** 筛选表单 */
   const filterForm = ref({
@@ -504,10 +545,17 @@ export function useSubjectStatistics() {
 
   /** 执行查询 */
   async function handleSearch() {
-    await statisticsStore.fetchSubjectStatistics(
-      filterForm.value.class_name || undefined,
-      filterForm.value.exam_type as ExamType || undefined
-    )
+    try {
+      error.value = null
+      await statisticsStore.fetchSubjectStatistics(
+        filterForm.value.class_name || undefined,
+        filterForm.value.exam_type as ExamType || undefined
+      )
+      queried.value = true
+    } catch (err) {
+      error.value = '查询失败，请稍后重试'
+      queried.value = true
+    }
   }
 
   /** 重置筛选 */
@@ -517,6 +565,8 @@ export function useSubjectStatistics() {
       exam_type: '',
       class_name: '',
     }
+    queried.value = false
+    error.value = null
     // 使用 setTimeout 确保状态更新后再查询
     setTimeout(() => {
       handleSearch()
@@ -542,6 +592,8 @@ export function useSubjectStatistics() {
     classOptions,
     subjectStats,
     loading,
+    queried,
+    error,
     selectedSubjectStats,
     subjectComparisonData,
     subjectRateData,

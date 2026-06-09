@@ -210,10 +210,13 @@ const activeMenu = computed(() => {
     margin-bottom: 2px;
     padding-left: 14px !important;
     transition: all var(--transition-fast);
+    background: transparent;
+    border: none;
 
     .el-icon {
       font-size: 18px;
       margin-right: 10px;
+      transition: color var(--transition-fast);
     }
 
     &:hover {
@@ -238,6 +241,10 @@ const activeMenu = computed(() => {
         background: var(--primary-color);
         border-radius: 0 3px 3px 0;
       }
+
+      .el-icon {
+        color: var(--primary-color);
+      }
     }
   }
 
@@ -250,15 +257,28 @@ const activeMenu = computed(() => {
     margin-bottom: 2px;
     padding-left: 14px !important;
     transition: all var(--transition-fast);
+    background: transparent;
+    border: none;
 
     .el-icon {
       font-size: 18px;
       margin-right: 10px;
+      transition: color var(--transition-fast);
     }
 
     &:hover {
       background: var(--sidebar-hover-bg);
       color: var(--sidebar-text-active);
+    }
+  }
+
+  // 子菜单展开时父级高亮
+  :deep(.el-sub-menu.is-opened > .el-sub-menu__title) {
+    color: var(--sidebar-text-active);
+    background: rgba(255, 255, 255, 0.04);
+
+    .el-icon {
+      color: var(--primary-color);
     }
   }
 

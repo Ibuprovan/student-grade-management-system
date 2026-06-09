@@ -61,152 +61,241 @@
       </el-button>
     </div>
 
-    <!-- 统计卡片 -->
-    <el-row :gutter="16" class="stat-cards">
-      <el-col
-        v-for="(card, index) in statCards"
-        :key="index"
-        :xs="12"
-        :sm="8"
-        :md="4"
-      >
-        <div class="stat-card" :style="{ borderLeft: `4px solid ${card.color}` }">
-          <div class="stat-card__icon" :style="{ color: card.color }">
-            <el-icon :size="24">
-              <component :is="card.icon" />
-            </el-icon>
-          </div>
-          <div class="stat-card__content">
-            <div class="stat-card__value">{{ card.format(card.value) }}</div>
-            <div class="stat-card__label">{{ card.label }}</div>
-          </div>
-        </div>
-      </el-col>
-    </el-row>
-
-    <!-- 图表区域 -->
-    <el-row :gutter="16" class="chart-section">
-      <!-- 分数分布柱状图 -->
-      <el-col :xs="24" :md="12">
-        <div class="page-card">
-          <BarChart
-            v-if="scoreDistributionData.xData.length > 0"
-            title="分数分布"
-            :xData="scoreDistributionData.xData"
-            :yData="scoreDistributionData.yData"
-            xLabel="分数段"
-            yLabel="人数"
-            color="#409EFF"
-            :showValue="true"
-            :height="300"
-          />
-          <div v-else class="chart-empty-wrapper">
-            <el-empty description="暂无分数分布数据" :image-size="80" />
-          </div>
-        </div>
-      </el-col>
-
-      <!-- 成绩趋势折线图 -->
-      <el-col :xs="24" :md="12">
-        <div class="page-card">
-          <LineChart
-            v-if="examTrendData.xData.length > 0"
-            title="成绩趋势"
-            :xData="examTrendData.xData"
-            :series="examTrendData.series"
-            xLabel="考试类型"
-            yLabel="分数"
-            :smooth="true"
-            :areaStyle="true"
-            :height="300"
-          />
-          <div v-else class="chart-empty-wrapper">
-            <el-empty description="暂无成绩趋势数据" :image-size="80" />
-          </div>
-        </div>
-      </el-col>
-    </el-row>
-
-    <el-row :gutter="16" class="chart-section">
-      <!-- 科目占比饼图 -->
-      <el-col :xs="24" :md="12">
-        <div class="page-card">
-          <PieChart
-            v-if="subjectPieData.length > 0"
-            title="科目平均分占比"
-            :data="subjectPieData"
-            :isRing="true"
-            centerTitle="科目分布"
-            :height="300"
-          />
-          <div v-else class="chart-empty-wrapper">
-            <el-empty description="暂无科目占比数据" :image-size="80" />
-          </div>
-        </div>
-      </el-col>
-
-      <!-- 能力雷达图 -->
-      <el-col :xs="24" :md="12">
-        <div class="page-card">
-          <RadarChart
-            title="能力雷达图"
-            :indicators="radarData.indicators"
-            :series="radarData.series"
-            :height="300"
-          />
-        </div>
-      </el-col>
-    </el-row>
-
-    <!-- 排名表格 -->
-    <div class="page-card">
-      <div class="card-header">
-        <h3 class="section-title">成绩排名（前10名）</h3>
+    <!-- 错误状态 -->
+    <div v-if="error && queried" class="page-card">
+      <div class="state-error">
+        <el-icon :size="48" class="state-error__icon"><CircleCloseFilled /></el-icon>
+        <h4 class="state-error__title">加载失败</h4>
+        <p class="state-error__desc">{{ error }}</p>
+        <el-button type="primary" @click="handleSearch">
+          <el-icon><RefreshRight /></el-icon>
+          重新加载
+        </el-button>
       </div>
-      <el-table
-        :data="top10Rankings"
-        border
-        stripe
-        :header-cell-style="{ background: 'var(--bg-color)', color: 'var(--text-color)' }"
-        empty-text="暂无排名数据"
-      >
-        <el-table-column type="index" label="排名" width="80" align="center">
-          <template #default="{ $index }">
-            <div class="rank-cell">
-              <span
-                v-if="$index < 3"
-                class="rank-badge"
-                :class="`rank-${$index + 1}`"
-              >
-                {{ $index + 1 }}
-              </span>
-              <span v-else>{{ $index + 1 }}</span>
-            </div>
-          </template>
-        </el-table-column>
-        <el-table-column prop="student_id" label="学号" width="120" align="center" />
-        <el-table-column prop="student_name" label="姓名" width="120" align="center" />
-        <el-table-column prop="score" label="分数" width="100" align="center">
-          <template #default="{ row }">
-            <span :style="{ color: getScoreColor(row.score), fontWeight: 'bold' }">
-              {{ formatScore(row.score) }}
-            </span>
-          </template>
-        </el-table-column>
-      </el-table>
     </div>
+
+    <!-- 加载骨架屏 -->
+    <template v-else-if="loading && !queried">
+      <el-row :gutter="16" class="stat-cards">
+        <el-col v-for="i in 6" :key="i" :xs="12" :sm="8" :md="4">
+          <div class="skeleton skeleton--card"></div>
+        </el-col>
+      </el-row>
+      <el-row :gutter="16" class="chart-section">
+        <el-col :xs="24" :md="12">
+          <div class="skeleton skeleton--chart"></div>
+        </el-col>
+        <el-col :xs="24" :md="12">
+          <div class="skeleton skeleton--chart"></div>
+        </el-col>
+      </el-row>
+    </template>
+
+    <!-- 未查询空状态 -->
+    <template v-else-if="!queried">
+      <div class="page-card">
+        <EmptyState
+          icon-color="var(--primary-color)"
+          title="请先录入学生成绩"
+          description="录入成绩数据后，系统将自动为您生成统计分析报告"
+          action-text="去录入成绩"
+          :action-icon="Edit"
+          @action="router.push('/grade/input')"
+        />
+      </div>
+    </template>
+
+    <!-- 正常数据展示 -->
+    <template v-else>
+      <!-- 统计卡片 -->
+      <el-row :gutter="16" class="stat-cards">
+        <el-col
+          v-for="(card, index) in statCards"
+          :key="index"
+          :xs="12"
+          :sm="8"
+          :md="4"
+        >
+          <div class="stat-card" :style="{ borderLeft: `4px solid ${card.color}` }">
+            <div class="stat-card__icon" :style="{ color: card.color }">
+              <el-icon :size="24">
+                <component :is="card.icon" />
+              </el-icon>
+            </div>
+            <div class="stat-card__content">
+              <div class="stat-card__value">{{ card.format(card.value) }}</div>
+              <div class="stat-card__label">{{ card.label }}</div>
+            </div>
+          </div>
+        </el-col>
+      </el-row>
+
+      <!-- 图表区域 -->
+      <el-row :gutter="16" class="chart-section">
+        <!-- 分数分布柱状图 -->
+        <el-col :xs="24" :md="12">
+          <div class="page-card">
+            <BarChart
+              v-if="scoreDistributionData.xData.length > 0"
+              title="分数分布"
+              :xData="scoreDistributionData.xData"
+              :yData="scoreDistributionData.yData"
+              xLabel="分数段"
+              yLabel="人数"
+              color="#409EFF"
+              :showValue="true"
+              :height="300"
+            />
+            <div v-else class="chart-empty-wrapper">
+              <EmptyState
+                size="small"
+                :icon="DataLine"
+                title="暂无分数分布数据"
+                description="当前筛选条件下无分数分布数据"
+              />
+            </div>
+          </div>
+        </el-col>
+
+        <!-- 成绩趋势折线图 -->
+        <el-col :xs="24" :md="12">
+          <div class="page-card">
+            <LineChart
+              v-if="examTrendData.xData.length > 0"
+              title="成绩趋势"
+              :xData="examTrendData.xData"
+              :series="examTrendData.series"
+              xLabel="考试类型"
+              yLabel="分数"
+              :smooth="true"
+              :areaStyle="true"
+              :height="300"
+            />
+            <div v-else class="chart-empty-wrapper">
+              <EmptyState
+                size="small"
+                :icon="TrendCharts"
+                title="暂无成绩趋势数据"
+                description="当前筛选条件下无趋势数据"
+              />
+            </div>
+          </div>
+        </el-col>
+      </el-row>
+
+      <el-row :gutter="16" class="chart-section">
+        <!-- 科目占比饼图 -->
+        <el-col :xs="24" :md="12">
+          <div class="page-card">
+            <div class="chart-header">
+              <h4 class="chart-title">科目平均分占比</h4>
+              <p class="desc-text">各科目成绩占比</p>
+            </div>
+            <PieChart
+              v-if="subjectPieData.length > 0"
+              :data="subjectPieData"
+              :isRing="true"
+              centerTitle="科目分布"
+              :height="300"
+            />
+            <div v-else class="chart-empty-wrapper">
+              <EmptyState
+                size="small"
+                :icon="DataLine"
+                title="暂无科目占比数据"
+                description="当前筛选条件下无科目数据"
+              />
+            </div>
+          </div>
+        </el-col>
+
+        <!-- 能力雷达图 -->
+        <el-col :xs="24" :md="12">
+          <div class="page-card">
+            <div class="chart-header">
+              <h4 class="chart-title">能力雷达图</h4>
+              <p class="desc-text">各科目平均分对比</p>
+            </div>
+            <RadarChart
+              v-if="radarData.indicators.length > 0"
+              title=""
+              :indicators="radarData.indicators"
+              :series="radarData.series"
+              :height="300"
+            />
+            <div v-else class="chart-empty-wrapper">
+              <EmptyState
+                size="small"
+                :icon="Odometer"
+                title="暂无能力数据"
+                description="当前筛选条件下无能力分析数据"
+              />
+            </div>
+          </div>
+        </el-col>
+      </el-row>
+
+      <!-- 排名表格 -->
+      <div class="page-card">
+        <div class="card-header">
+          <h3 class="section-title">成绩排名（前10名）</h3>
+        </div>
+        <el-table
+          v-if="top10Rankings.length > 0"
+          :data="top10Rankings"
+          border
+          stripe
+          :header-cell-style="{ background: 'var(--bg-color)', color: 'var(--text-color)' }"
+        >
+          <el-table-column type="index" label="排名" width="80" align="center">
+            <template #default="{ $index }">
+              <div class="rank-cell">
+                <span
+                  v-if="$index < 3"
+                  class="rank-badge"
+                  :class="`rank-${$index + 1}`"
+                >
+                  {{ $index + 1 }}
+                </span>
+                <span v-else>{{ $index + 1 }}</span>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column prop="student_id" label="学号" width="120" align="center" />
+          <el-table-column prop="student_name" label="姓名" width="120" align="center" />
+          <el-table-column prop="score" label="分数" width="100" align="center">
+            <template #default="{ row }">
+              <span :style="{ color: getScoreColor(row.score), fontWeight: 'bold' }">
+                {{ formatScore(row.score) }}
+              </span>
+            </template>
+          </el-table-column>
+        </el-table>
+        <EmptyState
+          v-else
+          size="small"
+          :icon="Trophy"
+          title="暂无排名数据"
+          description="录入学生成绩后即可查看排名"
+        />
+      </div>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Download, Search, RefreshRight } from '@element-plus/icons-vue'
+import { useRouter } from 'vue-router'
+import { Download, Search, RefreshRight, Edit, DataLine, TrendCharts, Odometer, Trophy, CircleCloseFilled } from '@element-plus/icons-vue'
 import { useStatisticsOverview } from '@/composables/useStatistics'
 import { formatScore, getScoreColor } from '@/utils/format'
 import BarChart from '@/components/chart/BarChart.vue'
 import LineChart from '@/components/chart/LineChart.vue'
 import PieChart from '@/components/chart/PieChart.vue'
 import RadarChart from '@/components/chart/RadarChart.vue'
+import EmptyState from '@/components/common/EmptyState.vue'
+
+const router = useRouter()
 
 const {
   filterForm,
@@ -215,6 +304,8 @@ const {
   classOptions,
   rankings,
   loading,
+  queried,
+  error,
   statCards,
   scoreDistributionData,
   examTrendData,
@@ -270,7 +361,7 @@ const top10Rankings = computed(() => rankings.value.slice(0, 10))
     }
 
     &__value {
-      font-size: 24px;
+      font-size: 28px;
       font-weight: 700;
       color: var(--text-color);
       line-height: 1.2;
@@ -294,6 +385,10 @@ const top10Rankings = computed(() => rankings.value.slice(0, 10))
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+
+  .chart-header {
+    margin-bottom: 16px;
   }
 
   .section-title {
