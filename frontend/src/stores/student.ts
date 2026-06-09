@@ -157,14 +157,12 @@ export const useStudentStore = defineStore('student', () => {
   }
 
   /**
-   * 获取班级列表（从学生数据中提取）
+   * 获取班级列表（调用专用接口）
    */
   async function fetchClassList() {
     try {
-      // 获取所有学生数据来提取班级列表
-      const response = await studentApi.getStudentList({ page: 1, page_size: 1000 })
-      const classes = new Set(response.items.map((s) => s.class_name))
-      classList.value = Array.from(classes).sort()
+      const response = await studentApi.getClassList()
+      classList.value = (response.data as string[]).sort()
     } catch (error) {
       console.error('获取班级列表失败:', error)
     }
