@@ -272,6 +272,158 @@ img {
   border-right: none !important;
 }
 
+// ========== 按钮与控件一致性 ==========
+
+// 统一按钮高度 32px
+.el-button {
+  height: 32px !important;
+  padding: 0 16px !important;
+  font-size: 13px !important;
+}
+
+// 统一筛选下拉框高度
+.el-select {
+  .el-input__wrapper {
+    height: 32px !important;
+  }
+
+  .el-input__inner {
+    height: 32px !important;
+    line-height: 32px !important;
+    font-size: 13px !important;
+  }
+}
+
+// 统一日期选择器高度
+.el-date-editor {
+  .el-input__wrapper {
+    height: 32px !important;
+  }
+
+  .el-input__inner {
+    height: 32px !important;
+    line-height: 32px !important;
+    font-size: 13px !important;
+  }
+}
+
+// ========== 字体与间距统一 ==========
+
+// 页面标题：22px / 700
+.page-header .page-title {
+  font-size: 22px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em;
+}
+
+// 卡片标题：16px / 600
+.section-title {
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  line-height: 1.4;
+}
+
+// 图表标题：15px / 600
+.chart-title {
+  font-size: 15px !important;
+  font-weight: 600 !important;
+}
+
+// 说明文字：13px / 400
+.desc-text {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-color-secondary);
+}
+
+// 间距规范 — 页面内边距 20px（已在 page-container 中定义）
+// 卡片内边距 24px（已在 page-card 中定义）
+// 卡片间距 16px（已在 page-card margin-bottom 中定义）
+// 图表标题下边距 16px（已在 chart-header margin-bottom 中定义）
+
+// ========== 骨架屏加载效果 ==========
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--border-color-light);
+  border-radius: var(--border-radius-sm);
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.4) 50%,
+      transparent 100%
+    );
+    animation: skeletonShimmer 1.5s ease-in-out infinite;
+  }
+
+  &--text {
+    height: 14px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+  }
+
+  &--title {
+    height: 20px;
+    width: 40%;
+    border-radius: 4px;
+    margin-bottom: 12px;
+  }
+
+  &--card {
+    height: 120px;
+    border-radius: var(--border-radius-lg);
+  }
+
+  &--chart {
+    height: 300px;
+    border-radius: var(--border-radius-lg);
+  }
+}
+
+@keyframes skeletonShimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+// ========== 加载与错误状态容器 ==========
+.state-loading,
+.state-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  text-align: center;
+}
+
+.state-error {
+  &__icon {
+    color: var(--danger-color);
+    margin-bottom: 12px;
+  }
+
+  &__title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0 0 8px 0;
+  }
+
+  &__desc {
+    font-size: 13px;
+    color: var(--text-color-secondary);
+    margin: 0 0 16px 0;
+  }
+}
+
 // ========== 通用工具类 ==========
 
 // 弹性布局

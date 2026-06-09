@@ -66,7 +66,7 @@ const props = withDefaults(defineProps<LineChartProps>(), {
 const isEmpty = computed(() => {
   return !props.xData || props.xData.length === 0 ||
     !props.series || props.series.length === 0 ||
-    props.series.every(s => !s.data || s.data.length === 0)
+    props.series.every((s: SeriesItem) => !s.data || s.data.length === 0)
 })
 
 /** 默认颜色列表 */
@@ -86,40 +86,50 @@ function initChart() {
   updateChart()
 }
 
+/** 是否全为零数据 */
+const isAllZero = computed(() => {
+  return props.series.every((s: SeriesItem) => s.data && s.data.length > 0 && s.data.every((v: number) => v === 0))
+})
+
 /** 更新图表配置 */
 function updateChart() {
   if (!chart || isEmpty.value) return
 
-  const seriesData = props.series.map((item, index) => ({
-    name: item.name,
-    type: 'line' as const,
-    data: item.data,
-    smooth: props.smooth,
-    symbol: 'circle',
-    symbolSize: 8,
-    itemStyle: {
-      color: item.color || defaultColors[index % defaultColors.length],
-    },
-    lineStyle: {
-      width: 2,
-      color: item.color || defaultColors[index % defaultColors.length],
-    },
-    areaStyle: props.areaStyle ? {
-      color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-        {
-          offset: 0,
-          color: (item.color || defaultColors[index % defaultColors.length]) + '80',
-        },
-        {
-          offset: 1,
-          color: (item.color || defaultColors[index % defaultColors.length]) + '10',
-        },
-      ]),
-    } : undefined,
-    emphasis: {
-      focus: 'series',
-    },
-  }))
+  const seriesData = props.series.map((item: SeriesItem, index: number) => {
+    const color = item.color || defaultColors[index % defaultColors.length]
+    const allZero = item.data && item.data.length > 0 && item.data.every((v: number) => v === 0)
+    return {
+      name: item.name,
+      type: 'line' as const,
+      data: item.data,
+      smooth: props.smooth,
+      symbol: 'circle',
+      symbolSize: allZero ? 0 : 8,
+      itemStyle: {
+        color: color,
+      },
+      lineStyle: {
+        width: 2,
+        color: color,
+        type: allZero ? 'dashed' as const : 'solid' as const,
+      },
+      areaStyle: props.areaStyle && !allZero ? {
+        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+          {
+            offset: 0,
+            color: color + '80',
+          },
+          {
+            offset: 1,
+            color: color + '10',
+          },
+        ]),
+      } : undefined,
+      emphasis: {
+        focus: 'series',
+      },
+    }
+  })
 
   const option: echarts.EChartsOption = {
     tooltip: props.showTooltip ? {
@@ -136,7 +146,7 @@ function updateChart() {
       },
     } : undefined,
     legend: props.showLegend && props.series.length > 1 ? {
-      data: props.series.map((item) => item.name),
+      data: props.series.map((item: SeriesItem) => item.name),
       top: props.title ? 30 : 10,
       textStyle: {
         fontSize: 12,
@@ -151,6 +161,17 @@ function updateChart() {
       top: props.title ? (props.showLegend && props.series.length > 1 ? 80 : 60) : (props.showLegend && props.series.length > 1 ? 60 : 40),
       containLabel: true,
     } : undefined,
+    graphic: isAllZero.value ? [{
+      type: 'text',
+      left: 'center',
+      top: 'middle',
+      style: {
+        text: '暂无数据',
+        fontSize: 14,
+        fontWeight: 'normal',
+        fill: '#909399',
+      },
+    }] : undefined,
     xAxis: {
       type: 'category',
       data: props.xData,

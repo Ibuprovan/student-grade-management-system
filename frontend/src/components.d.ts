@@ -51,6 +51,7 @@ declare module 'vue' {
     ElTag: typeof import('element-plus/es')['ElTag']
     ElTooltip: typeof import('element-plus/es')['ElTooltip']
     ElUpload: typeof import('element-plus/es')['ElUpload']
+    EmptyState: typeof import('./components/common/EmptyState.vue')['default']
     LineChart: typeof import('./components/chart/LineChart.vue')['default']
     Pagination: typeof import('./components/common/Pagination.vue')['default']
     PieChart: typeof import('./components/chart/PieChart.vue')['default']
