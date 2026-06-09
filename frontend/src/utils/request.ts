@@ -65,6 +65,13 @@ service.interceptors.request.use(
     // 从 localStorage 获取 Token
     const token = localStorage.getItem('access_token')
 
+    console.log('=== [DEBUG] 请求拦截器 ===')
+    console.log('[DEBUG] Method:', config.method)
+    console.log('[DEBUG] URL:', config.url)
+    console.log('[DEBUG] Full URL:', config.baseURL + config.url)
+    console.log('[DEBUG] Data:', config.data)
+    console.log('[DEBUG] Token exists:', !!token)
+
     // 如果存在 Token，自动附加到请求头
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
@@ -83,17 +90,27 @@ service.interceptors.response.use(
   (response: AxiosResponse<BackendResponse>) => {
     const { data } = response
 
+    console.log('=== [DEBUG] 响应拦截器（成功） ===')
+    console.log('[DEBUG] Response data:', JSON.stringify(data))
+
     // 如果后端返回 success === false，表示业务错误
     if (data.success === false && data.error) {
       const message = data.error.message || '请求失败'
+      console.log('[DEBUG] 业务错误:', message)
       ElMessage.error(message)
       return Promise.reject(new Error(message))
     }
 
     // 返回完整响应数据
+    console.log('[DEBUG] 返回数据')
     return data as unknown as AxiosResponse
   },
   async (error) => {
+    console.log('=== [DEBUG] 响应拦截器（错误） ===')
+    console.log('[DEBUG] Error:', error)
+    console.log('[DEBUG] Error response:', error.response)
+    console.log('[DEBUG] Error config:', error.config)
+
     const originalRequest = error.config
 
     // 处理 HTTP 错误状态码
