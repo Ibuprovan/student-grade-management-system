@@ -21,7 +21,7 @@ const BASE_URL = '/grades'
  * @param params 查询参数（包含 student_id、class_name、subject、exam_type、keyword、page、page_size）
  */
 export function getGradeList(params?: GradeListParams) {
-  return get<GradeListResponse>(BASE_URL, { params })
+  return get<GradeListResponse>(`${BASE_URL}/search`, { params })
 }
 
 /**
