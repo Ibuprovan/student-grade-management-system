@@ -79,41 +79,87 @@ function updateChart() {
   const option: echarts.EChartsOption = {
     tooltip: props.showTooltip ? {
       trigger: 'axis',
+      confine: true,
       axisPointer: {
         type: 'shadow',
       },
+      textStyle: {
+        fontSize: 13,
+      },
     } : undefined,
     grid: props.showGrid ? {
-      left: '3%',
-      right: '4%',
-      bottom: '3%',
-      top: props.title ? '15%' : '10%',
+      left: 50,
+      right: 30,
+      bottom: 50,
+      top: props.title ? 60 : 40,
       containLabel: true,
     } : undefined,
     xAxis: props.horizontal ? {
       type: 'value',
       name: props.xLabel,
+      nameTextStyle: {
+        fontSize: 12,
+        color: '#606266',
+        padding: [8, 0, 0, 0],
+      },
       axisLabel: {
         formatter: '{value}',
+        fontSize: 12,
+        color: '#606266',
+      },
+      splitLine: {
+        lineStyle: {
+          color: '#F0F1F3',
+        },
       },
     } : {
       type: 'category',
       data: props.xData,
       name: props.xLabel,
+      nameTextStyle: {
+        fontSize: 12,
+        color: '#606266',
+        padding: [8, 0, 0, 0],
+      },
       axisLabel: {
         rotate: props.xData.length > 6 ? 30 : 0,
         interval: 0,
+        fontSize: 12,
+        color: '#606266',
+      },
+      axisTick: {
+        show: false,
       },
     },
     yAxis: props.horizontal ? {
       type: 'category',
       data: props.xData,
       name: props.yLabel,
+      nameTextStyle: {
+        fontSize: 12,
+        color: '#606266',
+      },
+      axisLabel: {
+        fontSize: 12,
+        color: '#606266',
+      },
     } : {
       type: 'value',
       name: props.yLabel,
+      nameTextStyle: {
+        fontSize: 12,
+        color: '#606266',
+      },
       axisLabel: {
         formatter: '{value}',
+        fontSize: 12,
+        color: '#606266',
+      },
+      splitLine: {
+        lineStyle: {
+          color: '#F0F1F3',
+          type: 'dashed',
+        },
       },
     },
     series: [
@@ -226,13 +272,16 @@ defineExpose({
   width: 100%;
 
   .chart-header {
-    margin-bottom: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color-light);
 
     .chart-title {
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 600;
       color: var(--text-color);
       margin: 0;
+      line-height: 1.4;
     }
   }
 

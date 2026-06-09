@@ -106,13 +106,21 @@ function updateChart() {
   const option: echarts.EChartsOption = {
     tooltip: props.showTooltip ? {
       trigger: 'item',
+      confine: true,
+      textStyle: {
+        fontSize: 13,
+      },
     } : undefined,
     legend: props.showLegend && props.series.length > 1 ? {
       data: props.series.map((item) => item.name),
-      bottom: '5%',
+      bottom: 20,
       textStyle: {
         fontSize: 12,
+        color: '#606266',
       },
+      itemGap: 16,
+      itemWidth: 12,
+      itemHeight: 12,
     } : undefined,
     radar: {
       shape: props.shape,
@@ -206,13 +214,16 @@ defineExpose({
   width: 100%;
 
   .chart-header {
-    margin-bottom: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color-light);
 
     .chart-title {
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 600;
       color: var(--text-color);
       margin: 0;
+      line-height: 1.4;
     }
   }
 

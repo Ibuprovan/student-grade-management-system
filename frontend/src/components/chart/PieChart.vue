@@ -99,15 +99,23 @@ function updateChart() {
   const option: echarts.EChartsOption = {
     tooltip: props.showTooltip ? {
       trigger: 'item',
+      confine: true,
       formatter: '{a} <br/>{b}: {c} ({d}%)',
+      textStyle: {
+        fontSize: 13,
+      },
     } : undefined,
     legend: props.showLegend ? {
       orient: 'vertical',
-      right: '5%',
+      right: 20,
       top: 'center',
       textStyle: {
         fontSize: 12,
+        color: '#606266',
       },
+      itemGap: 12,
+      itemWidth: 12,
+      itemHeight: 12,
     } : undefined,
     graphic: props.centerTitle ? [
       {
@@ -235,13 +243,16 @@ defineExpose({
   width: 100%;
 
   .chart-header {
-    margin-bottom: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color-light);
 
     .chart-title {
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 600;
       color: var(--text-color);
       margin: 0;
+      line-height: 1.4;
     }
   }
 

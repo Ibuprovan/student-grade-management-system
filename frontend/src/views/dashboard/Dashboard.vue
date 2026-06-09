@@ -270,7 +270,7 @@ onMounted(() => {
   font-size: 16px;
   font-weight: 600;
   color: var(--text-color);
-  margin-bottom: 18px;
+  margin-bottom: 16px;
 }
 
 // ===== 快捷操作 =====
