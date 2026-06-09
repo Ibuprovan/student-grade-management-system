@@ -30,7 +30,7 @@ if %errorlevel% neq 0 (
 
 echo [INFO] Checking and installing frontend dependencies...
 cd frontend
-call npm install
+call npm install --legacy-peer-deps 2>nul
 cd ..
 if %errorlevel% neq 0 (
     echo [WARNING] Frontend dependency installation may have issues, but will continue...
