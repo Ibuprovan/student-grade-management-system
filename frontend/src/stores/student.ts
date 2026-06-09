@@ -62,8 +62,11 @@ export const useStudentStore = defineStore('student', () => {
         ...params,
       }
       const response = await studentApi.getStudentList(queryParams)
-      students.value = response.items
-      pagination.value.total = response.total
+      // 响应拦截器返回完整的 BackendResponse { success, data, error }
+      // 实际数据在 response.data 中（PaginatedResponse 的 data 字段包含 items 和 total）
+      const paginatedData = (response as any).data || response
+      students.value = paginatedData.items || []
+      pagination.value.total = paginatedData.total || 0
     } catch (error) {
       console.error('获取学生列表失败:', error)
       throw error
@@ -79,7 +82,9 @@ export const useStudentStore = defineStore('student', () => {
   async function fetchStudentDetail(studentId: string) {
     loading.value = true
     try {
-      currentStudent.value = await studentApi.getStudentDetail(studentId)
+      const response = await studentApi.getStudentDetail(studentId)
+      // 响应拦截器返回 BackendResponse，实际数据在 .data 中
+      currentStudent.value = (response as any).data || response
     } catch (error) {
       console.error('获取学生详情失败:', error)
       throw error
@@ -95,7 +100,9 @@ export const useStudentStore = defineStore('student', () => {
   async function createStudent(data: StudentCreate) {
     loading.value = true
     try {
-      const newStudent = await studentApi.createStudent(data)
+      const response = await studentApi.createStudent(data)
+      // 响应拦截器返回 BackendResponse，实际数据在 .data 中
+      const newStudent = (response as any).data || response
       students.value.unshift(newStudent)
       pagination.value.total++
       ElMessage.success('学生创建成功')
@@ -116,7 +123,9 @@ export const useStudentStore = defineStore('student', () => {
   async function updateStudent(studentId: string, data: StudentUpdate) {
     loading.value = true
     try {
-      const updatedStudent = await studentApi.updateStudent(studentId, data)
+      const response = await studentApi.updateStudent(studentId, data)
+      // 响应拦截器返回 BackendResponse，实际数据在 .data 中
+      const updatedStudent = (response as any).data || response
       const index = students.value.findIndex((s) => s.student_id === studentId)
       if (index !== -1) {
         students.value[index] = updatedStudent
@@ -162,9 +171,12 @@ export const useStudentStore = defineStore('student', () => {
   async function fetchClassList() {
     try {
       const response = await studentApi.getClassList()
-      classList.value = (response.data as string[]).sort()
+      // 响应拦截器返回 BackendResponse，班级列表在 .data 中
+      const classes = (response as any).data || response
+      classList.value = Array.isArray(classes) ? [...classes].sort() : []
     } catch (error) {
       console.error('获取班级列表失败:', error)
+      classList.value = []
     }
   }
 

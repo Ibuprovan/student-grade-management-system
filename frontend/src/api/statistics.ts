@@ -24,8 +24,8 @@ export function getStatistics(params?: StatisticsQuery & { metrics?: string }) {
 }
 
 /**
- * 获取排名数据
- * @param params 查询参数（class_name、subject、exam_type、scope、limit）
+ * 获取单科排名数据
+ * @param params 查询参数（subject必填、exam_type必填、class_name、order、limit）
  */
 export function getRanking(params: {
   class_name?: string
@@ -34,7 +34,9 @@ export function getRanking(params: {
   scope?: 'class' | 'grade'
   limit?: number
 }) {
-  return get<RankingResponse>(`${BASE_URL}/ranking`, { params })
+  // 后端实际路径为 /ranking/subject（单科排名）
+  const { scope, ...rest } = params
+  return get<RankingResponse>(`${BASE_URL}/ranking/subject`, { params: rest })
 }
 
 /**

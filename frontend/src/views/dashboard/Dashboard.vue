@@ -82,7 +82,7 @@
         <el-col :xs="12" :sm="8" :md="6">
           <button class="quick-action" @click="router.push('/student/add')">
             <div class="quick-action__icon quick-action__icon--primary">
-              <el-icon :size="22"><UserPlus /></el-icon>
+              <el-icon :size="22"><CirclePlus /></el-icon>
             </div>
             <span class="quick-action__label">添加学生</span>
           </button>
