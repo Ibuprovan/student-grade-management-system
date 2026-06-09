@@ -1,5 +1,6 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
+import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 
 import App from './App.vue'
 import router from './router'
@@ -21,6 +22,11 @@ app.use(router)
 
 // 注册全局指令
 app.directive('permission', permissionDirective)
+
+// 全局注册所有 Element Plus 图标组件
+for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+  app.component(key, component)
+}
 
 // Element Plus 按需导入已通过 unplugin-vue-components 和 unplugin-auto-import 自动配置
 // 中文语言包在 App.vue 中通过 ElConfigProvider 使用

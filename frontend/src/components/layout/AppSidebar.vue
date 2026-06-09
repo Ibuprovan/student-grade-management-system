@@ -71,7 +71,7 @@
             <span>统计分析</span>
           </template>
           <el-menu-item index="/statistics/overview">
-            <el-icon><PieChart /></el-icon>
+            <el-icon><TrendCharts /></el-icon>
             <template #title>统计概览</template>
           </el-menu-item>
           <el-menu-item index="/statistics/class">
