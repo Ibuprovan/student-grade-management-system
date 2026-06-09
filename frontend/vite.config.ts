@@ -54,7 +54,13 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:8000',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '/api'),
+        // 移除后端的安全头，避免 CSP 等头影响前端开发
+        configure: (proxy) => {
+          proxy.on('proxyRes', (proxyRes) => {
+            proxyRes.headers['content-security-policy'] = undefined as unknown as string
+            proxyRes.headers['x-frame-options'] = undefined as unknown as string
+          })
+        },
       },
     },
   },

@@ -124,8 +124,8 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useStudentStore } from '@/stores/student'
-import type { FormInstance, FormRules } from 'element-plus'
-import { ElMessage } from 'element-plus'
+import type { FormRules } from 'element-plus'
+import { ElMessage, ElForm } from 'element-plus'
 
 const route = useRoute()
 const router = useRouter()
@@ -138,7 +138,7 @@ const isEdit = computed(() => !!route.params.id)
 const loading = ref(false)
 
 /** 表单引用 */
-const formRef = ref<FormInstance>()
+const formRef = ref<InstanceType<typeof ElForm>>()
 
 /** 班级选项 */
 const classOptions = computed(() => {

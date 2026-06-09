@@ -276,7 +276,8 @@ import { ref, reactive, computed } from 'vue'
 import { useGradeImport } from '@/composables/useGrade'
 import { ImportStep } from '@/types/grade'
 import type { ImportPreviewItem, BatchImportResponse } from '@/types/grade'
-import type { UploadInstance, UploadFile, UploadRawFile, FormInstance, FormRules } from 'element-plus'
+import type { UploadInstance, UploadFile, UploadRawFile, FormRules } from 'element-plus'
+import { ElForm } from 'element-plus'
 import { ElMessage } from 'element-plus'
 
 const {
@@ -295,7 +296,7 @@ const currentStep = ref(ImportStep.DOWNLOAD_TEMPLATE)
 const uploadRef = ref<UploadInstance>()
 
 /** 参数表单引用 */
-const paramFormRef = ref<FormInstance>()
+const paramFormRef = ref<InstanceType<typeof ElForm>>()
 
 /** 选中的文件 */
 const selectedFile = ref<File | null>(null)

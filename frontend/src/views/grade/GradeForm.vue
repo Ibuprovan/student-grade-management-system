@@ -150,9 +150,9 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useGradeForm } from '@/composables/useGrade'
 import { getScoreColor, formatScore } from '@/utils/format'
-import type { FormInstance, FormRules } from 'element-plus'
+import type { FormRules } from 'element-plus'
 import type { Subject, ExamType } from '@/types/grade'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox, ElForm } from 'element-plus'
 
 const route = useRoute()
 
@@ -178,7 +178,7 @@ const isEdit = computed(() => !!route.query.id)
 const submitting = ref(false)
 
 /** 表单引用 */
-const formRef = ref<FormInstance>()
+const formRef = ref<InstanceType<typeof ElForm>>()
 
 /** 表单数据 */
 const form = reactive({

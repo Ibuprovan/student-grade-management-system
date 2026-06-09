@@ -74,8 +74,8 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { ElMessage } from 'element-plus'
-import type { FormInstance, FormRules } from 'element-plus'
+import { ElMessage, ElForm } from 'element-plus'
+import type { FormRules } from 'element-plus'
 import { User, Lock, School, InfoFilled } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 
@@ -84,7 +84,7 @@ const route = useRoute()
 const authStore = useAuthStore()
 
 /** 表单引用 */
-const formRef = ref<FormInstance>()
+const formRef = ref<InstanceType<typeof ElForm>>()
 
 /** 加载状态 */
 const loading = ref(false)
@@ -111,7 +111,12 @@ const rules: FormRules = {
  * 处理登录
  */
 async function handleLogin() {
+  console.log('=== [DEBUG] handleLogin 被调用 ===')
+  console.log('[DEBUG] formRef.value:', formRef.value)
+  console.log('[DEBUG] loginForm:', JSON.stringify(loginForm))
+
   if (!formRef.value) {
+    console.error('[DEBUG] formRef.value 为空!')
     ElMessage.warning('页面加载异常，请刷新后重试')
     return
   }
@@ -119,26 +124,36 @@ async function handleLogin() {
   // 表单验证 —— 不依赖 validate() 的返回值，
   // 只区分 resolved（验证通过）和 rejected（验证失败）两种状态
   try {
+    console.log('[DEBUG] 开始表单验证...')
     await formRef.value.validate()
-    // resolved = 验证通过，继续执行
-  } catch {
+    console.log('[DEBUG] 表单验证通过!')
+  } catch (e) {
+    console.log('[DEBUG] 表单验证失败:', e)
     // rejected = 验证失败，表单已自动显示行内错误提示，直接返回
     return
   }
 
+  console.log('[DEBUG] 设置 loading = true')
   loading.value = true
   try {
+    console.log('[DEBUG] 调用 authStore.login...')
     const success = await authStore.login(loginForm.username, loginForm.password)
+    console.log('[DEBUG] authStore.login 返回:', success)
 
     if (success) {
       // 登录成功，跳转到目标页面或默认首页
       const redirect = (route.query.redirect as string) || '/dashboard'
+      console.log('[DEBUG] 登录成功，跳转到:', redirect)
       await router.push(redirect)
+      console.log('[DEBUG] 跳转完成')
+    } else {
+      console.log('[DEBUG] 登录失败，success 为 false')
     }
   } catch (error) {
-    console.error('登录异常:', error)
+    console.error('[DEBUG] 登录异常:', error)
     ElMessage.error('登录失败，请稍后重试')
   } finally {
+    console.log('[DEBUG] 设置 loading = false')
     loading.value = false
   }
 }
