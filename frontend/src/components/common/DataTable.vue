@@ -99,6 +99,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  data: () => [],
   loading: false,
   border: true,
   stripe: true,

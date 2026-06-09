@@ -88,6 +88,7 @@
         :header-cell-style="{ background: 'var(--bg-color)', color: 'var(--text-color)' }"
         @row-click="handleRowClick"
         highlight-current-row
+        empty-text="暂无班级统计数据"
       >
         <el-table-column prop="class_name" label="班级" width="150" />
         <el-table-column prop="student_count" label="学生人数" width="100" align="center" />
@@ -143,6 +144,7 @@
       <el-col :xs="24" :md="12">
         <div class="page-card">
           <BarChart
+            v-if="classComparisonData.xData.length > 0"
             title="各班级平均分对比"
             :xData="classComparisonData.xData"
             :yData="classComparisonData.yData"
@@ -152,6 +154,9 @@
             :showValue="true"
             :height="350"
           />
+          <div v-else class="chart-empty-wrapper">
+            <el-empty description="暂无班级对比数据" :image-size="80" />
+          </div>
         </div>
       </el-col>
 
@@ -159,6 +164,7 @@
       <el-col :xs="24" :md="12">
         <div class="page-card">
           <LineChart
+            v-if="classPassRateData.xData.length > 0"
             title="班级及格率/优秀率对比"
             :xData="classPassRateData.xData"
             :series="classPassRateData.series"
@@ -168,6 +174,9 @@
             :showLegend="true"
             :height="350"
           />
+          <div v-else class="chart-empty-wrapper">
+            <el-empty description="暂无及格率/优秀率数据" :image-size="80" />
+          </div>
         </div>
       </el-col>
     </el-row>
@@ -244,6 +253,13 @@ function getProgressColor(value: number): string {
     font-weight: 600;
     color: var(--text-color);
     margin-bottom: 16px;
+  }
+
+  .chart-empty-wrapper {
+    height: 350px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 }
 

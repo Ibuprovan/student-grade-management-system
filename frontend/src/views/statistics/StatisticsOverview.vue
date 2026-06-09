@@ -90,6 +90,7 @@
       <el-col :xs="24" :md="12">
         <div class="page-card">
           <BarChart
+            v-if="scoreDistributionData.xData.length > 0"
             title="分数分布"
             :xData="scoreDistributionData.xData"
             :yData="scoreDistributionData.yData"
@@ -99,6 +100,9 @@
             :showValue="true"
             :height="300"
           />
+          <div v-else class="chart-empty-wrapper">
+            <el-empty description="暂无分数分布数据" :image-size="80" />
+          </div>
         </div>
       </el-col>
 
@@ -106,6 +110,7 @@
       <el-col :xs="24" :md="12">
         <div class="page-card">
           <LineChart
+            v-if="examTrendData.xData.length > 0"
             title="成绩趋势"
             :xData="examTrendData.xData"
             :series="examTrendData.series"
@@ -115,6 +120,9 @@
             :areaStyle="true"
             :height="300"
           />
+          <div v-else class="chart-empty-wrapper">
+            <el-empty description="暂无成绩趋势数据" :image-size="80" />
+          </div>
         </div>
       </el-col>
     </el-row>
@@ -124,12 +132,16 @@
       <el-col :xs="24" :md="12">
         <div class="page-card">
           <PieChart
+            v-if="subjectPieData.length > 0"
             title="科目平均分占比"
             :data="subjectPieData"
             :isRing="true"
             centerTitle="科目分布"
             :height="300"
           />
+          <div v-else class="chart-empty-wrapper">
+            <el-empty description="暂无科目占比数据" :image-size="80" />
+          </div>
         </div>
       </el-col>
 
@@ -156,6 +168,7 @@
         border
         stripe
         :header-cell-style="{ background: 'var(--bg-color)', color: 'var(--text-color)' }"
+        empty-text="暂无排名数据"
       >
         <el-table-column type="index" label="排名" width="80" align="center">
           <template #default="{ $index }">
@@ -274,6 +287,13 @@ const top10Rankings = computed(() => rankings.value.slice(0, 10))
 
   .chart-section {
     margin-bottom: 16px;
+  }
+
+  .chart-empty-wrapper {
+    height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .section-title {

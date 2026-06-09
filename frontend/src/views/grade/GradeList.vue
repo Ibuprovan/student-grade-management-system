@@ -88,7 +88,7 @@
 
     <!-- 数据表格 -->
     <DataTable
-      :data="gradeStore.grades"
+      :data="gradeStore.grades || []"
       :loading="gradeStore.loading"
       :current-page="gradeStore.pagination.page"
       :page-size="gradeStore.pagination.pageSize"

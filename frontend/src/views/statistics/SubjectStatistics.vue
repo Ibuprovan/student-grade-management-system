@@ -121,6 +121,7 @@
         :header-cell-style="{ background: 'var(--bg-color)', color: 'var(--text-color)' }"
         @row-click="handleRowClick"
         highlight-current-row
+        empty-text="暂无科目统计数据"
       >
         <el-table-column prop="subject" label="科目" width="100" />
         <el-table-column prop="student_count" label="参考人数" width="100" align="center" />
@@ -162,6 +163,7 @@
       <el-col :xs="24" :md="12">
         <div class="page-card">
           <BarChart
+            v-if="subjectComparisonData.xData.length > 0"
             title="各科目平均分对比"
             :xData="subjectComparisonData.xData"
             :yData="subjectComparisonData.yData"
@@ -171,6 +173,9 @@
             :showValue="true"
             :height="350"
           />
+          <div v-else class="chart-empty-wrapper">
+            <el-empty description="暂无科目对比数据" :image-size="80" />
+          </div>
         </div>
       </el-col>
 
@@ -178,6 +183,7 @@
       <el-col :xs="24" :md="12">
         <div class="page-card">
           <LineChart
+            v-if="subjectRateData.xData.length > 0"
             title="科目及格率/优秀率对比"
             :xData="subjectRateData.xData"
             :series="subjectRateData.series"
@@ -187,6 +193,9 @@
             :showLegend="true"
             :height="350"
           />
+          <div v-else class="chart-empty-wrapper">
+            <el-empty description="暂无及格率/优秀率数据" :image-size="80" />
+          </div>
         </div>
       </el-col>
     </el-row>
@@ -196,6 +205,7 @@
       <el-col :xs="24" :md="12">
         <div class="page-card">
           <BarChart
+            v-if="scoreDistributionData.xData.length > 0"
             :title="selectedSubjectStats ? `${selectedSubjectStats.subject}成绩分布` : '成绩分布'"
             :xData="scoreDistributionData.xData"
             :yData="scoreDistributionData.yData"
@@ -205,6 +215,9 @@
             :showValue="true"
             :height="350"
           />
+          <div v-else class="chart-empty-wrapper">
+            <el-empty description="暂无分数分布数据" :image-size="80" />
+          </div>
         </div>
       </el-col>
 
@@ -307,6 +320,13 @@ function handleRowClick(row: SubjectStatistics) {
     font-weight: 600;
     color: var(--text-color);
     margin-bottom: 16px;
+  }
+
+  .chart-empty-wrapper {
+    height: 350px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 }
 
