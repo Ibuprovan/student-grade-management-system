@@ -40,7 +40,7 @@ if ($LASTEXITCODE -ne 0) {
 
 Write-Host "[信息] 正在检查并安装前端依赖..." -ForegroundColor Yellow
 Set-Location frontend
-npm install
+npm install --legacy-peer-deps 2>$null
 Set-Location ..
 if ($LASTEXITCODE -ne 0) {
     Write-Host "[警告] 前端依赖安装可能有问题，但将继续启动..." -ForegroundColor Yellow
