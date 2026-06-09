@@ -3,12 +3,15 @@
     <div class="chart-header" v-if="title">
       <h4 class="chart-title">{{ title }}</h4>
     </div>
-    <div ref="chartRef" class="chart-container" :style="{ height: height + 'px' }"></div>
+    <div v-if="isEmpty" class="chart-empty" :style="{ height: height + 'px' }">
+      <el-empty description="暂无数据" :image-size="80" />
+    </div>
+    <div v-else ref="chartRef" class="chart-container" :style="{ height: height + 'px' }"></div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import * as echarts from 'echarts'
 
 /** 柱状图组件 Props */
@@ -49,6 +52,12 @@ const props = withDefaults(defineProps<BarChartProps>(), {
   showGrid: true,
 })
 
+/** 是否为空数据 */
+const isEmpty = computed(() => {
+  return !props.xData || props.xData.length === 0 ||
+    !props.yData || props.yData.length === 0
+})
+
 /** 图表引用 */
 const chartRef = ref<HTMLElement>()
 
@@ -57,7 +66,7 @@ let chart: echarts.ECharts | null = null
 
 /** 初始化图表 */
 function initChart() {
-  if (!chartRef.value) return
+  if (!chartRef.value || isEmpty.value) return
 
   chart = echarts.init(chartRef.value)
   updateChart()
@@ -65,7 +74,7 @@ function initChart() {
 
 /** 更新图表配置 */
 function updateChart() {
-  if (!chart) return
+  if (!chart || isEmpty.value) return
 
   const option: echarts.EChartsOption = {
     tooltip: props.showTooltip ? {
@@ -173,7 +182,18 @@ watch(
   () => [props.xData, props.yData],
   () => {
     nextTick(() => {
-      updateChart()
+      if (isEmpty.value) {
+        if (chart) {
+          chart.dispose()
+          chart = null
+        }
+      } else {
+        if (!chart) {
+          initChart()
+        } else {
+          updateChart()
+        }
+      }
     })
   },
   { deep: true }
@@ -218,6 +238,13 @@ defineExpose({
 
   .chart-container {
     width: 100%;
+  }
+
+  .chart-empty {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 }
 </style>

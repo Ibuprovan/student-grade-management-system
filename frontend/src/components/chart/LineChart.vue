@@ -3,12 +3,15 @@
     <div class="chart-header" v-if="title">
       <h4 class="chart-title">{{ title }}</h4>
     </div>
-    <div ref="chartRef" class="chart-container" :style="{ height: height + 'px' }"></div>
+    <div v-if="isEmpty" class="chart-empty" :style="{ height: height + 'px' }">
+      <el-empty description="暂无数据" :image-size="80" />
+    </div>
+    <div v-else ref="chartRef" class="chart-container" :style="{ height: height + 'px' }"></div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import * as echarts from 'echarts'
 
 /** 系列数据项 */
@@ -59,6 +62,13 @@ const props = withDefaults(defineProps<LineChartProps>(), {
   showGrid: true,
 })
 
+/** 是否为空数据 */
+const isEmpty = computed(() => {
+  return !props.xData || props.xData.length === 0 ||
+    !props.series || props.series.length === 0 ||
+    props.series.every(s => !s.data || s.data.length === 0)
+})
+
 /** 默认颜色列表 */
 const defaultColors = ['#409EFF', '#67C23A', '#E6A23C', '#F56C6C', '#909399', '#8B5CF6', '#EC4899']
 
@@ -70,7 +80,7 @@ let chart: echarts.ECharts | null = null
 
 /** 初始化图表 */
 function initChart() {
-  if (!chartRef.value) return
+  if (!chartRef.value || isEmpty.value) return
 
   chart = echarts.init(chartRef.value)
   updateChart()
@@ -78,7 +88,7 @@ function initChart() {
 
 /** 更新图表配置 */
 function updateChart() {
-  if (!chart) return
+  if (!chart || isEmpty.value) return
 
   const seriesData = props.series.map((item, index) => ({
     name: item.name,
@@ -168,7 +178,18 @@ watch(
   () => [props.xData, props.series],
   () => {
     nextTick(() => {
-      updateChart()
+      if (isEmpty.value) {
+        if (chart) {
+          chart.dispose()
+          chart = null
+        }
+      } else {
+        if (!chart) {
+          initChart()
+        } else {
+          updateChart()
+        }
+      }
     })
   },
   { deep: true }
@@ -213,6 +234,13 @@ defineExpose({
 
   .chart-container {
     width: 100%;
+  }
+
+  .chart-empty {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 }
 </style>
