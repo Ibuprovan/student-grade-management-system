@@ -124,42 +124,75 @@ function updateChart() {
   const option: echarts.EChartsOption = {
     tooltip: props.showTooltip ? {
       trigger: 'axis',
+      confine: true,
       axisPointer: {
         type: 'cross',
         label: {
           backgroundColor: '#6a7985',
         },
       },
+      textStyle: {
+        fontSize: 13,
+      },
     } : undefined,
     legend: props.showLegend && props.series.length > 1 ? {
       data: props.series.map((item) => item.name),
-      top: props.title ? '10%' : '0%',
+      top: props.title ? 30 : 10,
       textStyle: {
         fontSize: 12,
+        color: '#606266',
       },
+      itemGap: 16,
     } : undefined,
     grid: props.showGrid ? {
-      left: '3%',
-      right: '4%',
-      bottom: '3%',
-      top: props.title ? (props.showLegend && props.series.length > 1 ? '25%' : '15%') : (props.showLegend && props.series.length > 1 ? '15%' : '10%'),
+      left: 50,
+      right: 30,
+      bottom: 50,
+      top: props.title ? (props.showLegend && props.series.length > 1 ? 80 : 60) : (props.showLegend && props.series.length > 1 ? 60 : 40),
       containLabel: true,
     } : undefined,
     xAxis: {
       type: 'category',
       data: props.xData,
       name: props.xLabel,
+      nameTextStyle: {
+        fontSize: 12,
+        color: '#606266',
+        padding: [8, 0, 0, 0],
+      },
       boundaryGap: false,
       axisLabel: {
         rotate: props.xData.length > 6 ? 30 : 0,
         interval: 0,
+        fontSize: 12,
+        color: '#606266',
+      },
+      axisTick: {
+        show: false,
+      },
+      axisLine: {
+        lineStyle: {
+          color: '#E8EAED',
+        },
       },
     },
     yAxis: {
       type: 'value',
       name: props.yLabel,
+      nameTextStyle: {
+        fontSize: 12,
+        color: '#606266',
+      },
       axisLabel: {
         formatter: '{value}',
+        fontSize: 12,
+        color: '#606266',
+      },
+      splitLine: {
+        lineStyle: {
+          color: '#F0F1F3',
+          type: 'dashed',
+        },
       },
     },
     series: seriesData,
@@ -222,13 +255,16 @@ defineExpose({
   width: 100%;
 
   .chart-header {
-    margin-bottom: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color-light);
 
     .chart-title {
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 600;
       color: var(--text-color);
       margin: 0;
+      line-height: 1.4;
     }
   }
 
