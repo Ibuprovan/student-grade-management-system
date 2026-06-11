@@ -35,6 +35,17 @@ from src.schemas.statistics import (
     TotalRankingResponse,
     StatisticsMetric,
 )
+from src.schemas.user import (
+    UserCreate,
+    UserUpdate,
+    UserPasswordReset,
+    UserResponse,
+)
+from src.schemas.batch import (
+    BatchDeleteRequest,
+    BatchDeleteResponse,
+)
+from src.schemas.audit_log import AuditLogResponse
 
 __all__ = [
     "StudentCreate",
@@ -60,4 +71,11 @@ __all__ = [
     "RankingResponse",
     "TotalRankingResponse",
     "StatisticsMetric",
+    "UserCreate",
+    "UserUpdate",
+    "UserPasswordReset",
+    "UserResponse",
+    "BatchDeleteRequest",
+    "BatchDeleteResponse",
+    "AuditLogResponse",
 ]

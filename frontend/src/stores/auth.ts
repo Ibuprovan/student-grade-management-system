@@ -146,44 +146,32 @@ export const useAuthStore = defineStore('auth', () => {
    * @returns 是否登录成功
    */
   async function login(username: string, password: string): Promise<boolean> {
-    console.log('=== [DEBUG] authStore.login 被调用 ===')
-    console.log('[DEBUG] username:', username)
     loading.value = true
     try {
-      console.log('[DEBUG] 调用 authApi.login...')
       const response = await authApi.login({ username, password })
-      console.log('[DEBUG] authApi.login 返回:', JSON.stringify(response))
 
       if (response.success && response.data) {
         const tokenResponse = response.data
-        console.log('[DEBUG] TokenResponse:', JSON.stringify(tokenResponse))
 
         // 保存 Token
-        console.log('[DEBUG] 保存 Token...')
         updateTokenResponse(tokenResponse)
-        console.log('[DEBUG] Token 已保存到 localStorage')
 
         // 获取用户信息
         try {
-          console.log('[DEBUG] 调用 authApi.getCurrentUser...')
           const userResponse = await authApi.getCurrentUser()
-          console.log('[DEBUG] authApi.getCurrentUser 返回:', JSON.stringify(userResponse))
 
           if (userResponse.success && userResponse.data) {
             user.value = userResponse.data
             localStorage.setItem(STORAGE_KEYS.USER_INFO, JSON.stringify(userResponse.data))
-            console.log('[DEBUG] 用户信息已保存')
           } else {
             // API 未返回用户信息时，从 JWT Token 解析基本信息作为兜底
-            console.log('[DEBUG] getCurrentUser 未返回数据，从 Token 解析')
             const fallbackUser = decodeTokenToUser(tokenResponse.access_token)
             if (fallbackUser) {
               user.value = fallbackUser
               localStorage.setItem(STORAGE_KEYS.USER_INFO, JSON.stringify(fallbackUser))
             }
           }
-        } catch (userError) {
-          console.warn('[DEBUG] 获取用户信息失败，从 Token 解析:', userError)
+        } catch {
           // 从 JWT Token 解析基本信息作为兜底
           const fallbackUser = decodeTokenToUser(tokenResponse.access_token)
           if (fallbackUser) {
@@ -194,7 +182,6 @@ export const useAuthStore = defineStore('auth', () => {
 
         // 检查是否成功获取到用户信息
         if (!user.value) {
-          console.error('[DEBUG] user.value 为空，登录失败')
           // 登录成功但获取用户信息失败，清除状态
           localStorage.removeItem('access_token')
           localStorage.removeItem('refresh_token')
@@ -204,25 +191,20 @@ export const useAuthStore = defineStore('auth', () => {
           return false
         }
 
-        console.log('[DEBUG] 登录成功，返回 true')
         ElMessage.success('登录成功')
         return true
       }
 
       // 后端返回 success: false 但未抛出异常的情况
-      console.log('[DEBUG] response.success 为 false')
       ElMessage.error('登录失败，请检查用户名和密码')
       return false
     } catch (error: unknown) {
-      console.error('[DEBUG] 登录失败:', error)
-
       // 兼容 FastAPI HTTPException 的 detail 字段和自定义 error 格式
       const errData = (error as { response?: { data?: { detail?: string; error?: { message?: string } } } })?.response?.data
       const message = errData?.detail || errData?.error?.message || '登录失败，请检查用户名和密码'
       ElMessage.error(message)
       return false
     } finally {
-      console.log('[DEBUG] authStore.login finally, 设置 loading = false')
       loading.value = false
     }
   }
@@ -295,6 +277,28 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   /**
+   * 修改密码
+   * @param oldPassword 旧密码
+   * @param newPassword 新密码
+   * @returns 是否修改成功
+   */
+  async function changePassword(oldPassword: string, newPassword: string): Promise<boolean> {
+    try {
+      const response = await authApi.changePassword(oldPassword, newPassword)
+      if (response.success) {
+        ElMessage.success('密码修改成功')
+        return true
+      }
+      return false
+    } catch (error: unknown) {
+      const errData = (error as { response?: { data?: { detail?: string; error?: { message?: string } } } })?.response?.data
+      const message = errData?.detail || errData?.error?.message || '密码修改失败'
+      ElMessage.error(message)
+      return false
+    }
+  }
+
+  /**
    * 清除认证状态
    */
   function clearAuth() {
@@ -329,5 +333,6 @@ export const useAuthStore = defineStore('auth', () => {
     setAuth,
     clearAuth,
     loadFromStorage,
+    changePassword,
   }
 })

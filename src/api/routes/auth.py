@@ -2,13 +2,15 @@
 认证 API 路由
 
 提供用户认证相关的 RESTful 接口：
-- POST /api/v1/auth/login          用户登录
-- POST /api/v1/auth/refresh        刷新 Token
-- POST /api/v1/auth/logout         用户登出（吊销 Token）
-- GET  /api/v1/auth/me             获取当前用户信息
+- POST /api/v1/auth/login             用户登录
+- POST /api/v1/auth/refresh           刷新 Token
+- POST /api/v1/auth/logout            用户登出（吊销 Token）
+- GET  /api/v1/auth/me                获取当前用户信息
+- POST /api/v1/auth/change-password   修改密码
 """
 
 import logging
+from datetime import datetime, timezone, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials
@@ -24,6 +26,7 @@ from src.schemas.auth import (
     TokenResponse,
     RefreshRequest,
     UserInfo,
+    ChangePasswordRequest,
 )
 from src.schemas.common import ApiResponse, SuccessResponse
 from src.api.auth import get_current_user, security, get_user_repository
@@ -231,5 +234,101 @@ def get_me(
             role=current_user.role,
             is_active=current_user.is_active,
         ).model_dump(),
+    )
+
+
+@router.post(
+    "/change-password",
+    response_model=ApiResponse,
+    summary="修改密码",
+    description="验证旧密码后修改为新密码，需要认证",
+    responses={
+        400: {"description": "旧密码错误"},
+        401: {"description": "未认证"},
+        422: {"description": "新密码强度不足"},
+    },
+)
+def change_password(
+    data: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    user_repo: UserRepository = Depends(get_user_repository),
+) -> ApiResponse:
+    """
+    修改密码
+
+    - **old_password**: 当前密码（用于身份验证）
+    - **new_password**: 新密码（需满足强度要求：至少8位，包含大小写字母和数字）
+
+    验证流程：
+    1. 验证旧密码是否正确
+    2. 验证新密码强度（由 Schema 层自动完成）
+    3. 确保新密码与旧密码不同
+    4. 哈希新密码并更新数据库
+    """
+    # 1. 验证旧密码
+    if not verify_password(data.old_password, current_user.hashed_password):
+        logger.warning(f"修改密码失败：旧密码错误 - user_id={current_user.id}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="旧密码不正确",
+        )
+
+    # 2. 确保新密码与旧密码不同
+    if data.old_password == data.new_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="新密码不能与旧密码相同",
+        )
+
+    # 3. 哈希新密码并更新
+    new_hashed_password = hash_password(data.new_password)
+    user_repo.update(current_user.id, {"hashed_password": new_hashed_password})
+
+    logger.info(f"用户密码修改成功: user_id={current_user.id}")
+
+    return ApiResponse(
+        success=True,
+        message="密码修改成功",
+    )
+
+
+@router.post(
+    "/check-token",
+    response_model=ApiResponse,
+    summary="检查 Token 状态",
+    description="检查当前 Token 是否即将过期（30 分钟内）",
+    responses={
+        401: {"description": "未认证"},
+    },
+)
+def check_token(
+    current_user: User = Depends(get_current_user),
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+) -> ApiResponse:
+    """
+    检查 Token 状态
+
+    检查当前 Access Token 是否即将过期（30 分钟内），
+    前端可根据返回的 `expiring_soon` 标志提前刷新 Token。
+    """
+    # 解码 Token 获取过期时间
+    payload = jwt_service.decode_token(credentials.credentials)
+
+    # 计算剩余时间
+    now = datetime.now(timezone.utc)
+    expires_at = payload.exp
+    remaining = expires_at - now
+    remaining_minutes = remaining.total_seconds() / 60
+
+    # 判断是否即将过期（30 分钟内）
+    expiring_soon = remaining_minutes <= 30
+
+    return ApiResponse(
+        success=True,
+        data={
+            "expiring_soon": expiring_soon,
+            "expires_at": expires_at.isoformat(),
+            "remaining_minutes": round(remaining_minutes, 1),
+        },
     )
 

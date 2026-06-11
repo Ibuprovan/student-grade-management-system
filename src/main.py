@@ -15,7 +15,15 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.api.routes import students_router, grades_router, statistics_router, auth_router, dashboard_router
+from src.api.routes import (
+    students_router,
+    grades_router,
+    statistics_router,
+    auth_router,
+    dashboard_router,
+    users_router,
+    audit_logs_router,
+)
 from src.api.exception_handlers import (
     app_exception_handler,
     validation_exception_handler,
@@ -45,6 +53,20 @@ async def lifespan(app: FastAPI):
     """
     # 启动时
     logger.info(f"启动 {settings.APP_NAME} v{settings.APP_VERSION}")
+
+    # ==================== P0-4: JWT 密钥安全检查 ====================
+    # 生产环境下检测是否使用了默认密钥，防止安全风险
+    _DEFAULT_JWT_SECRET = "dev-secret-key-change-in-production-environment!"
+    if settings.is_production and settings.JWT_SECRET_KEY == _DEFAULT_JWT_SECRET:
+        logger.critical(
+            "安全警告：生产环境正在使用默认 JWT 密钥！"
+            "请立即通过环境变量 JWT_SECRET_KEY 设置强密钥。"
+            "生成方式：python -c \"import secrets; print(secrets.token_urlsafe(32))\""
+        )
+        raise RuntimeError(
+            "生产环境禁止使用默认 JWT 密钥，请通过环境变量 JWT_SECRET_KEY 设置强密钥"
+        )
+
     init_db()
     logger.info("数据库初始化完成")
 
@@ -116,6 +138,10 @@ def create_app() -> FastAPI:
     app.include_router(grades_router)
     app.include_router(statistics_router)
     app.include_router(dashboard_router)
+
+    # 管理路由（需要管理员权限）
+    app.include_router(users_router)
+    app.include_router(audit_logs_router)
 
     # 健康检查端点（公开，用于监控）
     @app.get("/health", tags=["系统"])

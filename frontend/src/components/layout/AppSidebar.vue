@@ -83,6 +83,12 @@
             <template #title>科目统计</template>
           </el-menu-item>
         </el-sub-menu>
+
+        <!-- 我的成绩（仅学生可见） -->
+        <el-menu-item v-if="authStore.isStudent" index="/my-grades">
+          <el-icon><Trophy /></el-icon>
+          <template #title>我的成绩</template>
+        </el-menu-item>
       </el-menu>
     </el-scrollbar>
 
@@ -101,10 +107,12 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
+import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
 const router = useRouter()
 const appStore = useAppStore()
+const authStore = useAuthStore()
 
 /** 当前激活的菜单项 */
 const activeMenu = computed(() => {

@@ -49,3 +49,16 @@ export function logout(): Promise<AuthApiResponse<void>> {
 export function getCurrentUser(): Promise<AuthApiResponse<UserInfo>> {
   return get<AuthApiResponse<UserInfo>>(`${BASE_URL}/me`)
 }
+
+/**
+ * 修改密码
+ * @param oldPassword 旧密码
+ * @param newPassword 新密码
+ * @returns 修改结果
+ */
+export function changePassword(oldPassword: string, newPassword: string): Promise<AuthApiResponse<void>> {
+  return post<AuthApiResponse<void>>(`${BASE_URL}/change-password`, {
+    old_password: oldPassword,
+    new_password: newPassword,
+  })
+}

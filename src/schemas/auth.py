@@ -1,10 +1,12 @@
 """
 认证相关 Schema
 
-定义登录请求、Token 响应等认证相关的数据模型
+定义登录请求、Token 响应、修改密码等认证相关的数据模型
 """
 
-from pydantic import BaseModel, Field
+import re
+
+from pydantic import BaseModel, Field, field_validator
 
 
 class LoginRequest(BaseModel):
@@ -82,3 +84,57 @@ class UserInfo(BaseModel):
     username: str = Field(description="用户名")
     role: str = Field(description="用户角色")
     is_active: bool = Field(description="账户是否启用")
+
+
+class ChangePasswordRequest(BaseModel):
+    """
+    修改密码请求模型
+
+    Attributes:
+        old_password: 当前密码（用于验证身份）
+        new_password: 新密码（需满足强度要求）
+
+    密码强度要求：
+        - 至少 8 个字符
+        - 包含至少一个大写字母
+        - 包含至少一个小写字母
+        - 包含至少一个数字
+    """
+
+    old_password: str = Field(
+        ...,
+        min_length=1,
+        max_length=128,
+        description="当前密码",
+    )
+    new_password: str = Field(
+        ...,
+        min_length=8,
+        max_length=128,
+        description="新密码（至少8位，包含大小写字母和数字）",
+    )
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_password_strength(cls, v: str) -> str:
+        """
+        验证新密码强度
+
+        要求：
+        - 至少 8 个字符
+        - 包含至少一个大写字母 [A-Z]
+        - 包含至少一个小写字母 [a-z]
+        - 包含至少一个数字 [0-9]
+
+        Raises:
+            ValueError: 密码不满足强度要求时抛出
+        """
+        if len(v) < 8:
+            raise ValueError("密码长度至少为 8 个字符")
+        if not re.search(r"[A-Z]", v):
+            raise ValueError("密码必须包含至少一个大写字母")
+        if not re.search(r"[a-z]", v):
+            raise ValueError("密码必须包含至少一个小写字母")
+        if not re.search(r"\d", v):
+            raise ValueError("密码必须包含至少一个数字")
+        return v

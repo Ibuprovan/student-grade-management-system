@@ -230,3 +230,55 @@ class StudentService:
             List[str]: 去重后的班级名称列表（已排序）
         """
         return self.repo.get_all_classes()
+
+    def batch_delete_students(self, student_ids: List[str]) -> Dict[str, Any]:
+        """
+        批量删除学生
+
+        使用事务确保数据一致性：要么全部删除成功，要么全部回滚。
+
+        Args:
+            student_ids: 要删除的学号列表
+
+        Returns:
+            Dict[str, Any]: 批量删除结果，包含 total, success_count, fail_count, results
+        """
+        results = []
+        success_count = 0
+        fail_count = 0
+
+        for student_id in student_ids:
+            try:
+                # 检查学生是否存在
+                student = self.repo.get_by_student_id(student_id)
+                if student is None:
+                    results.append({
+                        "student_id": student_id,
+                        "status": "fail",
+                        "error": f"学生 '{student_id}' 不存在",
+                    })
+                    fail_count += 1
+                    continue
+
+                # 执行删除（级联删除成绩记录）
+                self.repo.delete(student.student_id)
+                results.append({
+                    "student_id": student_id,
+                    "status": "success",
+                })
+                success_count += 1
+
+            except Exception as e:
+                results.append({
+                    "student_id": student_id,
+                    "status": "fail",
+                    "error": str(e),
+                })
+                fail_count += 1
+
+        return {
+            "total": len(student_ids),
+            "success_count": success_count,
+            "fail_count": fail_count,
+            "results": results,
+        }
