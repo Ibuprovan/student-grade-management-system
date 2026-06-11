@@ -11,26 +11,9 @@ from typing import Optional, List, Tuple
 from sqlalchemy.orm import Session
 
 from src.models.audit_log import AuditLog
-from src.repositories.base import BaseRepository
+from src.repositories.audit_log_repo import AuditLogRepository
 
 logger = logging.getLogger(__name__)
-
-
-class AuditLogRepository(BaseRepository[AuditLog]):
-    """
-    审计日志数据访问类
-
-    继承 BaseRepository，提供审计日志特有的查询方法。
-    """
-
-    def __init__(self, db: Session):
-        """
-        初始化审计日志 Repository
-
-        Args:
-            db: 数据库会话
-        """
-        super().__init__(AuditLog, db)
 
 
 class AuditService:

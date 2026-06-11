@@ -430,26 +430,45 @@ async function confirmDelete() {
 /** 导出全部筛选结果 */
 async function handleExport() {
   try {
-    // 获取当前筛选条件下的所有数据
-    const params: Record<string, string | undefined> = { page_size: '10000' }
+    // 先获取总数，确定导出规模
+    const countParams: Record<string, string | undefined> = {}
     if (searchForm.student_id) {
-      params.keyword = searchForm.student_id
+      countParams.keyword = searchForm.student_id
     } else if (searchForm.name) {
-      params.keyword = searchForm.name
+      countParams.keyword = searchForm.name
     }
     if (searchForm.class_name) {
-      params.class_name = searchForm.class_name
+      countParams.class_name = searchForm.class_name
     }
 
     const { getStudentList } = await import('@/api/student')
-    const response = await getStudentList(params as any)
-    const paginatedData = (response as any).data || response
-    const allStudents = paginatedData.items || []
 
-    if (allStudents.length === 0) {
+    // 先查询第一页获取 total
+    const countResponse = await getStudentList({ ...countParams, page: '1', page_size: '1' } as any)
+    const countData = (countResponse as any).data || countResponse
+    const total = countData.total || 0
+
+    if (total === 0) {
       ElMessage.warning('没有可导出的数据')
       return
     }
+
+    // 导出上限常量：防止请求过大导致超时或内存溢出
+    const EXPORT_LIMIT = 5000
+    if (total > EXPORT_LIMIT) {
+      ElMessage.warning(`当前筛选条件下共 ${total} 条数据，超过单次导出上限 ${EXPORT_LIMIT} 条，请缩小筛选范围后重试`)
+      return
+    }
+
+    // 一次性获取所有筛选结果
+    const params: Record<string, string | undefined> = {
+      ...countParams,
+      page_size: String(total),
+    }
+
+    const response = await getStudentList(params as any)
+    const paginatedData = (response as any).data || response
+    const allStudents = paginatedData.items || []
 
     const headers = ['学号', '姓名', '性别', '班级', '入学年份', '创建时间']
     const data = allStudents.map((student: Student) => [
