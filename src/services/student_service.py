@@ -5,8 +5,11 @@
 - 学生增删改查（CRUD）
 - 学号唯一性校验
 - 分页查询与搜索
+- 学生数据导出（CSV）
 """
 
+import csv
+import io
 from typing import Optional, List, Dict, Any, Tuple
 
 from sqlalchemy.orm import Session
@@ -231,6 +234,61 @@ class StudentService:
         """
         return self.repo.get_all_classes()
 
+    def export_students_csv(
+        self,
+        class_name: Optional[str] = None,
+        keyword: Optional[str] = None,
+    ) -> str:
+        """
+        导出学生数据为 CSV 格式
+
+        支持按班级和关键词筛选，返回 CSV 格式的字符串。
+        用于前端导出功能，避免使用大 page_size 分页查询。
+
+        Args:
+            class_name: 班级筛选（可选）
+            keyword: 搜索关键词（匹配学号或姓名，可选）
+
+        Returns:
+            str: CSV 格式的学生数据字符串（UTF-8 BOM 编码，兼容 Excel）
+        """
+        # 构建过滤条件并查询所有匹配的学生
+        if keyword:
+            students = self.repo.search(
+                keyword=keyword,
+                class_name=class_name,
+                skip=0,
+                limit=10000,  # 导出上限
+            )
+        else:
+            filters = []
+            if class_name:
+                filters.append(Student.class_name == class_name)
+            students = self.repo.get_all(skip=0, limit=10000, filters=filters)
+
+        # 使用 StringIO 和 csv.writer 生成 CSV
+        output = io.StringIO()
+        # 写入 BOM 头，确保 Excel 正确识别 UTF-8 编码
+        output.write('\ufeff')
+
+        writer = csv.writer(output)
+        # 写入表头
+        writer.writerow(['学号', '姓名', '性别', '班级', '入学年份', '创建时间', '更新时间'])
+
+        # 写入数据行
+        for student in students:
+            writer.writerow([
+                student.student_id,
+                student.name,
+                student.gender,
+                student.class_name,
+                student.enrollment_year,
+                student.created_at.strftime('%Y-%m-%d %H:%M:%S') if student.created_at else '',
+                student.updated_at.strftime('%Y-%m-%d %H:%M:%S') if student.updated_at else '',
+            ])
+
+        return output.getvalue()
+
     def batch_delete_students(self, student_ids: List[str]) -> Dict[str, Any]:
         """
         批量删除学生
@@ -292,7 +350,8 @@ class StudentService:
                 if r["status"] == "success":
                     r["status"] = "fail"
                     r["error"] = f"事务回滚: {e}"
-            fail_count = len(student_ids) - fail_count
+            # 事务回滚时，所有学生都删除失败（包括之前不存在的）
+            fail_count = len(student_ids)
             success_count = 0
             raise
 
