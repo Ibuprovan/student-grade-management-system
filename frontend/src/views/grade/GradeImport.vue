@@ -189,8 +189,26 @@
           </el-table>
         </div>
 
+        <!-- 导入进度条 -->
+        <div v-if="importing" class="import-progress">
+          <div class="progress-header">
+            <el-icon class="is-loading"><Loading /></el-icon>
+            <span>正在导入成绩数据...</span>
+          </div>
+          <el-progress
+            :percentage="importProgress"
+            :stroke-width="20"
+            :text-inside="true"
+            status="warning"
+          />
+          <div class="progress-info">
+            <span>预计导入 {{ validCount }} 条记录</span>
+            <span>{{ importProgressStatus }}</span>
+          </div>
+        </div>
+
         <div class="step-actions">
-          <el-button @click="currentStep = ImportStep.UPLOAD_FILE">
+          <el-button @click="currentStep = ImportStep.UPLOAD_FILE" :disabled="importing">
             <el-icon><ArrowLeft /></el-icon>
             上一步
           </el-button>
@@ -198,11 +216,11 @@
             type="primary"
             size="large"
             :loading="importing"
-            :disabled="validCount === 0"
+            :disabled="validCount === 0 || importing"
             @click="handleStartImport"
           >
             <el-icon><Upload /></el-icon>
-            开始导入 ({{ validCount }} 条)
+            {{ importing ? '导入中...' : `开始导入 (${validCount} 条)` }}
           </el-button>
         </div>
       </div>
@@ -304,6 +322,15 @@ const selectedFile = ref<File | null>(null)
 /** 导入中状态 */
 const importing = ref(false)
 
+/** 导入进度百分比 */
+const importProgress = ref(0)
+
+/** 进度状态文本 */
+const importProgressStatus = ref('准备中...')
+
+/** 进度定时器 */
+let progressTimer: ReturnType<typeof setInterval> | null = null
+
 /** 预览数据 */
 const previewData = ref<ImportPreviewItem[]>([])
 
@@ -377,18 +404,53 @@ async function handleStartImport() {
   if (!selectedFile.value) return
 
   importing.value = true
+  importProgress.value = 0
+  importProgressStatus.value = '正在上传文件...'
+
+  // 启动进度模拟
+  progressTimer = setInterval(() => {
+    if (importProgress.value < 90) {
+      // 前 30% 快速增长（文件上传阶段）
+      if (importProgress.value < 30) {
+        importProgress.value += 2
+        importProgressStatus.value = '正在上传文件...'
+      }
+      // 30%-60% 中速增长（服务端处理阶段）
+      else if (importProgress.value < 60) {
+        importProgress.value += 1
+        importProgressStatus.value = '服务端处理中...'
+      }
+      // 60%-90% 慢速增长（写入数据库阶段）
+      else {
+        importProgress.value += 0.5
+        importProgressStatus.value = '正在写入数据库...'
+      }
+    }
+  }, 100)
+
   try {
     const result = await importGrades(
       selectedFile.value,
       importForm.exam_type,
       importForm.exam_date,
     )
+    // 完成时设置为 100%
+    importProgress.value = 100
+    importProgressStatus.value = '导入完成！'
+
+    // 短暂延迟后显示结果
+    await new Promise(resolve => setTimeout(resolve, 500))
     importResult.value = result
     currentStep.value = ImportStep.IMPORT_RESULT
   } catch (error) {
     console.error('导入失败:', error)
+    importProgressStatus.value = '导入失败'
     ElMessage.error('导入失败，请稍后重试')
   } finally {
+    if (progressTimer) {
+      clearInterval(progressTimer)
+      progressTimer = null
+    }
     importing.value = false
   }
 }
@@ -401,10 +463,12 @@ function handleDownloadFailed() {
 
 /** 继续导入 */
 function handleContinueImport() {
-    currentStep.value = ImportStep.DOWNLOAD_TEMPLATE
+  currentStep.value = ImportStep.DOWNLOAD_TEMPLATE
   selectedFile.value = null
   previewData.value = []
   importResult.value = null
+  importProgress.value = 0
+  importProgressStatus.value = '准备中...'
   uploadRef.value?.clearFiles()
 }
 </script>
@@ -509,6 +573,35 @@ function handleContinueImport() {
 
     :deep(.invalid-row) {
       background-color: var(--danger-light) !important;
+    }
+  }
+
+  .import-progress {
+    margin: 24px 0;
+    padding: 24px;
+    background: var(--bg-color);
+    border-radius: var(--border-radius-lg);
+
+    .progress-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-color);
+
+      .is-loading {
+        color: var(--primary-color);
+      }
+    }
+
+    .progress-info {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 12px;
+      font-size: 13px;
+      color: var(--text-color-secondary);
     }
   }
 

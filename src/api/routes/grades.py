@@ -4,18 +4,20 @@
 提供成绩管理的 RESTful 接口：
 - POST   /api/v1/grades                    录入单条成绩（需要教师权限）
 - POST   /api/v1/grades/batch              批量录入成绩（需要教师权限）
-- GET    /api/v1/grades/{grade_id}          查询单条成绩（需要认证）
-- PUT    /api/v1/grades/{grade_id}          修改成绩（需要教师权限）
-- DELETE /api/v1/grades/{grade_id}          删除成绩（需要管理员权限）
+- GET    /api/v1/grades/search              组合条件查询成绩（需要认证）
+- GET    /api/v1/grades/export              导出成绩数据 CSV（需要教师权限）
 - GET    /api/v1/grades/student/{student_id} 按学生查询成绩（需要认证）
 - GET    /api/v1/grades/class/{class_name}  按班级查询成绩（需要认证）
 - GET    /api/v1/grades/subject/{subject}   按科目查询成绩（需要认证）
-- GET    /api/v1/grades/search              组合条件查询成绩（需要认证）
+- GET    /api/v1/grades/{grade_id}          查询单条成绩（需要认证）
+- PUT    /api/v1/grades/{grade_id}          修改成绩（需要教师权限）
+- DELETE /api/v1/grades/{grade_id}          删除成绩（需要管理员权限）
 """
 
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query, Path, status
+from fastapi.responses import StreamingResponse
 
 from src.api.dependencies import get_grade_service
 from src.api.auth import get_current_user, require_admin, require_teacher_or_admin
@@ -147,6 +149,48 @@ def search_grades(
         total=total,
         page=page,
         page_size=page_size,
+    )
+
+
+@router.get(
+    "/export",
+    summary="导出成绩数据",
+    description="导出成绩数据为 CSV 文件（需要教师权限）",
+    responses={
+        401: {"description": "未认证"},
+        403: {"description": "权限不足"},
+    },
+)
+def export_grades(
+    class_name: Optional[str] = Query(None, description="按班级筛选"),
+    subject: Optional[str] = Query(None, description="按科目筛选"),
+    exam_type: Optional[str] = Query(None, description="按考试类型筛选"),
+    service: GradeService = Depends(get_grade_service),
+    current_user: User = Depends(require_teacher_or_admin),
+) -> StreamingResponse:
+    """
+    导出成绩数据为 CSV（需要教师权限）
+
+    - **class_name**: 按班级筛选（可选）
+    - **subject**: 按科目筛选（可选）
+    - **exam_type**: 按考试类型筛选（可选）
+    - 返回 CSV 格式文件，UTF-8 编码（带 BOM，兼容 Excel）
+    - 包含学号、姓名、班级、科目、分数、考试类型、考试日期等字段
+    """
+    csv_content = service.export_grades_csv(
+        class_name=class_name,
+        subject=subject,
+        exam_type=exam_type,
+    )
+
+    # 使用 StreamingResponse 返回文件
+    # 添加 Content-Disposition 头，触发浏览器下载
+    return StreamingResponse(
+        iter([csv_content]),
+        media_type="text/csv; charset=utf-8",
+        headers={
+            "Content-Disposition": "attachment; filename=grades_export.csv",
+        },
     )
 
 

@@ -7,8 +7,11 @@
 - 成绩修改
 - 成绩删除
 - 多维度成绩查询（按学生、班级、科目、组合条件）
+- 成绩数据导出（CSV）
 """
 
+import csv
+import io
 from datetime import date
 from typing import Optional, List, Dict, Any, Tuple
 
@@ -182,6 +185,69 @@ class GradeService:
             "fail_count": fail_count,
             "results": results,
         }
+
+    def export_grades_csv(
+        self,
+        class_name: Optional[str] = None,
+        subject: Optional[str] = None,
+        exam_type: Optional[str] = None,
+    ) -> str:
+        """
+        导出成绩数据为 CSV 格式
+
+        支持按班级、科目、考试类型筛选，返回 CSV 格式的字符串。
+        包含学生姓名和班级信息，便于数据分析。
+
+        Args:
+            class_name: 班级筛选（可选）
+            subject: 科目筛选（可选）
+            exam_type: 考试类型筛选（可选）
+
+        Returns:
+            str: CSV 格式的成绩数据字符串（UTF-8 BOM 编码，兼容 Excel）
+        """
+        # 构建过滤条件
+        filters = []
+        if class_name:
+            filters.append(Student.class_name == class_name)
+        if subject:
+            filters.append(Grade.subject == subject)
+        if exam_type:
+            filters.append(Grade.exam_type == exam_type)
+
+        # 查询成绩数据（包含学生信息）
+        grades = self.grade_repo.get_grades_with_student_info(
+            skip=0,
+            limit=10000,  # 导出上限
+            filters=filters if filters else None,
+        )
+
+        # 使用 StringIO 和 csv.writer 生成 CSV
+        output = io.StringIO()
+        # 写入 BOM 头，确保 Excel 正确识别 UTF-8 编码
+        output.write('\ufeff')
+
+        writer = csv.writer(output)
+        # 写入表头
+        writer.writerow([
+            '学号', '姓名', '班级', '科目', '分数', '考试类型', '考试日期', '创建时间'
+        ])
+
+        # 写入数据行
+        for grade in grades:
+            student = grade.student
+            writer.writerow([
+                grade.student_id,
+                student.name if student else '',
+                student.class_name if student else '',
+                grade.subject,
+                grade.score,
+                grade.exam_type,
+                grade.exam_date.strftime('%Y-%m-%d') if grade.exam_date else '',
+                grade.created_at.strftime('%Y-%m-%d %H:%M:%S') if grade.created_at else '',
+            ])
+
+        return output.getvalue()
 
     def get_grade_by_id(self, grade_id: int) -> Grade:
         """

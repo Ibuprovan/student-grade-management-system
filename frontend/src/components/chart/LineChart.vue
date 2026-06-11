@@ -12,7 +12,30 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
-import * as echarts from 'echarts'
+import * as echarts from 'echarts/core'
+import { LineChart } from 'echarts/charts'
+import {
+  TitleComponent,
+  TooltipComponent,
+  LegendComponent,
+  GridComponent,
+  GraphicComponent,
+  DatasetComponent,
+  TransformComponent,
+} from 'echarts/components'
+import { CanvasRenderer } from 'echarts/renderers'
+
+echarts.use([
+  LineChart,
+  TitleComponent,
+  TooltipComponent,
+  LegendComponent,
+  GridComponent,
+  GraphicComponent,
+  DatasetComponent,
+  TransformComponent,
+  CanvasRenderer,
+])
 
 /** 系列数据项 */
 interface SeriesItem {
@@ -131,7 +154,7 @@ function updateChart() {
     }
   })
 
-  const option: echarts.EChartsOption = {
+  const option: echarts.EChartsCoreOption = {
     tooltip: props.showTooltip ? {
       trigger: 'axis',
       confine: true,

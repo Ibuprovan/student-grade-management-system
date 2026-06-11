@@ -12,7 +12,30 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
-import * as echarts from 'echarts'
+import * as echarts from 'echarts/core'
+import { RadarChart } from 'echarts/charts'
+import {
+  TitleComponent,
+  TooltipComponent,
+  LegendComponent,
+  GridComponent,
+  RadarComponent,
+  DatasetComponent,
+  TransformComponent,
+} from 'echarts/components'
+import { CanvasRenderer } from 'echarts/renderers'
+
+echarts.use([
+  RadarChart,
+  TitleComponent,
+  TooltipComponent,
+  LegendComponent,
+  GridComponent,
+  RadarComponent,
+  DatasetComponent,
+  TransformComponent,
+  CanvasRenderer,
+])
 
 /** 雷达图指标 */
 interface RadarIndicator {
@@ -103,7 +126,7 @@ function updateChart() {
     },
   }))
 
-  const option: echarts.EChartsOption = {
+  const option: echarts.EChartsCoreOption = {
     tooltip: props.showTooltip ? {
       trigger: 'item',
       confine: true,

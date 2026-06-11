@@ -6,6 +6,7 @@
 - GET    /api/v1/students           学生列表（分页，需要认证）
 - GET    /api/v1/students/search    搜索学生（需要认证）
 - GET    /api/v1/students/classes   获取班级列表（需要认证）
+- GET    /api/v1/students/export    导出学生数据 CSV（需要教师权限）
 - GET    /api/v1/students/{id}      查询单个学生（需要认证）
 - PUT    /api/v1/students/{id}      修改学生（需要认证）
 - DELETE /api/v1/students/{id}      删除学生（需要管理员权限）
@@ -14,6 +15,7 @@
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query, Path, status
+from fastapi.responses import StreamingResponse
 
 from src.api.dependencies import get_student_service
 from src.api.auth import get_current_user, require_admin, require_teacher_or_admin
@@ -175,6 +177,44 @@ def get_classes(
     return ApiResponse(
         success=True,
         data=classes,
+    )
+
+
+@router.get(
+    "/export",
+    summary="导出学生数据",
+    description="导出学生数据为 CSV 文件（需要教师权限）",
+    responses={
+        401: {"description": "未认证"},
+        403: {"description": "权限不足"},
+    },
+)
+def export_students(
+    class_name: Optional[str] = Query(None, description="按班级筛选"),
+    keyword: Optional[str] = Query(None, description="按学号或姓名搜索"),
+    service: StudentService = Depends(get_student_service),
+    current_user: User = Depends(require_teacher_or_admin),
+) -> StreamingResponse:
+    """
+    导出学生数据为 CSV（需要教师权限）
+
+    - **class_name**: 按班级筛选（可选）
+    - **keyword**: 按学号或姓名搜索（可选）
+    - 返回 CSV 格式文件，UTF-8 编码（带 BOM，兼容 Excel）
+    """
+    csv_content = service.export_students_csv(
+        class_name=class_name,
+        keyword=keyword,
+    )
+
+    # 使用 StreamingResponse 返回文件
+    # 添加 Content-Disposition 头，触发浏览器下载
+    return StreamingResponse(
+        iter([csv_content]),
+        media_type="text/csv; charset=utf-8",
+        headers={
+            "Content-Disposition": "attachment; filename=students_export.csv",
+        },
     )
 
 
