@@ -19,6 +19,7 @@ from src.services.student_service import StudentService
 from src.services.grade_service import GradeService
 from src.services.statistics_service import StatisticsService
 from src.services.dashboard_service import DashboardService
+from src.services.user_service import UserService
 
 
 def get_student_service(db: Session = Depends(get_db)) -> StudentService:
@@ -95,3 +96,18 @@ def get_user_repository(db: Session = Depends(get_db)) -> UserRepository:
         UserRepository: 用户数据访问实例
     """
     return UserRepository(db)
+
+
+def get_user_service(db: Session = Depends(get_db)) -> UserService:
+    """
+    获取 UserService 实例的依赖注入函数
+
+    每次请求创建一个新的 UserService 实例，绑定到该请求的数据库会话。
+
+    Args:
+        db: 数据库会话（由 get_db 依赖注入）
+
+    Returns:
+        UserService: 用户管理业务逻辑服务实例
+    """
+    return UserService(db)

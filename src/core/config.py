@@ -95,6 +95,18 @@ class Settings(BaseSettings):
         return self.DATABASE_URL
 
     @property
+    def is_production(self) -> bool:
+        """
+        判断当前是否为生产环境
+
+        通过 DEBUG 配置项判断：DEBUG=False 视为生产环境。
+
+        Returns:
+            bool: 生产环境返回 True，开发环境返回 False
+        """
+        return not self.DEBUG
+
+    @property
     def cors_origins_list(self) -> list[str]:
         """
         获取 CORS 允许的源列表

@@ -174,3 +174,68 @@ export function validateScore(
   }
   callback()
 }
+
+/**
+ * 密码强度校验器
+ * 要求：至少 8 位，包含大写字母、小写字母和数字
+ * @param _rule 规则（未使用）
+ * @param value 值
+ * @param callback 回调
+ */
+export function validatePasswordStrength(
+  _rule: unknown,
+  value: string,
+  callback: (error?: Error) => void,
+): void {
+  if (!value) {
+    callback(new Error('请输入密码'))
+    return
+  }
+  if (value.length < 8) {
+    callback(new Error('密码长度至少 8 位'))
+    return
+  }
+  if (!/[A-Z]/.test(value)) {
+    callback(new Error('密码需包含大写字母'))
+    return
+  }
+  if (!/[a-z]/.test(value)) {
+    callback(new Error('密码需包含小写字母'))
+    return
+  }
+  if (!/\d/.test(value)) {
+    callback(new Error('密码需包含数字'))
+    return
+  }
+  callback()
+}
+
+/**
+ * 确认密码校验器
+ * @param newPasswordGetter 获取新密码的函数
+ * @returns 校验器函数
+ */
+export function createConfirmPasswordValidator(newPasswordGetter: () => string) {
+  return function validateConfirmPassword(
+    _rule: unknown,
+    value: string,
+    callback: (error?: Error) => void,
+  ): void {
+    if (!value) {
+      callback(new Error('请再次输入密码'))
+      return
+    }
+    if (value !== newPasswordGetter()) {
+      callback(new Error('两次输入的密码不一致'))
+      return
+    }
+    callback()
+  }
+}
+
+/**
+ * 密码验证规则（用于修改密码等场景）
+ */
+export const passwordStrengthRules: FormItemRule[] = [
+  { required: true, validator: validatePasswordStrength, trigger: 'blur' },
+]

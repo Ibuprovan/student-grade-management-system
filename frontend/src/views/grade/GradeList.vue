@@ -155,7 +155,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useGradeStore } from '@/stores/grade'
 import { useGradeList } from '@/composables/useGrade'
@@ -172,6 +172,7 @@ const {
   examTypeOptions,
   classOptions,
   handleSearch,
+  debouncedSearch,
   handleReset,
   handlePageChange,
   handleSizeChange,
@@ -181,6 +182,22 @@ const {
   handleDelete,
   handleExport,
 } = useGradeList()
+
+/** 监听关键字输入，自动防抖搜索 */
+watch(
+  () => searchForm.value.keyword,
+  () => {
+    debouncedSearch()
+  },
+)
+
+/** 监听下拉选择变化，立即搜索 */
+watch(
+  () => [searchForm.value.class_name, searchForm.value.subject, searchForm.value.exam_type],
+  () => {
+    handleSearch()
+  },
+)
 
 /** 跳转到学生详情 */
 function goToStudentDetail(studentId: string) {

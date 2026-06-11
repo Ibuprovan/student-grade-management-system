@@ -145,6 +145,12 @@ const protectedRoutes: RouteRecordRaw[] = [
       },
     ],
   },
+  {
+    path: '/my-grades',
+    name: 'MyGrades',
+    component: () => import('@/views/student/MyGrades.vue'),
+    meta: { title: '我的成绩', icon: 'Trophy', requiresAuth: true, roles: ['student'] },
+  },
   // 404 页面 - 放在最后
   {
     path: '/:pathMatch(.*)*',

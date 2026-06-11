@@ -20,6 +20,7 @@ from src.api.auth import get_current_user, require_admin, require_teacher_or_adm
 from src.core.config import settings
 from src.core.utils import build_paginated_response
 from src.schemas.student import StudentCreate, StudentUpdate, StudentResponse
+from src.schemas.batch import BatchDeleteRequest, BatchDeleteResponse
 from src.schemas.common import ApiResponse, PaginatedResponse, SuccessResponse
 from src.services.student_service import StudentService
 from src.models.user import User
@@ -174,6 +175,37 @@ def get_classes(
     return ApiResponse(
         success=True,
         data=classes,
+    )
+
+
+@router.post(
+    "/batch-delete",
+    response_model=ApiResponse,
+    summary="批量删除学生",
+    description="批量删除学生记录及其所有成绩（需要管理员权限）",
+    responses={
+        401: {"description": "未认证"},
+        403: {"description": "权限不足"},
+        422: {"description": "数据验证失败"},
+    },
+)
+def batch_delete_students(
+    data: BatchDeleteRequest,
+    service: StudentService = Depends(get_student_service),
+    current_user: User = Depends(require_admin),
+) -> ApiResponse:
+    """
+    批量删除学生（需要管理员权限）
+
+    - **student_ids**: 学号数组
+    - 删除学生会级联删除其所有成绩记录
+    - 返回每条记录的删除结果
+    """
+    result = service.batch_delete_students(data.student_ids)
+    return ApiResponse(
+        success=True,
+        data=BatchDeleteResponse(**result).model_dump(),
+        message=f"批量删除完成：成功 {result['success_count']} 条，失败 {result['fail_count']} 条",
     )
 
 

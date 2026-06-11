@@ -62,10 +62,20 @@
 
       <!-- 底部提示 -->
       <div class="login-footer">
-        <div class="hint-box">
+        <div v-if="showDefaultAccount" class="hint-box">
           <el-icon class="hint-icon"><InfoFilled /></el-icon>
           <span>默认账号：admin / admin123</span>
         </div>
+        <el-button
+          v-else
+          link
+          type="info"
+          size="small"
+          class="show-hint-btn"
+          @click="showDefaultAccount = true"
+        >
+          查看默认账号
+        </el-button>
       </div>
     </div>
   </div>
@@ -89,6 +99,9 @@ const formRef = ref<InstanceType<typeof ElForm>>()
 /** 加载状态 */
 const loading = ref(false)
 
+/** 是否显示默认账号提示 */
+const showDefaultAccount = ref(false)
+
 /** 登录表单 */
 const loginForm = reactive({
   username: '',
@@ -111,12 +124,7 @@ const rules: FormRules = {
  * 处理登录
  */
 async function handleLogin() {
-  console.log('=== [DEBUG] handleLogin 被调用 ===')
-  console.log('[DEBUG] formRef.value:', formRef.value)
-  console.log('[DEBUG] loginForm:', JSON.stringify(loginForm))
-
   if (!formRef.value) {
-    console.error('[DEBUG] formRef.value 为空!')
     ElMessage.warning('页面加载异常，请刷新后重试')
     return
   }
@@ -124,36 +132,24 @@ async function handleLogin() {
   // 表单验证 —— 不依赖 validate() 的返回值，
   // 只区分 resolved（验证通过）和 rejected（验证失败）两种状态
   try {
-    console.log('[DEBUG] 开始表单验证...')
     await formRef.value.validate()
-    console.log('[DEBUG] 表单验证通过!')
-  } catch (e) {
-    console.log('[DEBUG] 表单验证失败:', e)
+  } catch {
     // rejected = 验证失败，表单已自动显示行内错误提示，直接返回
     return
   }
 
-  console.log('[DEBUG] 设置 loading = true')
   loading.value = true
   try {
-    console.log('[DEBUG] 调用 authStore.login...')
     const success = await authStore.login(loginForm.username, loginForm.password)
-    console.log('[DEBUG] authStore.login 返回:', success)
 
     if (success) {
       // 登录成功，跳转到目标页面或默认首页
       const redirect = (route.query.redirect as string) || '/dashboard'
-      console.log('[DEBUG] 登录成功，跳转到:', redirect)
       await router.push(redirect)
-      console.log('[DEBUG] 跳转完成')
-    } else {
-      console.log('[DEBUG] 登录失败，success 为 false')
     }
-  } catch (error) {
-    console.error('[DEBUG] 登录异常:', error)
+  } catch {
     ElMessage.error('登录失败，请稍后重试')
   } finally {
-    console.log('[DEBUG] 设置 loading = false')
     loading.value = false
   }
 }
@@ -329,6 +325,15 @@ async function handleLogin() {
 
 .hint-icon {
   font-size: 14px;
+}
+
+.show-hint-btn {
+  font-size: 13px;
+  color: #7B8794;
+
+  &:hover {
+    color: #2A9D8F;
+  }
 }
 
 /* 响应式设计 */

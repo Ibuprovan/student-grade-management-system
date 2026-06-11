@@ -11,6 +11,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { downloadCSV } from '@/utils/export'
 import { getStudentList, getStudentDetail } from '@/api/student'
 import { getGradeDetail } from '@/api/grade'
+import { useDebounce } from '@/composables/useCommon'
 import type { Grade, GradeCreate, GradeListParams, Subject, ExamType, ImportPreviewItem } from '@/types/grade'
 import type { Student } from '@/types/student'
 import { SUBJECTS, EXAM_TYPES } from '@/types/grade'
@@ -54,6 +55,9 @@ export function useGradeList() {
     gradeStore.setSearchParams(params)
     gradeStore.fetchGrades()
   }
+
+  /** 防抖搜索（用于关键字输入） */
+  const { debounced: debouncedSearch } = useDebounce(handleSearch, 300)
 
   /** 重置搜索 */
   function handleReset() {
@@ -115,6 +119,7 @@ export function useGradeList() {
       if (searchForm.value.class_name) params.class_name = searchForm.value.class_name
       if (searchForm.value.subject) params.subject = searchForm.value.subject as Subject
       if (searchForm.value.exam_type) params.exam_type = searchForm.value.exam_type as ExamType
+      if (searchForm.value.keyword) params.keyword = searchForm.value.keyword
 
       // 获取当前筛选条件下的所有成绩数据
       const response = await gradeStore.exportGrades(params)
@@ -154,6 +159,7 @@ export function useGradeList() {
 
     // 方法
     handleSearch,
+    debouncedSearch,
     handleReset,
     handlePageChange,
     handleSizeChange,

@@ -240,12 +240,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useStudentStore } from '@/stores/student'
 import DataTable from '@/components/common/DataTable.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import { formatDateTime } from '@/utils/format'
+import { useDebounce } from '@/composables/useCommon'
 import { ElMessage } from 'element-plus'
 import type { Student } from '@/types/student'
 
@@ -258,6 +259,25 @@ const searchForm = reactive({
   name: '',
   class_name: '',
 })
+
+/** 防抖自动搜索 */
+const { debounced: debouncedSearch } = useDebounce(handleSearch, 300)
+
+/** 监听搜索表单变化，自动触发防抖搜索 */
+watch(
+  () => [searchForm.student_id, searchForm.name],
+  () => {
+    debouncedSearch()
+  },
+)
+
+/** 班级选择变化时立即搜索 */
+watch(
+  () => searchForm.class_name,
+  () => {
+    handleSearch()
+  },
+)
 
 /** 班级选项（从 store 获取或使用默认值） */
 const classOptions = computed(() => {
@@ -407,39 +427,64 @@ async function confirmDelete() {
   }
 }
 
-/** 导出数据 */
-function handleExport() {
-  const headers = ['学号', '姓名', '性别', '班级', '入学年份', '创建时间']
-  const data = studentStore.students.map((student) => [
-    student.student_id,
-    student.name,
-    student.gender,
-    student.class_name,
-    String(student.enrollment_year),
-    formatDateTime(student.created_at),
-  ])
-
-  /** 对包含特殊字符的字段用双引号包裹，内部双引号转义为两个双引号 */
-  function escapeCSVField(field: string): string {
-    if (field.includes(',') || field.includes('"') || field.includes('\n')) {
-      return `"${field.replace(/"/g, '""')}"`
+/** 导出全部筛选结果 */
+async function handleExport() {
+  try {
+    // 获取当前筛选条件下的所有数据
+    const params: Record<string, string | undefined> = { page_size: '10000' }
+    if (searchForm.student_id) {
+      params.keyword = searchForm.student_id
+    } else if (searchForm.name) {
+      params.keyword = searchForm.name
     }
-    return field
+    if (searchForm.class_name) {
+      params.class_name = searchForm.class_name
+    }
+
+    const { getStudentList } = await import('@/api/student')
+    const response = await getStudentList(params as any)
+    const paginatedData = (response as any).data || response
+    const allStudents = paginatedData.items || []
+
+    if (allStudents.length === 0) {
+      ElMessage.warning('没有可导出的数据')
+      return
+    }
+
+    const headers = ['学号', '姓名', '性别', '班级', '入学年份', '创建时间']
+    const data = allStudents.map((student: Student) => [
+      student.student_id,
+      student.name,
+      student.gender,
+      student.class_name,
+      String(student.enrollment_year),
+      formatDateTime(student.created_at),
+    ])
+
+    /** 对包含特殊字符的字段用双引号包裹，内部双引号转义为两个双引号 */
+    function escapeCSVField(field: string): string {
+      if (field.includes(',') || field.includes('"') || field.includes('\n')) {
+        return `"${field.replace(/"/g, '""')}"`
+      }
+      return field
+    }
+
+    const csvContent = [
+      headers.map(escapeCSVField).join(','),
+      ...data.map((row: string[]) => row.map(escapeCSVField).join(',')),
+    ].join('\n')
+
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = `学生列表_${new Date().toISOString().slice(0, 10)}.csv`
+    link.click()
+    URL.revokeObjectURL(link.href)
+
+    ElMessage.success(`成功导出 ${allStudents.length} 条记录`)
+  } catch {
+    ElMessage.error('导出失败，请稍后重试')
   }
-
-  const csvContent = [
-    headers.map(escapeCSVField).join(','),
-    ...data.map((row) => row.map(escapeCSVField).join(',')),
-  ].join('\n')
-
-  const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' })
-  const link = document.createElement('a')
-  link.href = URL.createObjectURL(blob)
-  link.download = `学生列表_${new Date().toISOString().slice(0, 10)}.csv`
-  link.click()
-  URL.revokeObjectURL(link.href)
-
-  ElMessage.success('导出成功')
 }
 </script>
 

@@ -1,312 +1,373 @@
-﻿# 代码审查报告 - 架构优化
+﻿# 代码审查报告：P0 + P1 改进
 
-> **审查日期：** 2026-06-09  
-> **审查人：** Reviewer Agent  
-> **审查轮次：** 第一轮  
-> **审查范围：** 前端 5 项优化 + 后端 5 项优化  
-> **审查结果：** ✅ 通过（附 1 项文档建议）
-
----
-
-## 1. 审查概述
-
-### 1.1 审查背景
-
-本次审查针对前后端架构优化重构，涵盖代码重复消除、常量统一、依赖注入规范化、公共逻辑抽取等方面。
-
-### 1.2 审查文件清单
-
-#### 前端文件
-
-| 优化项 | 涉及文件 | 说明 |
-|--------|---------|------|
-| 统一 Token 刷新机制 | `stores/auth.ts`, `utils/request.ts`, `api/auth.ts` | Token 刷新统一由 request.ts 拦截器处理 |
-| 抽取 CSV 导出工具 | `utils/export.ts`, `composables/useGrade.ts` | 新建通用 CSV 导出函数 |
-| 统一常量定义 | `utils/format.ts`, `types/grade.ts` | SCORE_THRESHOLDS / SUBJECTS / EXAM_TYPES |
-| 删除 usePagination.ts | (文件已删除) | 移除未使用的组合式函数 |
-| GradeForm 修复 | `views/grade/GradeForm.vue`, `composables/useGrade.ts` | 通过 Store/Composable 调用 API |
-
-#### 后端文件
-
-| 优化项 | 涉及文件 | 说明 |
-|--------|---------|------|
-| 统一常量引用 | `services/statistics_service.py`, `services/dashboard_service.py` | 使用 constants.py 中的 PASS_SCORE / EXCELLENT_SCORE |
-| 统一依赖注入 | `api/dependencies.py`, `api/routes/dashboard.py` | DashboardService 注入移至 dependencies.py |
-| 抽取分页响应函数 | `core/utils.py`, `api/routes/students.py`, `api/routes/grades.py` | build_paginated_response |
-| 抽取公共验证逻辑 | `schemas/grade.py` | _validate_score_precision |
-| 创建 UserRepository | `repositories/user_repo.py`, `api/auth.py`, `api/routes/auth.py` | Repository 模式统一数据访问 |
+> **审查日期：** 2026-06-11  
+> **审查人：** Code Reviewer Agent  
+> **审查范围：** 前端改进 7 项 + 后端改进 5 项  
+> **审查结论：** ❌ **不通过（REJECTED）**
 
 ---
 
-## 2. 审查结论
+## 一、审查结论
 
-### ✅ 审查通过
-
-10 项架构优化全部正确实现，原有功能完整保留，未引入新问题。后端 119 项单元测试全部通过，前端构建成功。存在 1 项非阻塞文档建议。
-
----
-
-## 3. 逐项审查 — 前端优化
-
-### 3.1 统一 Token 刷新机制 ✅ 通过
-
-**目标：** 删除 auth.ts (Store) 中的重复 Token 刷新实现，统一由 request.ts 拦截器处理。
-
-**审查结果：**
-
-- `utils/request.ts`（第 96-203 行）实现了完整的 Token 自动刷新机制：
-  - 401 状态码检测（排除登录/刷新接口）
-  - 请求队列（`isRefreshing` + `failedQueue`），避免并发刷新
-  - 刷新成功后自动重试原始请求
-  - 刷新失败时清除认证状态并跳转登录页
-- `stores/auth.ts` **不包含**任何 Token 刷新逻辑
-- Store 仅暴露 `setAuth()` 和 `clearAuth()` 方法供拦截器调用
-- `checkAuth()` 方法注释明确说明 "Token 刷新由 request.ts 拦截器统一处理"（第 259 行）
-- `api/auth.ts` 仅定义 API 调用函数（login / refreshToken / logout / getCurrentUser），不含刷新逻辑
-
-**结论：** Token 刷新职责单一，无重复实现。
+| 项目 | 结果 |
+|------|------|
+| **总体判定** | ❌ 不通过 |
+| **阻塞问题** | 1 个（BLOCKER） |
+| **高优先级问题** | 4 个 |
+| **中优先级问题** | 3 个 |
+| **低优先级问题** | 2 个 |
+| **通过项** | 8 项 |
 
 ---
 
-### 3.2 抽取通用 CSV 导出工具函数 ✅ 通过
+## 二、逐项审查结果
 
-**目标：** 新建 `utils/export.ts`，提供通用 CSV 导出能力。
+### 2.1 前端改进
 
-**审查结果：**
+#### ✅ FE-1: 移除调试日志（Login.vue、auth.ts、request.ts）
 
-- `utils/export.ts` 定义了两个函数：
-  - `escapeCSVField()`（第 12-18 行）：正确处理逗号、双引号、换行符，符合 RFC 4180
-  - `downloadCSV()`（第 26-42 行）：生成带 BOM 的 UTF-8 CSV，自动添加日期后缀
-- `composables/useGrade.ts` 第 11 行正确导入：`import { downloadCSV } from '@/utils/export'`
-- 第 140 行调用 `downloadCSV(headers, rows, '成绩列表')` 完成导出
-- BOM 头（`\ufeff`）确保 Excel 正确识别中文编码
+**结论：通过**
 
-**结论：** 导出逻辑抽取干净，调用方正确引用。
+- `Login.vue`：无 `console.log` 调试语句
+- `api/auth.ts`：无调试日志
+- `utils/request.ts`：无调试日志
+- `stores/auth.ts`：仅保留 `console.error` 用于错误处理（可接受）
 
----
+#### ✅ FE-2: 密码修改功能（前端部分）
 
-### 3.3 统一前端常量定义 ✅ 通过
+**结论：前端部分通过，但后端缺失导致整体失败**
 
-**目标：** 统一 SCORE_THRESHOLDS、SUBJECTS、EXAM_TYPES 等常量定义。
+前端实现完整：
+- `api/auth.ts`：定义了 `changePassword()` 函数，调用 `POST /auth/change-password`
+- `stores/auth.ts`：`changePassword()` 方法正确处理成功/失败
+- `AppHeader.vue`：密码修改对话框完整，含密码强度指示器
 
-**审查结果：**
+⚠️ **但后端缺少对应接口**（详见 BE-5）
 
-- `utils/format.ts`（第 7-12 行）定义 `SCORE_THRESHOLDS`：
-  ```typescript
-  export const SCORE_THRESHOLDS = { FAIL: 60, PASS: 70, GOOD: 80, EXCELLENT: 90 } as const
-  ```
-  被 `getScoreLevel()` 和 `getScoreColor()` 函数引用，无硬编码魔法数字。
+#### ✅ FE-3: 学生查看成绩页面（MyGrades.vue）
 
-- `types/grade.ts`（第 21-26 行）定义 `SUBJECTS` 和 `EXAM_TYPES`：
-  ```typescript
-  export const SUBJECTS: Subject[] = ['语文', '数学', '英语', ...]
-  export const EXAM_TYPES: ExamType[] = ['期中', '期末', '月考', '单元测试']
-  ```
-  被 `useGrade.ts`、`useGradeList()`、`useGradeForm()`、`useGradeImport()` 统一引用。
+**结论：通过（有 1 个中等问题）**
 
-**结论：** 常量定义集中，引用一致，无散落的硬编码值。
+- 路由 `/my-grades` 已注册，角色限制为 `['student']` ✓
+- 侧边栏 `AppSidebar.vue` 正确使用 `v-if="authStore.isStudent"` 控制可见性 ✓
+- 页面包含概览卡片、趋势图、成绩明细表格 ✓
+- 支持按考试类型筛选 ✓
 
----
+⚠️ **中等问题**：`MyGrades.vue` 第 148 行假设 `username === student_id`：
+```typescript
+const studentId = computed(() => authStore.user?.username || '')
+```
+如果管理员创建的用户名不是学号（如 `teacher01`），此逻辑将失败。
 
-### 3.4 删除未使用的 usePagination.ts ✅ 通过
+#### ✅ FE-4: 搜索防抖自动搜索（StudentList.vue、GradeList.vue）
 
-**目标：** 删除未使用的 `composables/usePagination.ts`。
+**结论：通过**
 
-**审查结果：**
+- `useCommon.ts` 提供了 `useDebounce` 组合式函数
+- `StudentList.vue`：学号/姓名输入框使用 `watch` + `debouncedSearch`（300ms）✓
+- `GradeList.vue`：关键字输入框使用 `watch` + `debouncedSearch`（300ms）✓
+- 班级等下拉框变化时立即搜索 ✓
 
-- 文件已删除（glob 搜索确认不存在）
-- 全局搜索 `usePagination` 无任何源码引用（仅在历史任务文档 `TASK-006.md` 和 `architecture.md` 目录结构图中出现）
-- 分页逻辑已内联到各 Store 中（如 `stores/grade.ts` 第 31-35 行的 `pagination` ref）
+#### ✅ FE-5: 导出全部筛选结果（StudentList.vue）
 
-**结论：** 文件已正确删除，无遗留引用。
+**结论：通过（有 1 个低等问题）**
 
-> ⚠️ **文档建议：** `docs/architecture.md` 第 293 行目录结构图仍列出 `usePagination.ts`，建议更新以保持文档与代码一致。此为非阻塞项。
+- `handleExport()` 函数正确获取筛选条件下的所有数据
+- CSV 格式正确，含 BOM 头（支持中文 Excel 打开）
+- `escapeCSVField()` 处理了逗号、双引号、换行符等特殊字符
+- 文件名含日期戳
 
----
+⚠️ **低等问题**：使用 `page_size: '10000'` 硬编码获取全部数据，建议使用专用导出 API。
 
-### 3.5 修复 GradeForm.vue 绕过 Store 直接调用 API ✅ 通过
+#### ✅ FE-6: 登录页隐藏默认密码（Login.vue）
 
-**目标：** GradeForm.vue 应通过 Store/Composable 调用 API，而非直接调用。
+**结论：通过**
 
-**审查结果：**
+- 默认账号提示默认隐藏（`showDefaultAccount = ref(false)`）
+- 用户需主动点击"查看默认账号"按钮才会显示
+- 使用 `v-if/v-else` 切换显示状态
 
-- `GradeForm.vue`（第 151 行）使用 `useGradeForm()` composable：
-  ```typescript
-  const { createGrade, updateGrade, ... } = useGradeForm()
-  ```
-- `useGradeForm()`（`composables/useGrade.ts` 第 265-266 行）返回 Store 方法：
-  ```typescript
-  createGrade: gradeStore.createGrade,
-  updateGrade: gradeStore.updateGrade,
-  ```
-- 组件中 `handleSubmit()` 调用的是 composable 返回的 `createGrade()` / `updateGrade()`，而非直接调用 API
-- `searchStudents()` 直接调用 `getStudentList` API（第 206 行），这是合理的——搜索下拉框的临时数据不需要 Store 管理
-- `loadGradeForEdit()` 调用 `getGradeDetail` 和 `getStudentDetail` API（第 220-221 行），用于编辑模式加载，也是合理的
+#### ✅ FE-7: 密码强度校验（validation.ts、AppHeader.vue）
 
-**结论：** 核心 CRUD 操作通过 Store 路由，辅助查询直接调用 API，职责划分清晰。
+**结论：通过**
 
----
-
-## 4. 逐项审查 — 后端优化
-
-### 4.1 统一常量引用 ✅ 通过
-
-**目标：** `statistics_service.py` 和 `dashboard_service.py` 应引用 `constants.py` 中的常量，而非硬编码。
-
-**审查结果：**
-
-- `constants.py`（第 45-48 行）定义：
-  ```python
-  PASS_SCORE: float = 60.0
-  EXCELLENT_SCORE: float = 90.0
-  ```
-
-- `statistics_service.py` 第 18 行导入：`from src.core.constants import PASS_SCORE, EXCELLENT_SCORE`
-  - 全文 12 处使用 `PASS_SCORE` 和 `EXCELLENT_SCORE`，无硬编码 `60` 或 `90`
-
-- `dashboard_service.py` 第 16 行导入：`from src.core.constants import PASS_SCORE`
-  - 第 88 行使用 `Grade.score >= PASS_SCORE`，无硬编码
-
-**结论：** 常量引用统一，无魔法数字。
+- `validation.ts`：`validatePasswordStrength` 要求 8+ 位、大写、小写、数字
+- `AppHeader.vue`：密码修改对话框使用相同的强度校验规则
+- 密码强度指示器（弱/中/强）视觉反馈完整
+- 确认密码一致性校验正确
 
 ---
 
-### 4.2 统一依赖注入 ✅ 通过
+### 2.2 后端改进
 
-**目标：** DashboardService 的依赖注入函数应集中在 `dependencies.py` 中。
+#### ✅ BE-1: JWT 密钥检查（config.py、main.py）
 
-**审查结果：**
+**结论：通过**
 
-- `api/dependencies.py`（第 69-81 行）定义 `get_dashboard_service()`
-- `api/routes/dashboard.py`（第 10 行）正确导入：
-  ```python
-  from src.api.dependencies import get_dashboard_service
-  ```
-- 路由函数通过 `Depends(get_dashboard_service)` 注入（第 30 行）
-- 所有 Service 和 Repository 的依赖注入函数均集中在 `dependencies.py`：
-  - `get_student_service()`、`get_grade_service()`、`get_statistics_service()`、`get_dashboard_service()`、`get_user_repository()`
+- `config.py`：`JWT_SECRET_KEY` 配置项有默认值和文档说明
+- `main.py`：`lifespan` 函数中检测生产环境是否使用默认密钥
+- 检测到默认密钥时抛出 `RuntimeError`，阻止应用启动 ✓
+- 日志消息清晰，包含密钥生成命令 ✓
 
-**结论：** 依赖注入集中管理，路由文件无散落的 Service 实例化。
+#### ✅ BE-2: 用户管理 API（users.py、user_service.py、user schemas）
 
----
+**结论：通过**
 
-### 4.3 抽取分页响应构建函数 ✅ 通过
+- CRUD 接口完整：列表、创建、查询、更新、删除、重置密码
+- 权限控制：所有接口使用 `require_admin` 依赖 ✓
+- 业务逻辑：
+  - 用户名唯一性校验 ✓
+  - 防止管理员删除自己 ✓
+  - 密码 bcrypt 哈希 ✓
+- Schema 验证：
+  - 用户名 3-50 字符 ✓
+  - 角色枚举校验（admin/teacher/student）✓
+  - 响应模型不包含密码字段 ✓
 
-**目标：** 抽取 `build_paginated_response()` 公共函数，消除路由层重复的分页响应构建代码。
+#### ✅ BE-3: 操作审计日志（audit_log model、audit_service.py、audit_logs.py）
 
-**审查结果：**
+**结论：通过（有 1 个高等问题）**
 
-- `core/utils.py`（第 13-44 行）定义 `build_paginated_response()`
-  - 正确计算 `total_pages = math.ceil(total / page_size)`
-  - 处理 `total == 0` 边界情况
-  - 返回标准化 `PaginatedResponse` 对象
+- `AuditLog` 模型字段完整：user_id、username、action、resource_type、resource_id、details、ip_address
+- 索引设计合理：user_id、action、resource_type、created_at ✓
+- `AuditService.log()` 记录失败不影响业务流程 ✓
+- 查询接口支持分页和多维度筛选 ✓
+- 权限控制：`require_admin` ✓
 
-- `api/routes/students.py` 使用 2 处（第 103、146 行）
-- `api/routes/grades.py` 使用 3 处（第 145、229、276 行）
-- 所有调用方传参格式一致：`items`, `total`, `page`, `page_size`
+⚠️ **高等问题**：`AuditLogRepository` 定义在 `audit_service.py` 中而非 `repositories/` 目录，违反分层架构。
 
-**结论：** 分页逻辑统一，无重复代码。
+#### ⚠️ BE-4: 批量删除接口（students.py、student_service.py）
 
----
+**结论：通过（有 1 个高等问题）**
 
-### 4.4 抽取公共验证逻辑 ✅ 通过
+- API 路由 `POST /api/v1/students/batch-delete` ✓
+- 权限控制：`require_admin` ✓
+- Schema 验证：`BatchDeleteRequest` 要求 `student_ids` 非空 ✓
+- 响应格式：返回每条记录的删除结果 ✓
 
-**目标：** 抽取 `_validate_score_precision()` 公共函数，供多个 Schema 类复用。
+⚠️ **高等问题**：`batch_delete_students` 方法的文档声称"使用事务确保数据一致性：要么全部删除成功，要么全部回滚"，但实际实现是逐条删除，未使用显式事务。如果中途失败，部分学生已被删除。
 
-**审查结果：**
+#### ❌ BE-5: Token 过期检查（auth.py）
 
-- `schemas/grade.py`（第 20-48 行）定义模块级函数 `_validate_score_precision()`
-  - 验证小数位数不超过 1 位
-  - 验证分数范围在 `SCORE_MIN` ~ `SCORE_MAX` 之间
-  - 使用 `constants.py` 中的常量，无硬编码
-  - 返回 `round(v, 1)` 确保精度一致
+**结论：通过**
 
-- 被 3 个 Schema 类的 `validate_score` 方法引用：
-  - `GradeBase.validate_score`（第 143 行）
-  - `GradeBatchItem.validate_score`（第 192 行）
-  - `GradeUpdate.validate_score`（第 272 行）
-
-**结论：** 验证逻辑统一，无重复实现。
-
----
-
-### 4.5 创建 UserRepository ✅ 通过
-
-**目标：** 创建 `UserRepository`，auth.py 使用 Repository 模式访问数据。
-
-**审查结果：**
-
-- `repositories/user_repo.py` 定义 `UserRepository(BaseRepository[User])`
-  - `get_by_username()`（第 39-51 行）
-  - `get_active_by_id()`（第 53-71 行）— 同时检查 `is_active == True`
-  - `username_exists()`（第 73-83 行）
-
-- `api/auth.py`（第 37 行）通过依赖注入使用：
-  ```python
-  user_repo: UserRepository = Depends(get_user_repository)
-  ```
-  - `get_current_user()` 使用 `user_repo.get_active_by_id()`（第 77 行）
-
-- `api/routes/auth.py` 通过依赖注入使用：
-  - `login()` 使用 `user_repo.get_by_username()`（第 60 行）
-  - `refresh_token()` 使用 `user_repo.get_active_by_id()`（第 141 行）
-
-- 全局搜索确认 auth 相关代码中无 `db.query(User)` 直接调用
-
-**结论：** 数据访问统一收归 Repository，符合分层架构。
+- `POST /api/v1/auth/check-token` 端点已实现 ✓
+- 计算剩余时间，返回 `expiring_soon` 标志（30 分钟阈值）✓
+- 返回 `expires_at` 和 `remaining_minutes` ✓
 
 ---
 
-## 5. DBA 优先权审查（红线）
+## 三、阻塞问题（BLOCKER）
 
-| 检查项 | 状态 | 说明 |
-|-------|------|------|
-| CREATE TABLE | ✅ 无 | 全量搜索 .py 文件，无 CREATE TABLE 语句 |
-| ALTER TABLE | ✅ 无 | 全量搜索 .py 文件，无 ALTER TABLE 语句 |
-| database.md | N/A | 文件不存在（本次修改不涉及数据库变更） |
+### ❌ BUG-001: 后端缺少 `POST /api/v1/auth/change-password` 接口
+
+**严重程度：** 🔴 BLOCKER  
+**影响范围：** 密码修改功能完全不可用  
+**涉及文件：**
+- 前端：`frontend/src/api/auth.ts` 第 59-63 行
+- 前端：`frontend/src/stores/auth.ts` 第 285-299 行
+- 前端：`frontend/src/components/layout/AppHeader.vue` 第 337-358 行
+- 后端：`src/api/routes/auth.py`（**缺失**）
+
+**问题描述：**
+
+前端 `auth.ts` 定义了密码修改 API：
+```typescript
+export function changePassword(oldPassword: string, newPassword: string): Promise<AuthApiResponse<void>> {
+  return post<AuthApiResponse<void>>(`${BASE_URL}/change-password`, {
+    old_password: oldPassword,
+    new_password: newPassword,
+  })
+}
+```
+
+但后端 `src/api/routes/auth.py` 中**没有** `/change-password` 端点。用户点击"修改密码"后将收到 404 错误。
+
+**修复方案：**
+
+在 `src/api/routes/auth.py` 中添加：
+
+```python
+@router.post(
+    "/change-password",
+    response_model=SuccessResponse,
+    summary="修改密码",
+    description="当前用户修改自己的密码",
+)
+def change_password(
+    data: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    user_repo: UserRepository = Depends(get_user_repository),
+) -> SuccessResponse:
+    # 验证旧密码
+    if not verify_password(data.old_password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="旧密码错误",
+        )
+    # 更新密码
+    user_repo.update(current_user.id, {
+        "hashed_password": hash_password(data.new_password)
+    })
+    return SuccessResponse(message="密码修改成功")
+```
+
+同时在 `src/schemas/auth.py` 中添加 `ChangePasswordRequest` Schema。
 
 ---
 
-## 6. 架构合规性审查
+## 四、高优先级问题
 
-| 检查项 | 状态 | 说明 |
-|-------|------|------|
-| 分层架构 | ✅ 符合 | 前端：Component → Composable → Store → API；后端：Route → Service → Repository |
-| Repository 模式 | ✅ 符合 | StudentRepository / GradeRepository / UserRepository 均继承 BaseRepository |
-| 依赖注入 | ✅ 符合 | 所有 Service/Repository 通过 dependencies.py 集中注入 |
-| API 规范 | ✅ 符合 | 统一 ApiResponse / PaginatedResponse 格式 |
-| 代码风格 | ✅ 一致 | 前端 TypeScript 类型完整，后端 docstring 规范 |
+### ⚠️ HI-001: 前后端密码强度校验不一致
+
+**严重程度：** 🟠 高  
+**涉及文件：**
+- 前端：`frontend/src/utils/validation.ts` 第 185-211 行
+- 后端：`src/schemas/user.py` 第 27-33 行
+
+**问题描述：**
+
+| 校验项 | 前端 | 后端 |
+|--------|------|------|
+| 最小长度 | 8 位 | 6 位 |
+| 大写字母 | ✅ 必须 | ❌ 不检查 |
+| 小写字母 | ✅ 必须 | ❌ 不检查 |
+| 数字 | ✅ 必须 | ❌ 不检查 |
+
+攻击者可绕过前端，直接调用 API 创建弱密码用户。
+
+**修复方案：**
+
+在后端 Schema 中添加密码强度验证器，与前端保持一致。
+
+### ⚠️ HI-002: 批量删除未使用显式事务
+
+**严重程度：** 🟠 高  
+**涉及文件：** `src/services/student_service.py` 第 234-284 行
+
+**问题描述：**
+
+`batch_delete_students` 方法逐条删除学生，如果中途异常，部分学生已被删除但返回失败。
+
+**修复方案：**
+
+使用 SQLAlchemy 的 `begin_nested()` 或在 Repository 层统一管理事务。
+
+### ⚠️ HI-003: AuditLogRepository 架构违规
+
+**严重程度：** 🟠 高  
+**涉及文件：** `src/services/audit_service.py` 第 19-33 行
+
+**问题描述：**
+
+`AuditLogRepository` 定义在 Service 文件中，违反了 `docs/architecture.md` 规定的分层架构（Repository 层应在 `repositories/` 目录）。
+
+**修复方案：**
+
+将 `AuditLogRepository` 移至 `src/repositories/audit_log_repo.py`。
+
+### ⚠️ HI-004: 缺少 `docs/database.md` 文档
+
+**严重程度：** 🟠 高  
+
+**问题描述：**
+
+新增了 `users` 和 `audit_logs` 两张表，但项目中没有 `docs/database.md` 文件记录数据库表结构变更。根据 DBA 优先权审查规则，新增表结构应在文档中备案。
 
 ---
 
-## 7. 测试验证
+## 五、中优先级问题
 
-| 验证项 | 结果 | 说明 |
-|-------|------|------|
-| 后端单元测试 | ✅ 119 passed | 1.48s 通过 |
-| 前端构建 | ✅ 成功 | vite build 8.30s 完成 |
-| 遗留引用检查 | ✅ 无 | usePagination 无源码引用 |
-| 常量硬编码检查 | ✅ 无 | PASS_SCORE / EXCELLENT_SCORE 统一引用 |
+### ⚠️ MED-001: MyGrades 假设 username === student_id
+
+**严重程度：** 🟡 中  
+**涉及文件：** `frontend/src/views/student/MyGrades.vue` 第 148 行
+
+**问题描述：**
+```typescript
+const studentId = computed(() => authStore.user?.username || '')
+```
+假设用户名就是学号，但管理员可能创建非学号用户名。
+
+**修复方案：**
+
+后端 `/auth/me` 接口应返回关联的 `student_id`，或在 User 模型中添加 `student_id` 字段。
+
+### ⚠️ MED-002: 前端类型安全问题
+
+**严重程度：** 🟡 中  
+**涉及文件：**
+- `frontend/src/views/student/MyGrades.vue` 第 205、210 行
+- `frontend/src/views/student/StudentList.vue` 第 445-446 行
+
+**问题描述：**
+
+多处使用 `(xxx as any)` 类型断言，绕过了 TypeScript 类型检查。
+
+### ⚠️ MED-003: Export 硬编码 page_size
+
+**严重程度：** 🟡 中  
+**涉及文件：** `frontend/src/views/student/StudentList.vue` 第 434 行
+
+**问题描述：**
+
+`page_size: '10000'` 硬编码，如果数据量超过 10000 条将丢失数据。应使用后端导出 API（`GET /api/v1/export/students`）。
 
 ---
 
-## 8. 建议项（非阻塞）
+## 六、低优先级问题
 
-| 序号 | 文件 | 问题描述 | 建议 |
-|-----|------|---------|------|
-| 1 | `docs/architecture.md` | 第 293 行目录结构图仍列出已删除的 `usePagination.ts` | 更新目录结构图，移除该条目 |
+### ℹ️ LOW-001: 前端 console.error/console.warn 残留
+
+**严重程度：** 🟢 低  
+**涉及文件：**
+- `stores/auth.ts`：3 处 `console.error`
+- `router/index.ts`：1 处 `console.error` + 1 处 `console.warn`
+- `views/student/MyGrades.vue`：1 处 `console.error`
+
+**说明：** 这些是错误处理日志，非调试日志，可接受。但建议统一使用 Logger 工具而非直接调用 console。
+
+### ℹ️ LOW-002: 登录页默认凭据提示
+
+**严重程度：** 🟢 低  
+**涉及文件：** `frontend/src/views/login/Login.vue` 第 65-78 行
+
+**说明：** 默认凭据需用户主动点击才显示（`showDefaultAccount` 默认 `false`），开发阶段可接受。生产环境建议完全移除或通过环境变量控制。
 
 ---
 
-## 9. 审查决策
+## 七、已通过的功能清单
 
-### ✅ 审查通过
-
-- **结论：** 10 项架构优化全部正确实现，功能完整保留，无新引入问题
-- **状态变更：** 任务状态改为 TESTING
-- **建议项：** 1 项非阻塞文档建议，可在后续迭代中修正
+| # | 功能 | 前端 | 后端 | 结论 |
+|---|------|------|------|------|
+| 1 | 移除调试日志 | ✅ | N/A | 通过 |
+| 2 | JWT 密钥检查 | N/A | ✅ | 通过 |
+| 3 | 用户管理 API | N/A | ✅ | 通过 |
+| 4 | 操作审计日志 | N/A | ✅ | 通过（有小问题） |
+| 5 | 批量删除接口 | N/A | ✅ | 通过（有小问题） |
+| 6 | Token 过期检查 | N/A | ✅ | 通过 |
+| 7 | 学生查看成绩页面 | ✅ | N/A | 通过 |
+| 8 | 搜索防抖自动搜索 | ✅ | N/A | 通过 |
+| 9 | 导出全部筛选结果 | ✅ | N/A | 通过 |
+| 10 | 登录页隐藏默认密码 | ✅ | N/A | 通过 |
+| 11 | 密码强度校验 | ✅ | ⚠️ | 前端通过，后端缺失 |
+| 12 | 密码修改功能 | ✅ | ❌ | 后端接口缺失 |
 
 ---
 
-> **审查人签名：** Reviewer Agent  
-> **审查日期：** 2026-06-09
+## 八、修复优先级建议
+
+| 优先级 | 问题编号 | 修复建议 |
+|--------|---------|---------|
+| **P0** | BUG-001 | 添加后端 `/auth/change-password` 端点 |
+| **P1** | HI-001 | 后端添加密码强度校验 |
+| **P1** | HI-004 | 创建 `docs/database.md` |
+| **P2** | HI-002 | 批量删除使用显式事务 |
+| **P2** | HI-003 | 移动 AuditLogRepository |
+| **P3** | MED-001~003 | MyGrades 学生ID、类型安全、导出优化 |
+| **P4** | LOW-001~002 | 日志工具化、生产环境配置 |
+
+---
+
+> **审查结束**  
+> 请 backend-dev 优先修复 BUG-001（阻塞问题），然后重新提交审查。
