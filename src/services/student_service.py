@@ -235,46 +235,66 @@ class StudentService:
         """
         批量删除学生
 
-        使用事务确保数据一致性：要么全部删除成功，要么全部回滚。
+        使用显式事务确保数据一致性：要么全部删除成功，要么全部回滚。
+        通过 SQLAlchemy 的 begin() 上下文管理器管理事务边界，
+        避免 BaseRepository.delete() 中的逐条 commit 导致部分成功的情况。
 
         Args:
             student_ids: 要删除的学号列表
 
         Returns:
             Dict[str, Any]: 批量删除结果，包含 total, success_count, fail_count, results
+
+        Raises:
+            Exception: 事务内发生任何异常时自动回滚并重新抛出
         """
         results = []
         success_count = 0
         fail_count = 0
 
+        # 先做存在性校验（只读，不涉及事务）
+        students_map = {}
         for student_id in student_ids:
-            try:
-                # 检查学生是否存在
-                student = self.repo.get_by_student_id(student_id)
-                if student is None:
-                    results.append({
-                        "student_id": student_id,
-                        "status": "fail",
-                        "error": f"学生 '{student_id}' 不存在",
-                    })
-                    fail_count += 1
-                    continue
-
-                # 执行删除（级联删除成绩记录）
-                self.repo.delete(student.student_id)
-                results.append({
-                    "student_id": student_id,
-                    "status": "success",
-                })
-                success_count += 1
-
-            except Exception as e:
+            student = self.repo.get_by_student_id(student_id)
+            if student is None:
                 results.append({
                     "student_id": student_id,
                     "status": "fail",
-                    "error": str(e),
+                    "error": f"学生 '{student_id}' 不存在",
                 })
                 fail_count += 1
+            else:
+                students_map[student_id] = student
+
+        # 如果所有学生都不存在，直接返回
+        if not students_map:
+            return {
+                "total": len(student_ids),
+                "success_count": success_count,
+                "fail_count": fail_count,
+                "results": results,
+            }
+
+        # 使用显式事务批量删除
+        try:
+            with self.repo.db.begin():
+                for student_id, student in students_map.items():
+                    self.repo.db.delete(student)
+                    results.append({
+                        "student_id": student_id,
+                        "status": "success",
+                    })
+                    success_count += 1
+        except Exception as e:
+            # 事务自动回滚（由 begin() 上下文管理器处理）
+            # 将已标记为 success 的记录改为 fail
+            for r in results:
+                if r["status"] == "success":
+                    r["status"] = "fail"
+                    r["error"] = f"事务回滚: {e}"
+            fail_count = len(student_ids) - fail_count
+            success_count = 0
+            raise
 
         return {
             "total": len(student_ids),
