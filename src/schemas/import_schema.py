@@ -99,3 +99,32 @@ class ImportLogResponse(ImportLogBase):
 
     class Config:
         from_attributes = True
+
+
+# ==================== 成绩导入相关模式 ====================
+
+class GradeImportItem(BaseModel):
+    """成绩导入项"""
+    row: int = Field(..., description="行号")
+    student_id: str = Field(..., description="学号")
+    name: Optional[str] = Field(None, description="学生姓名")
+    subject: str = Field(..., description="科目")
+    score: float = Field(..., description="分数")
+    error: Optional[str] = Field(None, description="错误信息")
+
+
+class GradeImportResult(BaseModel):
+    """成绩导入结果"""
+    total_rows: int = Field(..., description="总行数")
+    success_count: int = Field(..., description="成功数量")
+    fail_count: int = Field(..., description="失败数量")
+    success_items: List[GradeImportItem] = Field(default_factory=list, description="成功导入项")
+    failed_items: List[GradeImportItem] = Field(default_factory=list, description="失败导入项")
+    errors: List[ImportErrorDetail] = Field(default_factory=list, description="错误详情列表")
+
+
+class GradeImportResponse(BaseModel):
+    """成绩导入响应"""
+    success: bool = Field(True, description="是否成功")
+    data: GradeImportResult = Field(..., description="导入结果")
+    message: str = Field(..., description="响应消息")

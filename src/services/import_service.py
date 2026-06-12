@@ -548,3 +548,462 @@ class ImportService:
         output.seek(0)
         
         return output.getvalue()
+
+    # ==================== 成绩导入相关方法 ====================
+
+    def parse_grade_csv_file(self, file_content: bytes, exam_type: str, exam_date: str) -> dict:
+        """
+        解析成绩 CSV 文件内容
+        
+        Args:
+            file_content: CSV 文件内容（字节）
+            exam_type: 考试类型
+            exam_date: 考试日期
+            
+        Returns:
+            包含 grades 和 errors 的字典
+        """
+        try:
+            # 尝试不同编码，优先使用 utf-8-sig 处理 BOM
+            content = None
+            for encoding in ['utf-8-sig', 'utf-8', 'gbk', 'gb2312']:
+                try:
+                    content = file_content.decode(encoding)
+                    break
+                except UnicodeDecodeError:
+                    continue
+            
+            if content is None:
+                raise ValidationException("无法识别文件编码，请使用 UTF-8 或 GBK 编码")
+
+            # 去除可能残留的 BOM 字符
+            if content.startswith('\ufeff'):
+                content = content[1:]
+
+            # 解析 CSV
+            reader = csv.DictReader(io.StringIO(content))
+            grades = []
+            errors = []
+            
+            for row_num, row in enumerate(reader, start=2):
+                # 清理字段名和值的空白字符
+                cleaned_row = {k.strip(): v for k, v in row.items() if k is not None}
+                result = self._validate_grade_row(cleaned_row, row_num, exam_type, exam_date)
+                if result['data']:
+                    grades.append(result['data'])
+                if result['errors']:
+                    errors.append({
+                        'row': row_num,
+                        'student_id': str(cleaned_row.get('学号', '')).strip() or '未知',
+                        'error': '; '.join(result['errors'])
+                    })
+            
+            return {'grades': grades, 'errors': errors}
+
+        except csv.Error as e:
+            raise ValidationException(f"CSV 文件格式错误: {str(e)}")
+
+    def parse_grade_excel_file(self, file_content: bytes, exam_type: str, exam_date: str) -> dict:
+        """
+        解析成绩 Excel 文件内容
+        
+        Args:
+            file_content: Excel 文件内容（字节）
+            exam_type: 考试类型
+            exam_date: 考试日期
+            
+        Returns:
+            包含 grades 和 errors 的字典
+        """
+        try:
+            import openpyxl
+        except ImportError:
+            raise ValidationException("请安装 openpyxl 库以支持 Excel 文件")
+
+        try:
+            wb = openpyxl.load_workbook(io.BytesIO(file_content), read_only=True)
+            ws = wb.active
+
+            if ws is None:
+                raise ValidationException("Excel 文件没有活动工作表")
+
+            # 读取表头
+            headers = []
+            for cell in ws[1]:
+                if cell.value:
+                    headers.append(str(cell.value).strip())
+                else:
+                    headers.append("")
+
+            # 验证表头
+            required_headers = ['学号', '科目', '分数']
+            for header in required_headers:
+                if header not in headers:
+                    raise ValidationException(f"Excel 文件缺少必要列: {header}")
+
+            # 解析数据行
+            grades = []
+            errors = []
+            for row_num, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
+                if not any(row):  # 跳过空行
+                    continue
+                    
+                row_dict = dict(zip(headers, row))
+                result = self._validate_grade_row(row_dict, row_num, exam_type, exam_date)
+                if result['data']:
+                    grades.append(result['data'])
+                if result['errors']:
+                    errors.append({
+                        'row': row_num,
+                        'student_id': str(row_dict.get('学号', '')).strip() or '未知',
+                        'error': '; '.join(result['errors'])
+                    })
+
+            wb.close()
+            return {'grades': grades, 'errors': errors}
+
+        except Exception as e:
+            if isinstance(e, ValidationException):
+                raise
+            raise ValidationException(f"Excel 文件解析错误: {str(e)}")
+
+    def _validate_grade_row(self, row: dict, row_num: int, exam_type: str, exam_date: str) -> dict:
+        """
+        验证单行成绩数据
+        
+        Args:
+            row: 行数据字典
+            row_num: 行号
+            exam_type: 考试类型
+            exam_date: 考试日期
+            
+        Returns:
+            包含 data 和 errors 的字典
+        """
+        errors = []
+
+        # 验证学号
+        student_id = str(row.get('学号', '')).strip()
+        if not student_id:
+            errors.append("学号不能为空")
+        elif len(student_id) != 8 or not student_id.isdigit():
+            errors.append(f"学号格式错误，应为8位数字，当前值: {student_id}")
+
+        # 验证科目
+        subject = str(row.get('科目', '')).strip()
+        if not subject:
+            errors.append("科目不能为空")
+        elif len(subject) > 10:
+            errors.append(f"科目名称长度不能超过10个字符，当前长度: {len(subject)}")
+
+        # 验证分数
+        score = row.get('分数')
+        if score is None or str(score).strip() == '':
+            errors.append("分数不能为空")
+        else:
+            try:
+                score = float(score)
+                if score < 0 or score > 100:
+                    errors.append(f"分数应在0-100之间，当前值: {score}")
+            except (ValueError, TypeError):
+                errors.append(f"分数格式错误，应为数字，当前值: {score}")
+
+        # 验证考试类型（如果文件中有则使用文件中的，否则使用参数）
+        row_exam_type = str(row.get('考试类型', '')).strip()
+        if row_exam_type:
+            exam_type = row_exam_type
+
+        # 验证考试日期（如果文件中有则使用文件中的，否则使用参数）
+        row_exam_date = str(row.get('考试日期', '')).strip()
+        if row_exam_date:
+            exam_date = row_exam_date
+
+        # 验证日期格式
+        try:
+            from datetime import datetime
+            datetime.strptime(exam_date, '%Y-%m-%d')
+        except (ValueError, TypeError):
+            errors.append(f"考试日期格式错误，应为 YYYY-MM-DD，当前值: {exam_date}")
+
+        if errors:
+            return {
+                'data': None,
+                'errors': errors
+            }
+
+        return {
+            'data': {
+                'student_id': student_id,
+                'subject': subject,
+                'score': float(score),
+                'exam_type': exam_type,
+                'exam_date': exam_date
+            },
+            'errors': []
+        }
+
+    def import_grades_from_file(
+        self,
+        file_content: bytes,
+        filename: str,
+        exam_type: str,
+        exam_date: str,
+        operator_id: Optional[int] = None,
+        operator_name: Optional[str] = None
+    ) -> dict:
+        """
+        从文件导入成绩数据
+        
+        Args:
+            file_content: 文件内容
+            filename: 文件名
+            exam_type: 考试类型
+            exam_date: 考试日期
+            operator_id: 操作用户ID
+            operator_name: 操作用户名
+            
+        Returns:
+            导入结果统计
+        """
+        # 根据文件扩展名选择解析器
+        if filename.endswith('.csv'):
+            result = self.parse_grade_csv_file(file_content, exam_type, exam_date)
+        elif filename.endswith('.xlsx'):
+            result = self.parse_grade_excel_file(file_content, exam_type, exam_date)
+        else:
+            raise ValidationException("不支持的文件格式，请上传 .xlsx 或 .csv 文件")
+
+        grades_data = result['grades']
+        parse_errors = result['errors']
+
+        if not grades_data and not parse_errors:
+            raise ValidationException("文件中没有有效的成绩数据")
+
+        if len(grades_data) > 5000:
+            raise ValidationException("单次导入不能超过5000条记录")
+
+        return self.batch_import_grades(
+            grades_data,
+            operator_id=operator_id,
+            operator_name=operator_name
+        )
+
+    def batch_import_grades(
+        self,
+        grades_data: list[dict],
+        operator_id: Optional[int] = None,
+        operator_name: Optional[str] = None
+    ) -> dict:
+        """
+        批量导入成绩数据
+        
+        Args:
+            grades_data: 成绩数据列表
+            operator_id: 操作用户ID
+            operator_name: 操作用户名
+            
+        Returns:
+            导入结果统计
+        """
+        from src.models.grade import Grade
+
+        total_rows = len(grades_data)
+        success_count = 0
+        fail_count = 0
+        errors = []
+        success_items = []
+        failed_items = []
+
+        for idx, grade_data in enumerate(grades_data, start=2):
+            try:
+                # 检查学生是否存在
+                student = self.student_repo.get_by_student_id(grade_data['student_id'])
+                if not student:
+                    errors.append({
+                        'row': idx,
+                        'student_id': grade_data['student_id'],
+                        'field': '学号',
+                        'error': '学号不存在',
+                        'value': grade_data['student_id']
+                    })
+                    failed_items.append({
+                        'row': idx,
+                        'student_id': grade_data['student_id'],
+                        'subject': grade_data['subject'],
+                        'score': grade_data['score'],
+                        'error': '学号不存在'
+                    })
+                    fail_count += 1
+                    continue
+
+                # 检查成绩是否已存在（唯一约束：学号+科目+考试类型）
+                existing = self.db.query(Grade).filter(
+                    Grade.student_id == grade_data['student_id'],
+                    Grade.subject == grade_data['subject'],
+                    Grade.exam_type == grade_data['exam_type']
+                ).first()
+
+                if existing:
+                    # 更新已有成绩
+                    existing.score = grade_data['score']
+                    existing.exam_date = grade_data['exam_date']
+                    success_count += 1
+                    success_items.append({
+                        'row': idx,
+                        'student_id': grade_data['student_id'],
+                        'name': student.name,
+                        'subject': grade_data['subject'],
+                        'score': grade_data['score'],
+                        'action': 'updated'
+                    })
+                else:
+                    # 创建新成绩
+                    new_grade = Grade(
+                        student_id=grade_data['student_id'],
+                        subject=grade_data['subject'],
+                        score=grade_data['score'],
+                        exam_type=grade_data['exam_type'],
+                        exam_date=grade_data['exam_date']
+                    )
+                    self.db.add(new_grade)
+                    success_count += 1
+                    success_items.append({
+                        'row': idx,
+                        'student_id': grade_data['student_id'],
+                        'name': student.name,
+                        'subject': grade_data['subject'],
+                        'score': grade_data['score'],
+                        'action': 'created'
+                    })
+
+            except Exception as e:
+                errors.append({
+                    'row': idx,
+                    'student_id': grade_data.get('student_id', '未知'),
+                    'field': '数据库',
+                    'error': str(e),
+                    'value': ''
+                })
+                failed_items.append({
+                    'row': idx,
+                    'student_id': grade_data.get('student_id', '未知'),
+                    'subject': grade_data.get('subject', '未知'),
+                    'score': grade_data.get('score', 0),
+                    'error': str(e)
+                })
+                fail_count += 1
+
+        # 提交事务
+        try:
+            self.db.commit()
+        except Exception as e:
+            self.db.rollback()
+            raise ValidationException(f"数据库提交失败: {str(e)}")
+
+        return {
+            'total_rows': total_rows,
+            'success_count': success_count,
+            'fail_count': fail_count,
+            'errors': errors,
+            'success_items': success_items,
+            'failed_items': failed_items
+        }
+
+    def generate_grade_template(self, format: str = 'xlsx') -> bytes:
+        """
+        生成成绩导入模板
+        
+        Args:
+            format: 模板格式 ('xlsx' 或 'csv')
+            
+        Returns:
+            模板文件内容
+        """
+        if format == 'csv':
+            return self._generate_grade_csv_template()
+        elif format == 'xlsx':
+            return self._generate_grade_excel_template()
+        else:
+            raise ValidationException("不支持的模板格式，请选择 'xlsx' 或 'csv'")
+
+    def _generate_grade_csv_template(self) -> bytes:
+        """生成成绩 CSV 模板"""
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # 写入表头
+        writer.writerow(['学号', '科目', '考试类型', '分数', '考试日期'])
+        
+        # 写入示例数据
+        writer.writerow(['20260001', '数学', '期中', '95.0', '2026-04-15'])
+        writer.writerow(['20260001', '语文', '期中', '88.5', '2026-04-15'])
+        writer.writerow(['20260001', '英语', '期中', '92.0', '2026-04-15'])
+        
+        return output.getvalue().encode('utf-8-sig')
+
+    def _generate_grade_excel_template(self) -> bytes:
+        """生成成绩 Excel 模板"""
+        try:
+            import openpyxl
+            from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+        except ImportError:
+            raise ValidationException("请安装 openpyxl 库以支持 Excel 模板生成")
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "成绩导入模板"
+
+        # 定义样式
+        header_font = Font(bold=True, size=12)
+        header_fill = PatternFill(start_color="CCCCCC", end_color="CCCCCC", fill_type="solid")
+        header_alignment = Alignment(horizontal='center', vertical='center')
+        thin_border = Border(
+            left=Side(style='thin'),
+            right=Side(style='thin'),
+            top=Side(style='thin'),
+            bottom=Side(style='thin')
+        )
+
+        # 写入表头
+        headers = ['学号', '科目', '考试类型', '分数', '考试日期']
+        for col, header in enumerate(headers, start=1):
+            cell = ws.cell(row=1, column=col, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = header_alignment
+            cell.border = thin_border
+
+        # 写入示例数据
+        example_data = [
+            ['20260001', '数学', '期中', 95.0, '2026-04-15'],
+            ['20260001', '语文', '期中', 88.5, '2026-04-15'],
+            ['20260001', '英语', '期中', 92.0, '2026-04-15'],
+        ]
+        
+        for row_idx, row_data in enumerate(example_data, start=2):
+            for col_idx, value in enumerate(row_data, start=1):
+                cell = ws.cell(row=row_idx, column=col_idx, value=value)
+                cell.border = thin_border
+                cell.alignment = Alignment(horizontal='center', vertical='center')
+
+        # 写入说明行
+        ws.cell(row=6, column=1, value="说明：")
+        ws.cell(row=7, column=1, value="1. 学号：8位数字，必须是已存在的学生")
+        ws.cell(row=8, column=1, value="2. 科目：如数学、语文、英语等")
+        ws.cell(row=9, column=1, value="3. 考试类型：期中、期末、月考、单元测试")
+        ws.cell(row=10, column=1, value="4. 分数：0-100之间的数字，支持小数")
+        ws.cell(row=11, column=1, value="5. 考试日期：格式为 YYYY-MM-DD（如：2026-04-15）")
+
+        # 设置列宽
+        ws.column_dimensions['A'].width = 15
+        ws.column_dimensions['B'].width = 12
+        ws.column_dimensions['C'].width = 12
+        ws.column_dimensions['D'].width = 10
+        ws.column_dimensions['E'].width = 15
+
+        # 保存到字节流
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+        
+        return output.getvalue()
