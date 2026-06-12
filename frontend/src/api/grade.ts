@@ -76,7 +76,7 @@ export function importGrades(file: File, examType: string, examDate: string) {
   formData.append('file', file)
   formData.append('exam_type', examType)
   formData.append('exam_date', examDate)
-  return post<BatchImportResponse>('/api/v1/import/grades', formData, {
+  return post<BatchImportResponse>('/import/grades', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
