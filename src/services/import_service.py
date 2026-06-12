@@ -35,15 +35,21 @@ class ImportService:
             包含 students 和 errors 的字典
         """
         try:
-            # 尝试不同编码
-            for encoding in ['utf-8', 'gbk', 'gb2312']:
+            # 尝试不同编码，优先使用 utf-8-sig 处理 BOM
+            content = None
+            for encoding in ['utf-8-sig', 'utf-8', 'gbk', 'gb2312']:
                 try:
                     content = file_content.decode(encoding)
                     break
                 except UnicodeDecodeError:
                     continue
-            else:
+            
+            if content is None:
                 raise ValidationException("无法识别文件编码，请使用 UTF-8 或 GBK 编码")
+
+            # 去除可能残留的 BOM 字符
+            if content.startswith('\ufeff'):
+                content = content[1:]
 
             # 解析 CSV
             reader = csv.DictReader(io.StringIO(content))
@@ -51,13 +57,15 @@ class ImportService:
             errors = []
             
             for row_num, row in enumerate(reader, start=2):  # 从第2行开始（第1行是表头）
-                result = self._validate_row(row, row_num)
+                # 清理字段名和值的空白字符
+                cleaned_row = {k.strip(): v for k, v in row.items() if k is not None}
+                result = self._validate_row(cleaned_row, row_num)
                 if result['data']:
                     students.append(result['data'])
                 if result['errors']:
                     errors.append({
                         'row': row_num,
-                        'student_id': str(row.get('学号', '')).strip() or '未知',
+                        'student_id': str(cleaned_row.get('学号', '')).strip() or '未知',
                         'error': '; '.join(result['errors'])
                     })
             
