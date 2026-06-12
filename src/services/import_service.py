@@ -24,7 +24,7 @@ class ImportService:
         self.db = db
         self.student_repo = StudentRepository(db)
 
-    def parse_csv_file(self, file_content: bytes) -> list[dict]:
+    def parse_csv_file(self, file_content: bytes) -> dict:
         """
         解析 CSV 文件内容
         
@@ -32,7 +32,7 @@ class ImportService:
             file_content: CSV 文件内容（字节）
             
         Returns:
-            解析后的学生数据列表
+            包含 students 和 errors 的字典
         """
         try:
             # 尝试不同编码
@@ -48,17 +48,25 @@ class ImportService:
             # 解析 CSV
             reader = csv.DictReader(io.StringIO(content))
             students = []
+            errors = []
             
             for row_num, row in enumerate(reader, start=2):  # 从第2行开始（第1行是表头）
-                student = self._validate_row(row, row_num)
-                students.append(student)
+                result = self._validate_row(row, row_num)
+                if result['data']:
+                    students.append(result['data'])
+                if result['errors']:
+                    errors.append({
+                        'row': row_num,
+                        'student_id': str(row.get('学号', '')).strip() or '未知',
+                        'error': '; '.join(result['errors'])
+                    })
             
-            return students
+            return {'students': students, 'errors': errors}
 
         except csv.Error as e:
             raise ValidationException(f"CSV 文件格式错误: {str(e)}")
 
-    def parse_excel_file(self, file_content: bytes) -> list[dict]:
+    def parse_excel_file(self, file_content: bytes) -> dict:
         """
         解析 Excel 文件内容
         
@@ -66,7 +74,7 @@ class ImportService:
             file_content: Excel 文件内容（字节）
             
         Returns:
-            解析后的学生数据列表
+            包含 students 和 errors 的字典
         """
         try:
             import openpyxl
@@ -96,16 +104,24 @@ class ImportService:
 
             # 解析数据行
             students = []
+            errors = []
             for row_num, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
                 if not any(row):  # 跳过空行
                     continue
                     
                 row_dict = dict(zip(headers, row))
-                student = self._validate_row(row_dict, row_num)
-                students.append(student)
+                result = self._validate_row(row_dict, row_num)
+                if result['data']:
+                    students.append(result['data'])
+                if result['errors']:
+                    errors.append({
+                        'row': row_num,
+                        'student_id': str(row_dict.get('学号', '')).strip() or '未知',
+                        'error': '; '.join(result['errors'])
+                    })
 
             wb.close()
-            return students
+            return {'students': students, 'errors': errors}
 
         except Exception as e:
             if isinstance(e, ValidationException):
@@ -121,7 +137,9 @@ class ImportService:
             row_num: 行号
             
         Returns:
-            验证后的学生数据
+            包含 data 和 errors 的字典：
+            - data: 验证通过的学生数据（有错误时为 None）
+            - errors: 错误信息列表
         """
         errors = []
 
@@ -168,14 +186,20 @@ class ImportService:
                 errors.append(f"入学年份格式错误，应为整数，当前值: {enrollment_year}")
 
         if errors:
-            raise ValidationException(f"第{row_num}行数据错误: {'; '.join(errors)}")
+            return {
+                'data': None,
+                'errors': errors
+            }
 
         return {
-            'student_id': student_id,
-            'name': name,
-            'gender': gender,
-            'class_name': class_name,
-            'enrollment_year': int(enrollment_year)
+            'data': {
+                'student_id': student_id,
+                'name': name,
+                'gender': gender,
+                'class_name': class_name,
+                'enrollment_year': int(enrollment_year)
+            },
+            'errors': []
         }
 
     def batch_import_students(
@@ -284,23 +308,33 @@ class ImportService:
         """
         # 根据文件扩展名选择解析器
         if filename.endswith('.csv'):
-            students_data = self.parse_csv_file(file_content)
+            result = self.parse_csv_file(file_content)
         elif filename.endswith('.xlsx'):
-            students_data = self.parse_excel_file(file_content)
+            result = self.parse_excel_file(file_content)
         else:
             raise ValidationException("不支持的文件格式，请上传 .xlsx 或 .csv 文件")
 
-        if not students_data:
+        students_data = result['students']
+        parse_errors = result['errors']
+
+        if not students_data and not parse_errors:
             raise ValidationException("文件中没有有效的学生数据")
 
         if len(students_data) > 1000:
             raise ValidationException("单次导入不能超过1000条记录")
 
-        return self.batch_import_students(
+        # 合并解析错误和导入结果
+        import_result = self.batch_import_students(
             students_data, 
             operator_id=operator_id,
             operator_name=operator_name
         )
+        
+        # 将解析错误添加到导入结果中
+        import_result['errors'] = parse_errors + import_result.get('errors', [])
+        import_result['fail_count'] = import_result['fail_count'] + len(parse_errors)
+        
+        return import_result
 
     def preview_file(self, file_content: bytes, filename: str) -> dict:
         """
@@ -315,21 +349,39 @@ class ImportService:
         """
         # 根据文件扩展名选择解析器
         if filename.endswith('.csv'):
-            students_data = self.parse_csv_file(file_content)
+            result = self.parse_csv_file(file_content)
         elif filename.endswith('.xlsx'):
-            students_data = self.parse_excel_file(file_content)
+            result = self.parse_excel_file(file_content)
         else:
             raise ValidationException("不支持的文件格式，请上传 .xlsx 或 .csv 文件")
 
-        if not students_data:
+        students_data = result['students']
+        parse_errors = result['errors']
+
+        if not students_data and not parse_errors:
             raise ValidationException("文件中没有有效的学生数据")
 
         # 验证每条记录并生成预览
         preview = []
         valid_count = 0
         invalid_count = 0
-        errors = []
+        errors = list(parse_errors)  # 复制解析错误
 
+        # 添加解析错误的行到预览
+        for error in parse_errors:
+            preview.append({
+                'row': error['row'],
+                'student_id': error.get('student_id', '未知'),
+                'name': '未知',
+                'gender': '未知',
+                'class_name': '未知',
+                'enrollment_year': 0,
+                'status': 'invalid',
+                'errors': [error['error']]
+            })
+            invalid_count += 1
+
+        # 检查有效的学生数据
         for idx, student in enumerate(students_data, start=2):
             try:
                 # 检查学号是否已存在
@@ -385,7 +437,7 @@ class ImportService:
                 })
 
         return {
-            'total_rows': len(students_data),
+            'total_rows': len(students_data) + len(parse_errors),
             'valid_rows': valid_count,
             'invalid_rows': invalid_count,
             'preview': preview,
