@@ -117,6 +117,7 @@ student-grade-management-system/
 ├── tests/                        # 测试代码
 ├── data/                         # 数据文件
 ├── project-memory.md             # 项目记忆
+├── .env.example                  # 环境变量配置模板
 ├── start.bat                     # Windows 一键启动脚本
 ├── start.ps1                     # PowerShell 启动脚本
 ├── requirements.txt              # Python 依赖
@@ -125,6 +126,29 @@ student-grade-management-system/
 ```
 
 ## 快速开始
+
+### 环境配置（首次运行必读）
+
+在启动项目前，需要创建 `.env` 配置文件：
+
+```bash
+# 复制配置模板
+cp .env.example .env
+```
+
+**关键配置说明**：
+
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `DEBUG` | `True` | 调试模式，开发环境设为 `True`，生产环境设为 `False` |
+| `DATABASE_URL` | `sqlite:///./data/grades.db` | 数据库连接字符串 |
+| `JWT_SECRET_KEY` | 默认值（仅开发环境可用） | JWT 签名密钥，生产环境必须更换 |
+| `CORS_ORIGINS` | `http://localhost:5173,http://localhost:3000` | CORS 允许的源 |
+
+> **安全提示**：当 `DEBUG=False` 时，系统会强制要求设置自定义 `JWT_SECRET_KEY`，否则无法启动。生成方式：
+> ```bash
+> python -c "import secrets; print(secrets.token_urlsafe(32))"
+> ```
 
 ### 一键启动（推荐）
 
@@ -325,6 +349,7 @@ npm run test:coverage
 
 | 版本 | 日期 | 类型 | 说明 |
 |------|------|------|------|
+| V2.2.2 | 2026-06-12 | Bug 修复 + 配置优化 | 修复 JWT 密钥检查、新增环境配置模板、完善文档 |
 | V2.2.1 | 2026-06-11 | Bug 修复 + 性能优化 | 审查修复、ECharts 按需引入、导入进度条、导出 API |
 | V2.2.0 | 2026-06-11 | 功能更新 + 安全增强 | P0+P1 全面改进：安全、UX、新功能 |
 | V2.1.4 | 2026-06-09 | UI/UX 优化 | 全面改进：空状态差异化、导航状态、按钮一致性、加载状态 |
