@@ -35,14 +35,16 @@ src/
 │   ├── student_service.py    # 学生服务
 │   ├── grade_service.py      # 成绩服务
 │   ├── statistics_service.py # 统计服务
-│   └── dashboard_service.py  # 仪表盘服务
+│   ├── dashboard_service.py  # 仪表盘服务
+│   └── import_service.py     # 批量导入服务（新增）
 ├── api/            # API 路由
 │   ├── routes/
 │   │   ├── auth.py           # 认证路由
 │   │   ├── students.py       # 学生路由
 │   │   ├── grades.py         # 成绩路由
 │   │   ├── statistics.py     # 统计路由
-│   │   └── dashboard.py      # 仪表盘路由
+│   │   ├── dashboard.py      # 仪表盘路由
+│   │   └── imports.py        # 批量导入路由（新增）
 │   └── dependencies.py       # 依赖注入
 ├── cli/            # CLI 命令
 └── main.py         # 应用入口
@@ -52,6 +54,7 @@ frontend/
 │   ├── api/             # API接口封装
 │   │   ├── auth.ts      # 认证 API
 │   │   ├── dashboard.ts # 仪表盘 API
+│   │   ├── import.ts    # 批量导入 API（新增）
 │   │   └── ...          # 其他 API
 │   ├── components/      # 公共组件
 │   ├── directives/      # 自定义指令
@@ -59,6 +62,7 @@ frontend/
 │   ├── views/           # 页面组件
 │   │   ├── login/       # 登录页面
 │   │   ├── student/     # 学生管理页面
+│   │   │   └── StudentImport.vue # 批量导入页面（新增）
 │   │   ├── grade/       # 成绩管理页面
 │   │   ├── statistics/  # 统计分析页面
 │   │   ├── dashboard/   # 仪表盘
@@ -133,8 +137,9 @@ frontend/
 | 统计分析 | 3 | 统计 + 排名 + 学生综合统计 |
 | 仪表盘 | 1 | 统计数据 |
 | 数据导入导出 | 2 | CSV导入 + 导出 |
+| 批量导入 | 3 | 学生导入 + 预览 + 模板下载（新增） |
 | 健康检查 | 1 | 服务状态 |
-| **总计** | **20** | - |
+| **总计** | **23** | - |
 
 **API基础路径：** `/api/v1`
 **文档地址：** `/docs` (Swagger UI)、`/redoc` (ReDoc)
@@ -218,11 +223,19 @@ frontend/
 | TASK-010 | Token 刷新队列机制 | 避免并发请求重复刷新 |
 | TASK-010 | localStorage 存储 | MVP 阶段简单实现，未来可升级 httpOnly Cookie |
 | TASK-010 | 路由守卫 + Axios 拦截器 | 双重保障认证流程 |
+| TASK-017 | 支持 Excel/CSV 双格式 | 满足不同用户习惯，Excel 更直观，CSV 更通用 |
+| TASK-017 | 文件大小限制 10MB | 防止恶意上传大文件，保护服务器资源 |
+| TASK-017 | 单次导入上限 1000 条 | 平衡用户体验和系统性能 |
+| TASK-017 | 事务处理（全部成功或全部回滚） | 保证数据一致性，避免部分导入导致数据混乱 |
+| TASK-017 | 预览功能 | 让用户在导入前确认数据，减少误操作 |
+| TASK-017 | 错误报告下载 | 方便用户定位和修正错误数据 |
+| TASK-017 | 步骤引导 UI | 提升用户体验，降低使用门槛 |
 
 ## 版本历史
 
 | 版本 | 日期 | 类型 | 说明 |
 |------|------|------|------|
+| V2.1.0 | 2026-06-12 | 功能新增 | 批量导入学生功能：支持 Excel/CSV 文件导入、模板下载、数据预览、错误报告 |
 | V2.0.1 | 2026-06-08 | Bug 修复 | 修复登录按钮点击无响应问题 |
 | V2.0.0 | 2026-06-07 | 重大更新 | 第二代全面升级：认证系统、UI美化、性能优化、安全增强 |
 

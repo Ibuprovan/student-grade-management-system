@@ -91,6 +91,12 @@ const protectedRoutes: RouteRecordRaw[] = [
         component: () => import('@/views/student/StudentDetail.vue'),
         meta: { title: '学生详情', icon: 'User', hidden: true, requiresAuth: true, roles: ['admin', 'teacher'] },
       },
+      {
+        path: 'import',
+        name: 'StudentImport',
+        component: () => import('@/views/student/StudentImport.vue'),
+        meta: { title: '批量导入', icon: 'Upload', requiresAuth: true, roles: ['admin', 'teacher'] },
+      },
     ],
   },
   {

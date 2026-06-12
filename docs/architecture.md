@@ -242,6 +242,16 @@ student-grade-system/
 | `grade_service.py` | GradeService | 成绩录入、批量导入、成绩修改 |
 | `statistics_service.py` | StatisticsService | 平均分、及格率、排名计算 |
 
+#### 3.2.8 文件处理模块（新增）
+
+**职责：** 处理文件上传、解析和批量导入功能。
+
+| 模块 | 职责 | 依赖 |
+|------|------|------|
+| `file_parser.py` | 解析 Excel/CSV 文件 | openpyxl, csv |
+| `import_service.py` | 批量导入业务逻辑 | StudentRepository, FileParser |
+| `template_generator.py` | 生成导入模板 | openpyxl |
+
 #### 3.2.7 CLI 命令行层（cli/）
 
 **职责：** 提供命令行交互界面。

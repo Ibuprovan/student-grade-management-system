@@ -11,6 +11,7 @@ from src.api.routes.auth import router as auth_router
 from src.api.routes.dashboard import router as dashboard_router
 from src.api.routes.users import router as users_router
 from src.api.routes.audit_logs import router as audit_logs_router
+from src.api.routes.imports import router as imports_router
 
 __all__ = [
     "students_router",
@@ -20,4 +21,5 @@ __all__ = [
     "dashboard_router",
     "users_router",
     "audit_logs_router",
+    "imports_router",
 ]
