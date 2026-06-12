@@ -223,7 +223,7 @@
           :total="studentStore.pagination.total"
           layout="total, prev, pager, next"
           :background="true"
-          small
+          size="small"
           @current-change="handlePageChange"
           @size-change="handleSizeChange"
         />

@@ -2,7 +2,7 @@
  * 批量导入相关 API
  */
 
-import request from './index'
+import { upload, get } from '@/utils/request'
 
 /**
  * 批量导入学生
@@ -10,11 +10,7 @@ import request from './index'
  * @returns 导入结果
  */
 export function importStudents(formData: FormData) {
-  return request.post<any, any>('/import/students', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data'
-    }
-  })
+  return upload<any>('/import/students', formData)
 }
 
 /**
@@ -23,11 +19,7 @@ export function importStudents(formData: FormData) {
  * @returns 预览结果
  */
 export function previewImport(formData: FormData) {
-  return request.post<any, any>('/import/students/preview', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data'
-    }
-  })
+  return upload<any>('/import/students/preview', formData)
 }
 
 /**
@@ -36,7 +28,7 @@ export function previewImport(formData: FormData) {
  * @returns 模板文件 Blob
  */
 export function downloadTemplate(format: 'xlsx' | 'csv' = 'xlsx') {
-  return request.get<any, Blob>('/import/students/template', {
+  return get<Blob>('/import/students/template', {
     params: { format },
     responseType: 'blob'
   })
