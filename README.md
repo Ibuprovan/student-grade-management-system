@@ -49,15 +49,19 @@ student-grade-management-system/
 │   │   ├── student_service.py    # 学生服务
 │   │   ├── grade_service.py      # 成绩服务
 │   │   ├── statistics_service.py # 统计服务
-│   │   └── dashboard_service.py  # 仪表盘服务
+│   │   ├── dashboard_service.py  # 仪表盘服务
+│   │   └── import_service.py     # 批量导入服务
 │   ├── api/                      # API 路由
 │   │   ├── routes/               # 路由定义
 │   │   │   ├── auth.py           # 认证路由
 │   │   │   ├── students.py       # 学生路由
 │   │   │   ├── grades.py         # 成绩路由
 │   │   │   ├── statistics.py     # 统计路由
-│   │   │   └── dashboard.py      # 仪表盘路由
+│   │   │   ├── dashboard.py      # 仪表盘路由
+│   │   │   └── imports.py        # 批量导入路由
 │   │   └── dependencies.py       # 依赖注入
+│   ├── schemas/                  # 数据验证
+│   │   └── import_schema.py      # 导入数据模式
 │   ├── cli/                      # CLI 命令
 │   └── main.py                   # 应用入口
 ├── frontend/                     # 前端代码
@@ -65,6 +69,7 @@ student-grade-management-system/
 │   │   ├── api/                  # API 封装
 │   │   │   ├── auth.ts           # 认证 API
 │   │   │   ├── dashboard.ts      # 仪表盘 API
+│   │   │   ├── import.ts         # 批量导入 API
 │   │   │   └── ...               # 其他 API
 │   │   ├── components/           # 组件
 │   │   ├── composables/          # 组合式函数
@@ -82,6 +87,8 @@ student-grade-management-system/
 │   │       ├── login/            # 登录页面
 │   │       ├── dashboard/        # 仪表盘
 │   │       ├── student/          # 学生管理
+│   │       │   ├── StudentList.vue    # 学生列表
+│   │       │   └── StudentImport.vue  # 批量导入
 │   │       ├── grade/            # 成绩管理
 │   │       ├── statistics/       # 统计分析
 │   │       └── error/            # 错误页面
@@ -329,6 +336,13 @@ npm run test:coverage
 - 权限指令：v-permission 控制前端元素显示
 - 安全响应头：完整的安全配置
 
+### 📥 批量导入学生
+- 支持 Excel/CSV 文件一键导入多位学生
+- 数据预览与校验，显示有效/无效统计
+- 导入模板下载，包含字段说明和示例
+- 导入结果反馈：成功数、失败数、错误详情
+- 事务处理，保证数据一致性
+
 ### 📊 真实数据展示
 - Dashboard 显示真实统计数据
 - 用户信息显示真实用户名和角色
@@ -338,17 +352,18 @@ npm run test:coverage
 
 | 指标 | 数量 |
 |------|------|
-| 后端代码文件 | 50+ |
-| 前端代码文件 | 80+ |
-| 单元测试 | 119 项 |
-| API 接口 | 16 个 |
-| 文档文件 | 15+ |
-| 总代码行数 | 15,000+ |
+| 后端代码文件 | 55+ |
+| 前端代码文件 | 85+ |
+| 单元测试 | 133 项 |
+| API 接口 | 18 个 |
+| 文档文件 | 20+ |
+| 总代码行数 | 16,000+ |
 
 ## 更新日志
 
 | 版本 | 日期 | 类型 | 说明 |
 |------|------|------|------|
+| V2.3.0 | 2026-06-12 | 功能更新 | 新增批量导入学生功能：Excel/CSV上传、数据校验、结果反馈 |
 | V2.2.2 | 2026-06-12 | Bug 修复 + 配置优化 | 修复 JWT 密钥检查、新增环境配置模板、完善文档 |
 | V2.2.1 | 2026-06-11 | Bug 修复 + 性能优化 | 审查修复、ECharts 按需引入、导入进度条、导出 API |
 | V2.2.0 | 2026-06-11 | 功能更新 + 安全增强 | P0+P1 全面改进：安全、UX、新功能 |

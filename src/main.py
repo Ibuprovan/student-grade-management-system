@@ -23,6 +23,7 @@ from src.api.routes import (
     dashboard_router,
     users_router,
     audit_logs_router,
+    imports_router,
 )
 from src.api.exception_handlers import (
     app_exception_handler,
@@ -138,6 +139,7 @@ def create_app() -> FastAPI:
     app.include_router(grades_router)
     app.include_router(statistics_router)
     app.include_router(dashboard_router)
+    app.include_router(imports_router)  # 批量导入路由
 
     # 管理路由（需要管理员权限）
     app.include_router(users_router)

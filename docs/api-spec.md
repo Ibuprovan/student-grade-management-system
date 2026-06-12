@@ -865,7 +865,226 @@ GET /api/v1/export/grades?class_name=三年一班&exam_type=期中&format=csv
 
 ---
 
-## 6. 健康检查接口
+## 6. 批量导入接口
+
+### 6.1 批量导入学生
+
+**POST** `/api/v1/import/students`
+
+从 Excel/CSV 文件批量导入学生信息。
+
+#### 请求格式
+
+`Content-Type: multipart/form-data`
+
+#### 请求参数
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| file | file | 是 | Excel (.xlsx) 或 CSV (.csv) 文件 |
+
+#### 文件格式要求
+
+**Excel/CSV 文件必须包含以下列（按顺序）：**
+
+| 列名 | 类型 | 必填 | 说明 | 校验规则 |
+|------|------|------|------|---------|
+| 学号 | 字符串 | 是 | 学号 | 8位数字，格式：YYYY + 4位序号 |
+| 姓名 | 字符串 | 是 | 姓名 | 2-20个字符 |
+| 性别 | 字符串 | 是 | 性别 | "男" 或 "女" |
+| 班级 | 字符串 | 是 | 班级 | 2-20个字符 |
+| 入学年份 | 整数 | 是 | 入学年份 | 2000-2100 |
+
+**示例数据：**
+
+```
+学号,姓名,性别,班级,入学年份
+20260001,张三,男,三年一班,2026
+20260002,李四,女,三年一班,2026
+20260003,王五,男,三年二班,2026
+```
+
+#### 成功响应
+
+```json
+{
+    "success": true,
+    "data": {
+        "total_rows": 3,
+        "success_count": 3,
+        "fail_count": 0,
+        "errors": []
+    },
+    "message": "导入完成：成功 3 条，失败 0 条"
+}
+```
+
+#### 部分失败响应
+
+```json
+{
+    "success": true,
+    "data": {
+        "total_rows": 3,
+        "success_count": 2,
+        "fail_count": 1,
+        "errors": [
+            {
+                "row": 3,
+                "student_id": "20260003",
+                "field": "学号",
+                "error": "学号已存在"
+            }
+        ]
+    },
+    "message": "导入完成：成功 2 条，失败 1 条"
+}
+```
+
+#### 错误响应
+
+```json
+// 文件格式错误
+{
+    "success": false,
+    "error": {
+        "code": "INVALID_FORMAT",
+        "message": "不支持的文件格式，请上传 .xlsx 或 .csv 文件"
+    }
+}
+
+// 文件大小超限
+{
+    "success": false,
+    "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "文件大小超过限制（最大 10MB）"
+    }
+}
+
+// 文件内容为空
+{
+    "success": false,
+    "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "文件内容为空"
+    }
+}
+```
+
+---
+
+### 6.2 下载导入模板
+
+**GET** `/api/v1/import/students/template`
+
+下载学生信息导入模板。
+
+#### 查询参数
+
+| 参数 | 类型 | 必填 | 说明 | 默认值 |
+|------|------|------|------|--------|
+| format | string | 否 | 模板格式（xlsx/csv） | xlsx |
+
+#### 请求示例
+
+```
+GET /api/v1/import/students/template?format=xlsx
+```
+
+#### 响应
+
+**Excel 模板响应：**
+
+`Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
+
+`Content-Disposition: attachment; filename=student_import_template.xlsx`
+
+**CSV 模板响应：**
+
+`Content-Type: text/csv; charset=utf-8`
+
+`Content-Disposition: attachment; filename=student_import_template.csv`
+
+#### 模板内容
+
+```
+学号,姓名,性别,班级,入学年份
+20260001,张三,男,三年一班,2026
+20260002,李四,女,三年一班,2026
+```
+
+---
+
+### 6.3 预览导入数据
+
+**POST** `/api/v1/import/students/preview`
+
+预览上传文件中的学生数据，不执行实际导入。
+
+#### 请求格式
+
+`Content-Type: multipart/form-data`
+
+#### 请求参数
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| file | file | 是 | Excel (.xlsx) 或 CSV (.csv) 文件 |
+
+#### 成功响应
+
+```json
+{
+    "success": true,
+    "data": {
+        "total_rows": 3,
+        "valid_rows": 2,
+        "invalid_rows": 1,
+        "preview": [
+            {
+                "row": 2,
+                "student_id": "20260001",
+                "name": "张三",
+                "gender": "男",
+                "class_name": "三年一班",
+                "enrollment_year": 2026,
+                "status": "valid"
+            },
+            {
+                "row": 3,
+                "student_id": "20260002",
+                "name": "李四",
+                "gender": "女",
+                "class_name": "三年一班",
+                "enrollment_year": 2026,
+                "status": "valid"
+            },
+            {
+                "row": 4,
+                "student_id": "20260003",
+                "name": "",
+                "gender": "男",
+                "class_name": "三年二班",
+                "enrollment_year": 2026,
+                "status": "invalid",
+                "errors": ["姓名不能为空"]
+            }
+        ],
+        "errors": [
+            {
+                "row": 4,
+                "field": "姓名",
+                "error": "姓名不能为空"
+            }
+        ]
+    }
+}
+```
+
+---
+
+## 7. 健康检查接口
 
 ### 6.1 服务健康检查
 

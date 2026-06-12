@@ -8,6 +8,10 @@
           <el-icon><Plus /></el-icon>
           添加学生
         </el-button>
+        <el-button type="success" @click="router.push('/student/import')">
+          <el-icon><Upload /></el-icon>
+          批量导入
+        </el-button>
         <el-button
           type="danger"
           plain
@@ -248,6 +252,7 @@ import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import { formatDateTime } from '@/utils/format'
 import { useDebounce } from '@/composables/useCommon'
 import { ElMessage } from 'element-plus'
+import { Plus, Delete, Download, Search, Refresh, Upload } from '@element-plus/icons-vue'
 import type { Student } from '@/types/student'
 
 const router = useRouter()
