@@ -25,7 +25,7 @@ from src.schemas.import_schema import (
 from src.api.auth import get_current_user
 from src.models.user import User
 
-router = APIRouter(prefix="/import", tags=["批量导入"])
+router = APIRouter(prefix="/api/v1/import", tags=["批量导入"])
 
 
 @router.post("/students", response_model=ImportResponse, summary="批量导入学生")
