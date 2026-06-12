@@ -12,7 +12,7 @@
       :total="total"
       :layout="layout"
       :background="background"
-      :small="small"
+      :size="small ? 'small' : 'default'"
       :disabled="disabled"
       @size-change="handleSizeChange"
       @current-change="handlePageChange"

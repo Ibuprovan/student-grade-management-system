@@ -3,10 +3,16 @@
     <!-- 页面头部 -->
     <div class="page-header">
       <h1 class="page-title">{{ isEdit ? '编辑学生' : '添加学生' }}</h1>
-      <el-button @click="handleCancel">
-        <el-icon><Back /></el-icon>
-        返回
-      </el-button>
+      <div class="header-actions">
+        <el-button v-if="!isEdit" type="success" @click="router.push('/student/import')">
+          <el-icon><Upload /></el-icon>
+          批量导入
+        </el-button>
+        <el-button @click="handleCancel">
+          <el-icon><Back /></el-icon>
+          返回
+        </el-button>
+      </div>
     </div>
 
     <!-- 表单卡片 -->
@@ -325,6 +331,11 @@ function handleCancel() {
       margin: 0;
       font-size: 22px;
       font-weight: 700;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
     }
   }
 
