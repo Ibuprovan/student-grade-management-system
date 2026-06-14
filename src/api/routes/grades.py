@@ -14,7 +14,7 @@
 - DELETE /api/v1/grades/{grade_id}          删除成绩（需要管理员权限）
 """
 
-from typing import Optional
+from typing import Optional, List
 
 from fastapi import APIRouter, Depends, Query, Path, status
 from fastapi.responses import StreamingResponse
@@ -31,10 +31,41 @@ from src.schemas.grade import (
 )
 from src.schemas.common import ApiResponse, PaginatedResponse, SuccessResponse
 from src.services.grade_service import GradeService
+from src.models.grade import Grade
 from src.models.user import User
 
 # 创建路由器
 router = APIRouter(prefix="/api/v1/grades", tags=["成绩管理"])
+
+
+def _build_grade_response(grade: Grade) -> GradeResponse:
+    """
+    构建包含学生信息的成绩响应
+
+    Args:
+        grade: 成绩对象（已加载 student 关联）
+
+    Returns:
+        GradeResponse: 包含学生姓名和班级的成绩响应
+    """
+    grade_data = GradeResponse.model_validate(grade)
+    if hasattr(grade, 'student') and grade.student:
+        grade_data.student_name = grade.student.name
+        grade_data.class_name = grade.student.class_name
+    return grade_data
+
+
+def _build_grade_responses(grades: List[Grade]) -> List[GradeResponse]:
+    """
+    批量构建包含学生信息的成绩响应
+
+    Args:
+        grades: 成绩列表
+
+    Returns:
+        List[GradeResponse]: 成绩响应列表
+    """
+    return [_build_grade_response(g) for g in grades]
 
 
 @router.post(
@@ -68,7 +99,7 @@ def create_grade(
     grade = service.create_grade(data)
     return ApiResponse(
         success=True,
-        data=GradeResponse.model_validate(grade),
+        data=_build_grade_response(grade),
         message="成绩录入成功",
     )
 
@@ -144,8 +175,11 @@ def search_grades(
         page_size=page_size,
     )
 
+    # 构建包含学生信息的响应
+    grade_responses = _build_grade_responses(grades)
+
     return build_paginated_response(
-        items=[GradeResponse.model_validate(g) for g in grades],
+        items=grade_responses,
         total=total,
         page=page,
         page_size=page_size,
@@ -223,7 +257,7 @@ def get_grades_by_student(
     )
     return ApiResponse(
         success=True,
-        data=[GradeResponse.model_validate(g) for g in grades],
+        data=_build_grade_responses(grades),
     )
 
 
@@ -271,7 +305,7 @@ def get_grades_by_class(
     )
 
     return build_paginated_response(
-        items=[GradeResponse.model_validate(g) for g in grades],
+        items=_build_grade_responses(grades),
         total=total,
         page=page,
         page_size=page_size,
@@ -318,7 +352,7 @@ def get_grades_by_subject(
     )
 
     return build_paginated_response(
-        items=[GradeResponse.model_validate(g) for g in grades],
+        items=_build_grade_responses(grades),
         total=total,
         page=page,
         page_size=page_size,
@@ -348,7 +382,7 @@ def get_grade(
     grade = service.get_grade_by_id(grade_id)
     return ApiResponse(
         success=True,
-        data=GradeResponse.model_validate(grade),
+        data=_build_grade_response(grade),
     )
 
 
@@ -379,7 +413,7 @@ def update_grade(
     grade = service.update_grade(grade_id, data)
     return ApiResponse(
         success=True,
-        data=GradeResponse.model_validate(grade),
+        data=_build_grade_response(grade),
         message="成绩更新成功",
     )
 
