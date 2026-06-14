@@ -182,36 +182,39 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
+@import '@/assets/styles/variables.scss';
+
 .dashboard {
   animation: fadeIn 0.3s ease;
 }
 
 // ===== 统计卡片 =====
 .stat-cards {
-  margin-bottom: 16px;
+  margin-bottom: $space-4;
 }
 
 .stat-card {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 22px 24px;
-  background: var(--surface-color);
-  border-radius: var(--border-radius-lg);
-  border: 1px solid var(--border-color-light);
-  box-shadow: var(--shadow-xs);
-  margin-bottom: 16px;
-  transition: all var(--transition-duration);
+  gap: $space-4;
+  padding: $space-5 $space-6;
+  background: $bg-secondary;
+  border-radius: $rounded-lg;
+  border: 1px solid $border-primary;
+  box-shadow: $shadow-sm;
+  margin-bottom: $space-4;
+  transition: all $transition-normal;
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: var(--shadow-sm);
+    box-shadow: $shadow-lg;
+    border-color: $border-accent;
   }
 
   &__icon {
     width: 52px;
     height: 52px;
-    border-radius: 14px;
+    border-radius: $rounded-xl;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -225,9 +228,9 @@ onMounted(() => {
   }
 
   &__value {
-    font-size: 28px;
-    font-weight: 700;
-    color: var(--text-color);
+    font-size: $text-3xl;
+    font-weight: $font-bold;
+    color: $text-primary;
     line-height: 1.2;
     min-height: 34px;
     display: flex;
@@ -236,66 +239,66 @@ onMounted(() => {
   }
 
   &__label {
-    font-size: 13px;
-    color: var(--text-color-secondary);
-    margin-top: 4px;
-    font-weight: 500;
+    font-size: $text-sm;
+    color: $text-secondary;
+    margin-top: $space-1;
+    font-weight: $font-medium;
   }
 
   &--primary .stat-card__icon {
-    background: linear-gradient(135deg, #2A9D8F, #3BBFA0);
+    background: $gradient-primary;
   }
 
   &--success .stat-card__icon {
-    background: linear-gradient(135deg, #52B788, #6CC49A);
+    background: linear-gradient(135deg, #10b981, #34d399);
   }
 
   &--warning .stat-card__icon {
-    background: linear-gradient(135deg, #E9A23B, #F0B860);
+    background: linear-gradient(135deg, #f59e0b, #fbbf24);
   }
 
   &--accent .stat-card__icon {
-    background: linear-gradient(135deg, #E06469, #E88286);
+    background: linear-gradient(135deg, #ef4444, #f87171);
   }
 }
 
 // ===== 错误提示 =====
 .error-alert {
-  margin-bottom: 16px;
-  border-radius: var(--border-radius-md);
+  margin-bottom: $space-4;
+  border-radius: $rounded-md;
 }
 
 // ===== 区块标题 =====
 .section-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-color);
-  margin-bottom: 16px;
+  font-size: $text-lg;
+  font-weight: $font-semibold;
+  color: $text-primary;
+  margin-bottom: $space-4;
 }
 
 // ===== 快捷操作 =====
 .quick-section {
-  margin-bottom: 16px;
+  margin-bottom: $space-4;
 }
 
 .quick-action {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: $space-3;
   width: 100%;
-  padding: 20px 12px;
-  background: var(--bg-color);
-  border: 1px solid var(--border-color-light);
-  border-radius: var(--border-radius-lg);
+  padding: $space-5 $space-3;
+  background: $bg-tertiary;
+  border: 1px solid $border-primary;
+  border-radius: $rounded-lg;
   cursor: pointer;
-  transition: all var(--transition-fast);
-  margin-bottom: 12px;
+  transition: all $transition-fast;
+  margin-bottom: $space-3;
 
   &:hover {
-    background: var(--surface-color);
-    border-color: var(--primary-color);
-    box-shadow: var(--shadow-sm);
+    background: $bg-secondary;
+    border-color: $accent-primary;
+    box-shadow: $glow-sm;
     transform: translateY(-1px);
   }
 
@@ -306,81 +309,81 @@ onMounted(() => {
   &__icon {
     width: 44px;
     height: 44px;
-    border-radius: 12px;
+    border-radius: $rounded-lg;
     display: flex;
     align-items: center;
     justify-content: center;
     color: #fff;
 
-    &--primary { background: linear-gradient(135deg, #2A9D8F, #3BBFA0); }
-    &--success { background: linear-gradient(135deg, #52B788, #6CC49A); }
-    &--warning { background: linear-gradient(135deg, #E9A23B, #F0B860); }
-    &--accent { background: linear-gradient(135deg, #E06469, #E88286); }
+    &--primary { background: $gradient-primary; }
+    &--success { background: linear-gradient(135deg, #10b981, #34d399); }
+    &--warning { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
+    &--accent { background: linear-gradient(135deg, #ef4444, #f87171); }
   }
 
   &__label {
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text-color);
+    font-size: $text-sm;
+    font-weight: $font-medium;
+    color: $text-primary;
   }
 }
 
 // ===== 功能介绍 =====
 .welcome-section {
   .welcome-desc {
-    color: var(--text-color-secondary);
+    color: $text-secondary;
     line-height: 1.7;
-    margin-bottom: 24px;
-    font-size: 14px;
+    margin-bottom: $space-6;
+    font-size: $text-sm;
   }
 }
 
 .feature-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+  gap: $space-4;
 }
 
 .feature-item {
   display: flex;
   align-items: flex-start;
-  gap: 14px;
-  padding: 20px;
-  background: var(--bg-color);
-  border-radius: var(--border-radius-lg);
-  transition: all var(--transition-fast);
+  gap: $space-4;
+  padding: $space-5;
+  background: $bg-tertiary;
+  border-radius: $rounded-lg;
+  transition: all $transition-fast;
 
   &:hover {
-    background: var(--primary-lighter);
+    background: rgba(62, 207, 142, 0.1);
   }
 }
 
 .feature-icon {
   width: 44px;
   height: 44px;
-  border-radius: 12px;
+  border-radius: $rounded-lg;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   color: #fff;
 
-  &--primary { background: linear-gradient(135deg, #2A9D8F, #3BBFA0); }
-  &--success { background: linear-gradient(135deg, #52B788, #6CC49A); }
-  &--warning { background: linear-gradient(135deg, #E9A23B, #F0B860); }
+  &--primary { background: $gradient-primary; }
+  &--success { background: linear-gradient(135deg, #10b981, #34d399); }
+  &--warning { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
 }
 
 .feature-content {
   h4 {
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--text-color);
-    margin: 0 0 4px;
+    font-size: $text-base;
+    font-weight: $font-semibold;
+    color: $text-primary;
+    margin: 0 0 $space-1;
   }
 
   p {
-    font-size: 13px;
-    color: var(--text-color-secondary);
+    font-size: $text-sm;
+    color: $text-secondary;
     margin: 0;
     line-height: 1.5;
   }

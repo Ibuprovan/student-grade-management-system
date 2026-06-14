@@ -2,9 +2,9 @@
 
 > **文档版本：** V2.0  
 > **创建日期：** 2026-06-05  
-> **更新日期：** 2026-06-06  
+> **更新日期：** 2026-06-15  
 > **架构师：** Architect Agent  
-> **文档状态：** 已更新（添加前端架构设计）
+> **文档状态：** 已更新（添加Supabase风格设计系统架构）
 
 ---
 
@@ -377,7 +377,110 @@ frontend/
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### 4.2 前端与后端接口对接方案
+### 4.2 Supabase风格设计系统
+
+#### 4.2.1 设计理念
+
+本系统采用Supabase风格的现代、简洁、代码优先的设计风格，主要特点：
+
+- **深色主题**：减少视觉疲劳，提升专业感
+- **翠绿色强调**：使用翠绿色(#3ecf8e)作为主要强调色
+- **现代简洁**：去除冗余装饰，突出内容本身
+- **代码优先**：为开发者和教务人员提供清晰的数据展示
+
+#### 4.2.2 设计令牌系统
+
+```scss
+// 颜色系统
+$bg-primary: #0f0f23;      // 主背景色
+$bg-secondary: #1a1a2e;    // 卡片背景色
+$bg-tertiary: #16213e;     // 次要背景色
+$accent-primary: #3ecf8e;  // 翠绿色强调色
+$text-primary: #ffffff;    // 主要文字颜色
+$text-secondary: #94a3b8;  // 次要文字颜色
+
+// 字体系统
+$font-sans: 'Geist Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+$font-mono: 'Geist Mono', 'SF Mono', monospace;
+
+// 间距系统
+$space-1: 0.25rem;  // 4px
+$space-2: 0.5rem;   // 8px
+$space-3: 0.75rem;  // 12px
+$space-4: 1rem;     // 16px
+$space-6: 1.5rem;   // 24px
+
+// 圆角系统
+$rounded-md: 0.5rem;   // 8px
+$rounded-lg: 0.75rem;  // 12px
+$rounded-xl: 1rem;     // 16px
+```
+
+#### 4.2.3 组件设计规范
+
+1. **按钮（Button）**
+   - 主要按钮：翠绿色渐变背景，hover发光效果
+   - 次要按钮：透明背景，翠绿色边框
+   - 幽灵按钮：透明背景，灰色边框
+
+2. **输入框（Input）**
+   - 深色背景，微妙边框
+   - focus状态：翠绿色边框和阴影
+
+3. **卡片（Card）**
+   - 深色背景，微妙边框
+   - hover状态：发光效果，边框颜色变化
+
+4. **表格（Table）**
+   - 深色背景，清晰的行分隔
+   - hover行高亮
+
+5. **侧边栏（Sidebar）**
+   - 深色背景，翠绿色选中状态
+   - 响应式折叠
+
+#### 4.2.4 布局系统
+
+```scss
+.layout {
+  display: flex;
+  min-height: 100vh;
+  background: $bg-primary;
+  
+  .sidebar {
+    width: 250px;
+    background: $bg-primary;
+    border-right: 1px solid $border-primary;
+  }
+  
+  .main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    
+    .header {
+      height: 64px;
+      background: $bg-secondary;
+      border-bottom: 1px solid $border-primary;
+    }
+    
+    .content {
+      flex: 1;
+      padding: $space-6;
+    }
+  }
+}
+```
+
+#### 4.2.5 响应式设计
+
+- **桌面端**：完整侧边栏 + 内容区域
+- **平板端**：可折叠侧边栏
+- **移动端**：隐藏侧边栏，汉堡菜单触发
+
+详细设计规范参考：`docs/design-system-supabase.md`
+
+### 4.3 前端与后端接口对接方案
 
 #### 4.2.1 API 请求封装
 

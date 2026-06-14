@@ -38,22 +38,24 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
+@import '@/assets/styles/variables.scss';
+
 .app-layout {
   min-height: 100vh;
-  background: var(--bg-color);
+  background: $bg-primary;
 }
 
 .layout-main {
   min-height: 100vh;
-  transition: margin-left var(--transition-duration);
+  transition: margin-left $transition-normal;
   display: flex;
   flex-direction: column;
 }
 
 .layout-content {
   flex: 1;
-  padding: 20px;
-  background: var(--bg-color);
+  padding: $space-5;
+  background: $bg-primary;
   overflow-y: auto;
 }
 

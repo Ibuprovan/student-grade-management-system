@@ -359,14 +359,16 @@ async function confirmChangePassword() {
 </script>
 
 <style lang="scss" scoped>
+@import '@/assets/styles/variables.scss';
+
 .app-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: var(--header-height);
-  padding: 0 20px;
-  background: var(--surface-color);
-  border-bottom: 1px solid var(--border-color-light);
+  height: $header-height;
+  padding: 0 $space-5;
+  background: $bg-secondary;
+  border-bottom: 1px solid $border-primary;
   position: sticky;
   top: 0;
   z-index: 100;
@@ -375,121 +377,121 @@ async function confirmChangePassword() {
 .header-left {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: $space-4;
 }
 
 .collapse-btn {
   font-size: 20px;
   cursor: pointer;
-  color: var(--text-color-secondary);
-  transition: color var(--transition-fast);
-  border-radius: 8px;
-  padding: 4px;
+  color: $text-secondary;
+  transition: color $transition-fast;
+  border-radius: $rounded-md;
+  padding: $space-1;
 
   &:hover {
-    color: var(--primary-color);
-    background: var(--primary-light);
+    color: $accent-primary;
+    background: rgba(62, 207, 142, 0.1);
   }
 }
 
 .breadcrumb {
-  font-size: 14px;
+  font-size: $text-sm;
 }
 
 .header-right {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: $space-4;
 }
 
 .header-action {
   font-size: 18px;
   cursor: pointer;
-  color: var(--text-color-secondary);
-  transition: all var(--transition-fast);
-  border-radius: 8px;
-  padding: 6px;
+  color: $text-secondary;
+  transition: all $transition-fast;
+  border-radius: $rounded-md;
+  padding: $space-2;
 
   &:hover {
-    color: var(--primary-color);
-    background: var(--primary-light);
+    color: $accent-primary;
+    background: rgba(62, 207, 142, 0.1);
   }
 }
 
 .user-info {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: $space-3;
   cursor: pointer;
-  padding: 6px 12px;
-  border-radius: var(--border-radius-md);
-  transition: background-color var(--transition-fast);
+  padding: $space-2 $space-3;
+  border-radius: $rounded-md;
+  transition: background-color $transition-fast;
 
   &:hover {
-    background-color: var(--bg-color);
+    background-color: $bg-tertiary;
   }
 }
 
 .user-avatar {
   color: #fff;
-  font-weight: 700;
-  font-size: 14px;
+  font-weight: $font-bold;
+  font-size: $text-sm;
 }
 
 .user-detail {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: $space-1;
 }
 
 .user-name {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-color);
+  font-size: $text-sm;
+  font-weight: $font-medium;
+  color: $text-primary;
   line-height: 1.2;
 }
 
 .role-tag {
-  font-size: 11px;
+  font-size: $text-xs;
   height: 18px;
   line-height: 16px;
-  padding: 0 6px;
+  padding: 0 $space-2;
 }
 
 .dropdown-icon {
-  font-size: 12px;
-  color: var(--text-color-placeholder);
+  font-size: $text-xs;
+  color: $text-muted;
 }
 
 // ===== 密码强度指示器 =====
 .password-strength {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-top: 6px;
+  gap: $space-2;
+  margin-top: $space-2;
 
   .strength-bars {
     display: flex;
-    gap: 4px;
+    gap: $space-1;
   }
 
   .strength-bar {
     width: 40px;
     height: 4px;
     border-radius: 2px;
-    background: var(--border-color-light);
+    background: $border-secondary;
     transition: background-color 0.3s;
 
-    &.active.weak { background: #f56c6c; }
-    &.active.medium { background: #e6a23c; }
-    &.active.strong { background: #67c23a; }
+    &.active.weak { background: $error; }
+    &.active.medium { background: $warning; }
+    &.active.strong { background: $success; }
   }
 
   .strength-text {
-    font-size: 12px;
-    &.weak { color: #f56c6c; }
-    &.medium { color: #e6a23c; }
-    &.strong { color: #67c23a; }
+    font-size: $text-xs;
+    &.weak { color: $error; }
+    &.medium { color: $warning; }
+    &.strong { color: $success; }
   }
 }
 </style>

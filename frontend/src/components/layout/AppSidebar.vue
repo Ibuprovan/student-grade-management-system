@@ -136,11 +136,13 @@ const activeMenu = computed(() => {
 </script>
 
 <style lang="scss" scoped>
+@import '@/assets/styles/variables.scss';
+
 .app-sidebar {
-  width: var(--sidebar-width);
+  width: $sidebar-width;
   height: 100vh;
-  background: var(--sidebar-bg);
-  transition: width var(--transition-duration);
+  background: $bg-primary;
+  transition: width $transition-normal;
   position: fixed;
   left: 0;
   top: 0;
@@ -148,9 +150,10 @@ const activeMenu = computed(() => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  border-right: 1px solid $border-primary;
 
   &.collapsed {
-    width: var(--sidebar-collapsed-width);
+    width: $sidebar-collapsed-width;
   }
 }
 
@@ -159,24 +162,24 @@ const activeMenu = computed(() => {
   display: flex;
   align-items: center;
   height: 68px;
-  padding: 0 18px;
+  padding: 0 $space-4;
   cursor: pointer;
   overflow: hidden;
   white-space: nowrap;
   flex-shrink: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid $border-primary;
 }
 
 .logo-icon-wrap {
   width: 36px;
   height: 36px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, var(--primary-color), #3BBFA0);
+  border-radius: $rounded-lg;
+  background: $gradient-primary;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(42, 157, 143, 0.35);
+  box-shadow: $glow-sm;
 }
 
 .logo-img {
@@ -186,23 +189,23 @@ const activeMenu = computed(() => {
 }
 
 .logo-text-wrap {
-  margin-left: 12px;
+  margin-left: $space-3;
   display: flex;
   flex-direction: column;
   min-width: 0;
 }
 
 .logo-text {
-  font-size: 15px;
-  font-weight: 700;
-  color: #FFFFFF;
+  font-size: $text-lg;
+  font-weight: $font-bold;
+  color: $text-primary;
   letter-spacing: 0.02em;
   line-height: 1.3;
 }
 
 .logo-sub {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.45);
+  font-size: $text-xs;
+  color: $text-muted;
   letter-spacing: 0.04em;
   line-height: 1.3;
 }
@@ -211,41 +214,41 @@ const activeMenu = computed(() => {
 .sidebar-menu-wrapper {
   flex: 1;
   overflow: hidden;
-  padding: 8px 0;
+  padding: $space-2 0;
 }
 
 .sidebar-menu {
   border-right: none;
   background: transparent;
-  padding: 0 8px;
+  padding: 0 $space-2;
 
   // 菜单项样式
   :deep(.el-menu-item) {
-    color: var(--sidebar-text);
+    color: $text-secondary;
     height: 44px;
     line-height: 44px;
-    border-radius: 10px;
-    margin-bottom: 2px;
-    padding-left: 14px !important;
-    transition: all var(--transition-fast);
+    border-radius: $rounded-lg;
+    margin-bottom: $space-1;
+    padding-left: $space-4 !important;
+    transition: all $transition-fast;
     background: transparent;
     border: none;
 
     .el-icon {
       font-size: 18px;
-      margin-right: 10px;
-      transition: color var(--transition-fast);
+      margin-right: $space-3;
+      transition: color $transition-fast;
     }
 
     &:hover {
-      background: var(--sidebar-hover-bg);
-      color: var(--sidebar-text-active);
+      background: rgba(62, 207, 142, 0.1);
+      color: $text-primary;
     }
 
     &.is-active {
-      background: var(--sidebar-active-bg);
-      color: var(--primary-color);
-      font-weight: 600;
+      background: rgba(62, 207, 142, 0.2);
+      color: $accent-primary;
+      font-weight: $font-semibold;
       position: relative;
 
       &::before {
@@ -256,47 +259,47 @@ const activeMenu = computed(() => {
         transform: translateY(-50%);
         width: 3px;
         height: 20px;
-        background: var(--primary-color);
+        background: $accent-primary;
         border-radius: 0 3px 3px 0;
       }
 
       .el-icon {
-        color: var(--primary-color);
+        color: $accent-primary;
       }
     }
   }
 
   // 子菜单标题样式
   :deep(.el-sub-menu__title) {
-    color: var(--sidebar-text);
+    color: $text-secondary;
     height: 44px;
     line-height: 44px;
-    border-radius: 10px;
-    margin-bottom: 2px;
-    padding-left: 14px !important;
-    transition: all var(--transition-fast);
+    border-radius: $rounded-lg;
+    margin-bottom: $space-1;
+    padding-left: $space-4 !important;
+    transition: all $transition-fast;
     background: transparent;
     border: none;
 
     .el-icon {
       font-size: 18px;
-      margin-right: 10px;
-      transition: color var(--transition-fast);
+      margin-right: $space-3;
+      transition: color $transition-fast;
     }
 
     &:hover {
-      background: var(--sidebar-hover-bg);
-      color: var(--sidebar-text-active);
+      background: rgba(62, 207, 142, 0.1);
+      color: $text-primary;
     }
   }
 
   // 子菜单展开时父级高亮
   :deep(.el-sub-menu.is-opened > .el-sub-menu__title) {
-    color: var(--sidebar-text-active);
-    background: rgba(255, 255, 255, 0.04);
+    color: $text-primary;
+    background: rgba(62, 207, 142, 0.05);
 
     .el-icon {
-      color: var(--primary-color);
+      color: $accent-primary;
     }
   }
 
@@ -308,26 +311,26 @@ const activeMenu = computed(() => {
       padding-left: 48px !important;
       height: 40px;
       line-height: 40px;
-      font-size: 13px;
+      font-size: $text-sm;
     }
   }
 
   // 展开箭头
   :deep(.el-sub-menu__icon-arrow) {
-    color: rgba(255, 255, 255, 0.3);
+    color: $text-muted;
   }
 }
 
 // ===== 底部 =====
 .sidebar-footer {
-  padding: 12px 18px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding: $space-3 $space-4;
+  border-top: 1px solid $border-primary;
   flex-shrink: 0;
 }
 
 .footer-text {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.25);
+  font-size: $text-xs;
+  color: $text-muted;
   white-space: nowrap;
 }
 
@@ -350,7 +353,7 @@ const activeMenu = computed(() => {
   }
 
   .sidebar-menu {
-    padding: 0 6px;
+    padding: 0 $space-2;
 
     :deep(.el-menu-item),
     :deep(.el-sub-menu__title) {
