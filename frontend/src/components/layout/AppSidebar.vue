@@ -17,6 +17,7 @@
     <el-scrollbar class="sidebar-menu-wrapper">
       <el-menu
         :default-active="activeMenu"
+        :model-value="activeMenu"
         :collapse="appStore.sidebarCollapsed"
         :collapse-transition="false"
         router
@@ -117,9 +118,15 @@ const authStore = useAuthStore()
 /** 当前激活的菜单项 */
 const activeMenu = computed(() => {
   const { path } = route
-  // 对于子路由，返回父级路径
+  // 对于子路由，返回对应的父级菜单项
   if (path.startsWith('/student/edit') || path.startsWith('/student/detail')) {
     return '/student/list'
+  }
+  if (path.startsWith('/student/import')) {
+    return '/student/list'
+  }
+  if (path.startsWith('/grade/import')) {
+    return '/grade/list'
   }
   return path
 })
