@@ -23,14 +23,14 @@
         router
         class="sidebar-menu"
       >
-        <!-- 仪表盘 -->
+        <!-- 仪表盘（所有角色可见） -->
         <el-menu-item index="/dashboard">
           <el-icon><Odometer /></el-icon>
           <template #title>仪表盘</template>
         </el-menu-item>
 
-        <!-- 学生管理 -->
-        <el-sub-menu index="/student">
+        <!-- 学生管理（仅管理员和教师可见） -->
+        <el-sub-menu v-if="authStore.isAdmin || authStore.isTeacher" index="/student">
           <template #title>
             <el-icon><User /></el-icon>
             <span>学生管理</span>
@@ -45,8 +45,8 @@
           </el-menu-item>
         </el-sub-menu>
 
-        <!-- 成绩管理 -->
-        <el-sub-menu index="/grade">
+        <!-- 成绩管理（仅管理员和教师可见） -->
+        <el-sub-menu v-if="authStore.isAdmin || authStore.isTeacher" index="/grade">
           <template #title>
             <el-icon><Document /></el-icon>
             <span>成绩管理</span>
@@ -71,15 +71,18 @@
             <el-icon><DataAnalysis /></el-icon>
             <span>统计分析</span>
           </template>
+          <!-- 统计概览（所有角色可见） -->
           <el-menu-item index="/statistics/overview">
             <el-icon><TrendCharts /></el-icon>
             <template #title>统计概览</template>
           </el-menu-item>
-          <el-menu-item index="/statistics/class">
+          <!-- 班级统计（仅管理员和教师可见） -->
+          <el-menu-item v-if="authStore.isAdmin || authStore.isTeacher" index="/statistics/class">
             <el-icon><School /></el-icon>
             <template #title>班级统计</template>
           </el-menu-item>
-          <el-menu-item index="/statistics/subject">
+          <!-- 科目统计（仅管理员和教师可见） -->
+          <el-menu-item v-if="authStore.isAdmin || authStore.isTeacher" index="/statistics/subject">
             <el-icon><Collection /></el-icon>
             <template #title>科目统计</template>
           </el-menu-item>

@@ -16,6 +16,15 @@ import type {
 /** API 路径前缀 */
 const BASE_URL = '/auth'
 
+/** 学生信息接口 */
+export interface StudentInfo {
+  student_id: string
+  name: string
+  gender: string
+  class_name: string
+  enrollment_year: number
+}
+
 /**
  * 用户登录
  * @param data 登录请求数据（用户名、密码）
@@ -48,6 +57,14 @@ export function logout(): Promise<AuthApiResponse<void>> {
  */
 export function getCurrentUser(): Promise<AuthApiResponse<UserInfo>> {
   return get<AuthApiResponse<UserInfo>>(`${BASE_URL}/me`)
+}
+
+/**
+ * 获取当前学生用户关联的学生信息
+ * @returns 学生信息（学号、姓名、班级等）
+ */
+export function getCurrentStudentInfo(): Promise<AuthApiResponse<StudentInfo>> {
+  return get<AuthApiResponse<StudentInfo>>(`${BASE_URL}/me/student-info`)
 }
 
 /**

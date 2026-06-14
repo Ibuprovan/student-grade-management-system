@@ -21,6 +21,7 @@ from src.core.security import jwt_service, hash_password, verify_password
 from src.core.config import settings
 from src.models.user import User
 from src.repositories.user_repo import UserRepository
+from src.repositories.student_repo import StudentRepository
 from src.schemas.auth import (
     LoginRequest,
     TokenResponse,
@@ -329,6 +330,60 @@ def check_token(
             "expiring_soon": expiring_soon,
             "expires_at": expires_at.isoformat(),
             "remaining_minutes": round(remaining_minutes, 1),
+        },
+    )
+
+
+def get_student_repository(db: Session = Depends(get_db)) -> StudentRepository:
+    """获取 StudentRepository 实例的依赖注入函数"""
+    return StudentRepository(db)
+
+
+@router.get(
+    "/me/student-info",
+    response_model=ApiResponse,
+    summary="获取当前学生用户关联的学生信息",
+    description="获取当前登录学生用户关联的学生基本信息（学号、姓名、班级等）",
+    responses={
+        401: {"description": "未认证"},
+        403: {"description": "非学生角色"},
+        404: {"description": "未找到关联的学生信息"},
+    },
+)
+def get_current_student_info(
+    current_user: User = Depends(get_current_user),
+    student_repo: StudentRepository = Depends(get_student_repository),
+) -> ApiResponse:
+    """
+    获取当前学生用户关联的学生信息
+
+    仅学生角色可调用，通过用户名查找关联的学生记录。
+    学生用户的用户名应与学号一致。
+    """
+    # 检查是否是学生角色
+    if current_user.role != "student":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="此接口仅限学生用户使用",
+        )
+
+    # 通过用户名（学号）查找学生
+    student = student_repo.get_by_student_id(current_user.username)
+
+    if student is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="未找到关联的学生信息，请联系管理员",
+        )
+
+    return ApiResponse(
+        success=True,
+        data={
+            "student_id": student.student_id,
+            "name": student.name,
+            "gender": student.gender,
+            "class_name": student.class_name,
+            "enrollment_year": student.enrollment_year,
         },
     )
 

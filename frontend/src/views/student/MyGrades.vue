@@ -111,7 +111,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useAuthStore } from '@/stores/auth'
+import { getCurrentStudentInfo } from '@/api/auth'
 import { getStudentStatistics } from '@/api/statistics'
 import { getGradeList } from '@/api/grade'
 import DataTable from '@/components/common/DataTable.vue'
@@ -119,8 +119,7 @@ import LineChart from '@/components/chart/LineChart.vue'
 import type { StudentStatisticsResponse } from '@/types/statistics'
 import type { Grade, ExamType } from '@/types/grade'
 import { EXAM_TYPES } from '@/types/grade'
-
-const authStore = useAuthStore()
+import { ElMessage } from 'element-plus'
 
 /** 考试类型选项 */
 const examTypeOptions = EXAM_TYPES
@@ -130,6 +129,9 @@ const selectedExamType = ref<ExamType | ''>('')
 
 /** 加载状态 */
 const loading = ref(false)
+
+/** 学生信息加载状态 */
+const studentInfoLoading = ref(true)
 
 /** 学生统计数据 */
 const studentStats = ref<StudentStatisticsResponse>({
@@ -144,12 +146,15 @@ const studentStats = ref<StudentStatisticsResponse>({
 /** 成绩列表 */
 const grades = ref<Grade[]>([])
 
-/** 学生ID（从用户名推断，假设用户名即学号） */
-const studentId = computed(() => authStore.user?.username || '')
+/** 学生ID（从后端接口获取） */
+const studentId = ref('')
+
+/** 学生姓名 */
+const studentName = ref('')
 
 /** 趋势图 X 轴数据（按科目） */
 const trendXData = computed(() => {
-  return studentStats.value.subjects.map((s) => s.subject)
+  return studentStats.value.subjects.map((s: { subject: string }) => s.subject)
 })
 
 /** 趋势图系列数据 */
@@ -158,7 +163,7 @@ const trendSeries = computed(() => {
   return [
     {
       name: '分数',
-      data: studentStats.value.subjects.map((s) => s.score),
+      data: studentStats.value.subjects.map((s: { score: number }) => s.score),
       color: '#2A9D8F',
     },
   ]
@@ -183,8 +188,33 @@ function getExamTypeTag(examType: string): '' | 'success' | 'warning' | 'danger'
   return map[examType] || ''
 }
 
-/** 获取数据 */
+/** 获取学生信息 */
+async function fetchStudentInfo() {
+  try {
+    const response = await getCurrentStudentInfo()
+    if (response.success && response.data) {
+      studentId.value = response.data.student_id
+      studentName.value = response.data.name
+      return true
+    }
+    return false
+  } catch (error: any) {
+    console.error('获取学生信息失败:', error)
+    const message = error?.response?.data?.detail || '获取学生信息失败，请联系管理员'
+    ElMessage.error(message)
+    return false
+  }
+}
+
+/** 获取成绩数据 */
 async function fetchData() {
+  // 如果还没有学生信息，先获取
+  if (!studentId.value) {
+    const success = await fetchStudentInfo()
+    if (!success) return
+  }
+
+  // 再次检查 studentId
   if (!studentId.value) return
 
   loading.value = true
@@ -217,7 +247,10 @@ async function fetchData() {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  studentInfoLoading.value = true
+  await fetchStudentInfo()
+  studentInfoLoading.value = false
   fetchData()
 })
 </script>
