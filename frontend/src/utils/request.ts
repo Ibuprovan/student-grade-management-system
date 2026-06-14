@@ -278,13 +278,7 @@ export function upload<T = unknown>(
   formData: FormData,
   config?: AxiosRequestConfig,
 ): Promise<T> {
-  return service.post(url, formData, {
-    ...config,
-    headers: {
-      'Content-Type': 'multipart/form-data',
-      ...config?.headers,
-    },
-  }) as unknown as Promise<T>
+  return service.post(url, formData, config) as unknown as Promise<T>
 }
 
 export default service
