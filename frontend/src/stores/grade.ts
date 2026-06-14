@@ -69,8 +69,10 @@ export const useGradeStore = defineStore('grade', () => {
         ...params,
       }
       const response = await gradeApi.getGradeList(queryParams)
-      grades.value = response.items
-      pagination.value.total = response.total
+      // 响应拦截器返回 BackendResponse，实际数据在 .data 中
+      const paginatedData = (response as any).data || response
+      grades.value = paginatedData.items || []
+      pagination.value.total = paginatedData.total || 0
     } catch (error) {
       console.error('获取成绩列表失败:', error)
       throw error
