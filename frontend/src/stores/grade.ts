@@ -216,12 +216,14 @@ export const useGradeStore = defineStore('grade', () => {
     try {
       const queryParams: GradeListParams = {
         page: 1,
-        page_size: 10000, // 获取所有数据
+        page_size: 100, // 后端最大允许值
         ...searchParams.value,
         ...params,
       }
       const response = await gradeApi.getGradeList(queryParams)
-      return response
+      // 响应拦截器返回 BackendResponse，实际数据在 .data 中
+      const paginatedData = (response as any).data || response
+      return paginatedData
     } catch (error) {
       console.error('导出成绩数据失败:', error)
       throw error

@@ -123,7 +123,7 @@ export function useGradeList() {
 
       // 获取当前筛选条件下的所有成绩数据
       const response = await gradeStore.exportGrades(params)
-      const grades = response.items
+      const grades = response.items || []
 
       if (grades.length === 0) {
         ElMessage.warning('没有可导出的数据')
@@ -132,10 +132,10 @@ export function useGradeList() {
 
       // 生成 CSV 内容
       const headers = ['学号', '姓名', '班级', '科目', '考试类型', '分数', '考试日期']
-      const rows = grades.map((grade) => [
+      const rows = grades.map((grade: any) => [
         grade.student_id,
-        grade.student?.name || '-',
-        grade.student?.class_name || '-',
+        grade.student_name || '-',
+        grade.class_name || '-',
         grade.subject,
         grade.exam_type,
         grade.score,

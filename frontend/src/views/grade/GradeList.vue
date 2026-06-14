@@ -205,14 +205,14 @@ function goToStudentDetail(studentId: string) {
 }
 
 /** 获取考试类型标签样式 */
-function getExamTypeTag(examType: string): '' | 'success' | 'warning' | 'danger' | 'info' {
-  const map: Record<string, '' | 'success' | 'warning' | 'danger' | 'info'> = {
-    '期中': '',
+function getExamTypeTag(examType: string): 'primary' | 'success' | 'warning' | 'danger' | 'info' {
+  const map: Record<string, 'primary' | 'success' | 'warning' | 'danger' | 'info'> = {
+    '期中': 'primary',
     '期末': 'success',
     '月考': 'warning',
     '单元测试': 'info',
   }
-  return map[examType] || ''
+  return map[examType] || 'primary'
 }
 
 /** 初始化 */
