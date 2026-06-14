@@ -720,10 +720,11 @@ class ImportService:
 
         # 验证日期格式
         try:
-            from datetime import datetime
-            datetime.strptime(exam_date, '%Y-%m-%d')
+            from datetime import datetime, date
+            exam_date_obj = datetime.strptime(exam_date, '%Y-%m-%d').date()
         except (ValueError, TypeError):
             errors.append(f"考试日期格式错误，应为 YYYY-MM-DD，当前值: {exam_date}")
+            exam_date_obj = None
 
         if errors:
             return {
@@ -737,7 +738,7 @@ class ImportService:
                 'subject': subject,
                 'score': float(score),
                 'exam_type': exam_type,
-                'exam_date': exam_date
+                'exam_date': exam_date_obj
             },
             'errors': []
         }
