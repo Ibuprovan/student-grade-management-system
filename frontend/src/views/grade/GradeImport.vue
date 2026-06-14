@@ -297,6 +297,7 @@ import type { ImportPreviewItem, BatchImportResponse } from '@/types/grade'
 import type { UploadInstance, UploadFile, UploadRawFile, FormRules } from 'element-plus'
 import { ElForm } from 'element-plus'
 import { ElMessage } from 'element-plus'
+import { testImport } from '@/api/grade'
 
 const {
   examTypeOptions,
@@ -439,6 +440,16 @@ async function handleStartImport() {
   }, 100)
 
   try {
+    // 先测试接口
+    console.log('测试导入接口...')
+    const testResult = await testImport(
+      selectedFile.value,
+      importForm.exam_type,
+      importForm.exam_date,
+    )
+    console.log('测试结果:', testResult)
+    
+    // 正式导入
     const result = await importGrades(
       selectedFile.value,
       importForm.exam_type,
@@ -452,10 +463,12 @@ async function handleStartImport() {
     await new Promise(resolve => setTimeout(resolve, 500))
     importResult.value = result
     currentStep.value = ImportStep.IMPORT_RESULT
-  } catch (error) {
+  } catch (error: any) {
     console.error('导入失败:', error)
+    // 显示后端返回的详细错误信息
+    const errorMsg = error?.response?.data?.error?.message || error?.message || '导入失败，请稍后重试'
     importProgressStatus.value = '导入失败'
-    ElMessage.error('导入失败，请稍后重试')
+    ElMessage.error(errorMsg)
   } finally {
     if (progressTimer) {
       clearInterval(progressTimer)
