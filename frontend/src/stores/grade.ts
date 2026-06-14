@@ -173,7 +173,9 @@ export const useGradeStore = defineStore('grade', () => {
   async function importGrades(file: File, examType: string, examDate: string) {
     loading.value = true
     try {
-      const result = await gradeApi.importGrades(file, examType, examDate)
+      const response = await gradeApi.importGrades(file, examType, examDate)
+      // 响应拦截器返回完整的 BackendResponse，实际数据在 .data 中
+      const result = (response as any).data || response
       lastImportResult.value = result
       ElMessage.success(`成功导入 ${result.success_count} 条成绩，失败 ${result.fail_count} 条`)
       // 刷新列表

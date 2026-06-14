@@ -251,7 +251,7 @@
             <span class="stat-label">失败</span>
           </div>
           <div class="stat-item stat-total">
-            <span class="stat-value">{{ importResult?.total || 0 }}</span>
+            <span class="stat-value">{{ importResult?.total_rows || 0 }}</span>
             <span class="stat-label">总计</span>
           </div>
         </div>
