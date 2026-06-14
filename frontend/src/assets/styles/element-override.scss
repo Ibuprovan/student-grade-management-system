@@ -1,6 +1,7 @@
 // Element Plus Supabase风格样式覆盖
 
-@import './variables.scss';
+@use './variables.scss' as *;
+@use 'sass:color';
 
 // ========== CSS变量覆盖 ==========
 :root {
@@ -106,7 +107,7 @@
   border: none;
   
   &:hover {
-    background: lighten($success, 5%);
+    background: color.adjust($success, $lightness: 5%);
   }
 }
 
@@ -115,7 +116,7 @@
   border: none;
   
   &:hover {
-    background: lighten($warning, 5%);
+    background: color.adjust($warning, $lightness: 5%);
   }
 }
 
@@ -124,7 +125,7 @@
   border: none;
   
   &:hover {
-    background: lighten($error, 5%);
+    background: color.adjust($error, $lightness: 5%);
   }
 }
 
@@ -133,7 +134,7 @@
   border: none;
   
   &:hover {
-    background: lighten($info, 5%);
+    background: color.adjust($info, $lightness: 5%);
   }
 }
 

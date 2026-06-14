@@ -8,8 +8,8 @@
  * 阴影：微妙阴影和发光效果
  */
 
-@import './variables.scss';
-@import './element-override.scss';
+@use './variables.scss' as *;
+@use './element-override.scss';
 
 // ========== CSS变量 ==========
 :root {

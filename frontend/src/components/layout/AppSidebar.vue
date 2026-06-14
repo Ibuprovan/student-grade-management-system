@@ -136,7 +136,7 @@ const activeMenu = computed(() => {
 </script>
 
 <style lang="scss" scoped>
-@import '@/assets/styles/variables.scss';
+@use '@/assets/styles/variables.scss' as *;
 
 .app-sidebar {
   width: $sidebar-width;
