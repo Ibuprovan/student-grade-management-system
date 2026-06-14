@@ -208,22 +208,36 @@ export const useGradeStore = defineStore('grade', () => {
   }
 
   /**
-   * 导出成绩数据（获取所有符合条件的数据）
+   * 导出成绩数据（获取所有符合条件的数据，支持分页）
    * @param params 查询参数
    */
   async function exportGrades(params?: GradeListParams) {
     loading.value = true
     try {
-      const queryParams: GradeListParams = {
-        page: 1,
-        page_size: 100, // 后端最大允许值
-        ...searchParams.value,
-        ...params,
-      }
-      const response = await gradeApi.getGradeList(queryParams)
-      // 响应拦截器返回 BackendResponse，实际数据在 .data 中
-      const paginatedData = (response as any).data || response
-      return paginatedData
+      const PAGE_SIZE = 100 // 后端最大允许值
+      let allItems: Grade[] = []
+      let page = 1
+      let total = 0
+
+      // 分页获取所有数据
+      do {
+        const queryParams: GradeListParams = {
+          page,
+          page_size: PAGE_SIZE,
+          ...searchParams.value,
+          ...params,
+        }
+        const response = await gradeApi.getGradeList(queryParams)
+        const paginatedData = (response as any).data || response
+
+        if (paginatedData.items) {
+          allItems = allItems.concat(paginatedData.items)
+        }
+        total = paginatedData.total || 0
+        page++
+      } while (allItems.length < total)
+
+      return { items: allItems, total }
     } catch (error) {
       console.error('导出成绩数据失败:', error)
       throw error
