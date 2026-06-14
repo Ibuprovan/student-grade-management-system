@@ -57,6 +57,9 @@ onMounted(() => {
   padding: $space-5;
   background: $bg-primary;
   overflow-y: auto;
+  max-width: 1440px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 // 页面切换动画

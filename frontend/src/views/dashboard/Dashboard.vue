@@ -5,7 +5,7 @@
     </div>
 
     <!-- 统计卡片 -->
-    <el-row :gutter="16" class="stat-cards">
+    <el-row :gutter="24" class="stat-cards">
       <el-col :xs="24" :sm="12" :md="6">
         <div class="stat-card stat-card--primary">
           <div class="stat-card__icon">
@@ -78,7 +78,7 @@
     <!-- 快捷操作 -->
     <div class="page-card quick-section">
       <h3 class="section-title">快捷操作</h3>
-      <el-row :gutter="16">
+      <el-row :gutter="24">
         <el-col :xs="12" :sm="8" :md="6">
           <button class="quick-action" @click="router.push('/student/add')">
             <div class="quick-action__icon quick-action__icon--primary">
@@ -190,7 +190,7 @@ onMounted(() => {
 
 // ===== 统计卡片 =====
 .stat-cards {
-  margin-bottom: $space-4;
+  margin-bottom: $space-6;
 }
 
 .stat-card {
@@ -202,7 +202,7 @@ onMounted(() => {
   border-radius: $rounded-lg;
   border: 1px solid $border-primary;
   box-shadow: $shadow-sm;
-  margin-bottom: $space-4;
+  margin-bottom: $space-6;
   transition: all $transition-normal;
 
   &:hover {
@@ -270,7 +270,7 @@ onMounted(() => {
 
 // ===== 区块标题 =====
 .section-title {
-  font-size: $text-lg;
+  font-size: $text-xl;
   font-weight: $font-semibold;
   color: $text-primary;
   margin-bottom: $space-4;
@@ -278,7 +278,7 @@ onMounted(() => {
 
 // ===== 快捷操作 =====
 .quick-section {
-  margin-bottom: $space-4;
+  margin-bottom: $space-6;
 }
 
 .quick-action {
@@ -354,7 +354,7 @@ onMounted(() => {
   transition: all $transition-fast;
 
   &:hover {
-    background: rgba(62, 207, 142, 0.1);
+    background: rgba(37, 99, 235, 0.1);
   }
 }
 

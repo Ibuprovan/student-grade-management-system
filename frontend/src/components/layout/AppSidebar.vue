@@ -141,7 +141,7 @@ const activeMenu = computed(() => {
 .app-sidebar {
   width: $sidebar-width;
   height: 100vh;
-  background: $bg-primary;
+  background: $bg-secondary;
   transition: width $transition-normal;
   position: fixed;
   left: 0;
@@ -241,12 +241,12 @@ const activeMenu = computed(() => {
     }
 
     &:hover {
-      background: rgba(62, 207, 142, 0.1);
+      background: rgba(37, 99, 235, 0.1);
       color: $text-primary;
     }
 
     &.is-active {
-      background: rgba(62, 207, 142, 0.2);
+      background: rgba(37, 99, 235, 0.2);
       color: $accent-primary;
       font-weight: $font-semibold;
       position: relative;
@@ -288,7 +288,7 @@ const activeMenu = computed(() => {
     }
 
     &:hover {
-      background: rgba(62, 207, 142, 0.1);
+      background: rgba(37, 99, 235, 0.1);
       color: $text-primary;
     }
   }
@@ -296,7 +296,7 @@ const activeMenu = computed(() => {
   // 子菜单展开时父级高亮
   :deep(.el-sub-menu.is-opened > .el-sub-menu__title) {
     color: $text-primary;
-    background: rgba(62, 207, 142, 0.05);
+    background: rgba(37, 99, 235, 0.05);
 
     .el-icon {
       color: $accent-primary;

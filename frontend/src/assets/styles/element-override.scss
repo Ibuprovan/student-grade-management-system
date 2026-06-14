@@ -1,4 +1,4 @@
-// Element Plus Supabase风格样式覆盖
+// Element Plus 专业教育风格样式覆盖
 
 @use './variables.scss' as *;
 @use 'sass:color';
@@ -7,12 +7,12 @@
 :root {
   // 主色调
   --el-color-primary: #{$accent-primary};
-  --el-color-primary-light-3: #6ee7b7;
-  --el-color-primary-light-5: #a7f3d0;
-  --el-color-primary-light-7: #d1fae5;
-  --el-color-primary-light-8: #ecfdf5;
-  --el-color-primary-light-9: #f0fdf4;
-  --el-color-primary-dark-2: #059669;
+  --el-color-primary-light-3: #3b82f6;
+  --el-color-primary-light-5: #60a5fa;
+  --el-color-primary-light-7: #93c5fd;
+  --el-color-primary-light-8: #bfdbfe;
+  --el-color-primary-light-9: #dbeafe;
+  --el-color-primary-dark-2: #1d4ed8;
   
   // 语义色
   --el-color-success: #{$success};
@@ -58,8 +58,8 @@
   --el-fill-color-blank: #{$bg-secondary};
   
   // 蒙层颜色
-  --el-mask-color: rgba(0, 0, 0, 0.7);
-  --el-mask-color-extra-light: rgba(0, 0, 0, 0.3);
+  --el-mask-color: rgba(0, 0, 0, 0.5);
+  --el-mask-color-extra-light: rgba(0, 0, 0, 0.2);
 }
 
 // ========== 按钮样式 ==========
@@ -78,7 +78,7 @@
 .el-button--primary {
   background: $gradient-primary;
   border: none;
-  color: $text-primary;
+  color: #ffffff;
   
   &:hover {
     box-shadow: $glow-md;
@@ -92,13 +92,13 @@
 
 .el-button--default {
   background: transparent;
-  border: 1px solid $border-secondary;
+  border: 1px solid $border-primary;
   color: $text-secondary;
   
   &:hover {
     color: $text-primary;
-    border-color: $text-secondary;
-    background: rgba(255, 255, 255, 0.05);
+    border-color: $accent-primary;
+    background: rgba(37, 99, 235, 0.05);
   }
 }
 
@@ -140,7 +140,7 @@
 
 // ========== 输入框样式 ==========
 .el-input__wrapper {
-  background-color: $bg-tertiary !important;
+  background-color: $bg-secondary !important;
   border: 1px solid $border-primary !important;
   border-radius: $rounded-md !important;
   box-shadow: none !important;
@@ -152,7 +152,7 @@
   
   &.is-focus {
     border-color: $accent-primary !important;
-    box-shadow: 0 0 0 3px rgba(62, 207, 142, 0.2) !important;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2) !important;
   }
 }
 
@@ -165,21 +165,21 @@
 }
 
 .el-textarea__inner {
-  background-color: $bg-tertiary !important;
+  background-color: $bg-secondary !important;
   border: 1px solid $border-primary !important;
   border-radius: $rounded-md !important;
   color: $text-primary !important;
   
   &:focus {
     border-color: $accent-primary !important;
-    box-shadow: 0 0 0 3px rgba(62, 207, 142, 0.2) !important;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2) !important;
   }
 }
 
 // ========== 选择器样式 ==========
 .el-select {
   .el-input__wrapper {
-    background-color: $bg-tertiary !important;
+    background-color: $bg-secondary !important;
     border: 1px solid $border-primary !important;
     border-radius: $rounded-md !important;
     
@@ -234,17 +234,18 @@
   td.el-table__cell {
     border-bottom: 1px solid $border-primary !important;
     font-size: $text-sm;
+    padding: 12px 16px !important;
   }
   
   tr {
     &:hover {
-      background-color: rgba(62, 207, 142, 0.05) !important;
+      background-color: rgba(37, 99, 235, 0.05) !important;
     }
   }
   
   .el-table__row {
     &:hover {
-      background-color: rgba(62, 207, 142, 0.05) !important;
+      background-color: rgba(37, 99, 235, 0.05) !important;
     }
   }
   
@@ -310,7 +311,7 @@
 }
 
 .el-dialog__wrapper {
-  background-color: rgba(0, 0, 0, 0.7) !important;
+  background-color: rgba(0, 0, 0, 0.5) !important;
   backdrop-filter: blur(4px);
 }
 
@@ -333,7 +334,7 @@
     
     &.is-active {
       background-color: $accent-primary !important;
-      color: $text-primary !important;
+      color: #ffffff !important;
     }
   }
   
@@ -404,10 +405,11 @@
 
 // ========== 工具提示样式 ==========
 .el-tooltip__popper {
-  background-color: $bg-tertiary !important;
+  background-color: $bg-secondary !important;
   border: 1px solid $border-primary !important;
   border-radius: $rounded-md !important;
   color: $text-primary !important;
+  box-shadow: $shadow-lg !important;
 }
 
 // ========== 面包屑样式 ==========
@@ -433,13 +435,13 @@
   color: $text-secondary !important;
   
   &:hover {
-    background-color: rgba(62, 207, 142, 0.1) !important;
+    background-color: rgba(37, 99, 235, 0.1) !important;
     color: $text-primary !important;
   }
   
   &.is-active {
     color: $accent-primary !important;
-    background-color: rgba(62, 207, 142, 0.2) !important;
+    background-color: rgba(37, 99, 235, 0.2) !important;
   }
 }
 
@@ -447,14 +449,14 @@
   color: $text-secondary !important;
   
   &:hover {
-    background-color: rgba(62, 207, 142, 0.1) !important;
+    background-color: rgba(37, 99, 235, 0.1) !important;
     color: $text-primary !important;
   }
 }
 
 // ========== 加载样式 ==========
 .el-loading-mask {
-  background-color: rgba(0, 0, 0, 0.7) !important;
+  background-color: rgba(255, 255, 255, 0.7) !important;
 }
 
 .el-loading-spinner .circular {
@@ -544,7 +546,7 @@
 // ========== 日期选择器样式 ==========
 .el-date-editor {
   .el-input__wrapper {
-    background-color: $bg-tertiary !important;
+    background-color: $bg-secondary !important;
     border: 1px solid $border-primary !important;
   }
 }

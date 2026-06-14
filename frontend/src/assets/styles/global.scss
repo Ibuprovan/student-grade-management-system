@@ -1,11 +1,11 @@
 /**
- * 全局样式 — Supabase风格深色主题
+ * 全局样式 — 专业教育风格浅色主题
  * 
- * 设计理念：现代、简洁、代码优先
- * 主色调：翠绿色强调色
- * 背景：深色主题，减少视觉疲劳
+ * 设计理念：专业、清晰、现代
+ * 主色调：专业蓝
+ * 背景：浅色主题，减少视觉疲劳
  * 圆角：8-12px，现代感
- * 阴影：微妙阴影和发光效果
+ * 阴影：微妙阴影
  */
 
 @use './variables.scss' as *;
@@ -18,7 +18,7 @@
   --sidebar-collapsed-width: #{$sidebar-collapsed-width};
   --header-height: #{$header-height};
 
-  // 主色调 - 翠绿色
+  // 主色调 - 专业蓝
   --primary-color: #{$accent-primary};
   --primary-light: #{$accent-light};
   --primary-dark: #{$accent-dark};
@@ -38,12 +38,14 @@
   --bg-color: #{$bg-primary};
   --bg-color-secondary: #{$bg-secondary};
   --bg-color-tertiary: #{$bg-tertiary};
+  --surface-color: #{$bg-secondary};
 
   // 边框
   --border-color: #{$border-primary};
   --border-color-light: #{$border-secondary};
 
   // 阴影
+  --shadow-xs: #{$shadow-sm};
   --shadow-sm: #{$shadow-sm};
   --shadow-md: #{$shadow-md};
   --shadow-lg: #{$shadow-lg};
@@ -127,7 +129,7 @@ img {
 
 // ========== 字体与间距统一 ==========
 
-// 页面标题：22px / 700
+// 页面标题：24px / 700
 .page-header .page-title {
   font-size: $text-2xl !important;
   font-weight: $font-bold !important;
@@ -135,22 +137,22 @@ img {
   color: $text-primary;
 }
 
-// 卡片标题：16px / 600
+// 卡片标题：20px / 600
 .section-title {
-  font-size: $text-lg !important;
+  font-size: $text-xl !important;
   font-weight: $font-semibold !important;
   line-height: 1.4;
   color: $text-primary;
 }
 
-// 图表标题：15px / 600
+// 图表标题：16px / 600
 .chart-title {
   font-size: $text-base !important;
   font-weight: $font-semibold !important;
   color: $text-primary;
 }
 
-// 说明文字：13px / 400
+// 说明文字：14px / 400
 .desc-text {
   font-size: $text-sm;
   font-weight: $font-normal;
@@ -174,7 +176,7 @@ img {
     background: linear-gradient(
       90deg,
       transparent 0%,
-      rgba(62, 207, 142, 0.1) 50%,
+      rgba(37, 99, 235, 0.1) 50%,
       transparent 100%
     );
     animation: skeletonShimmer 1.5s ease-in-out infinite;
@@ -283,14 +285,14 @@ img {
   white-space: nowrap;
 }
 
-// 卡片样式 — Supabase版本
+// 卡片样式 — 专业教育版本
 .page-card {
   background: $bg-secondary;
   border-radius: $rounded-lg;
   border: 1px solid $border-primary;
   box-shadow: $shadow-sm;
   padding: $space-6;
-  margin-bottom: $space-4;
+  margin-bottom: $space-6;
   transition: all $transition-normal;
 
   &:hover {
@@ -304,6 +306,8 @@ img {
   padding: $space-5;
   height: 100%;
   overflow-y: auto;
+  max-width: 1440px;
+  margin: 0 auto;
 }
 
 // 页面标题
@@ -321,7 +325,7 @@ img {
   }
 }
 
-// 搜索栏 — Supabase版本
+// 搜索栏 — 专业教育版本
 .search-bar {
   display: flex;
   align-items: center;
@@ -359,7 +363,7 @@ img {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.75);
+  background: rgba(255, 255, 255, 0.75);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -375,9 +379,9 @@ img {
 
 // 发光动画
 @keyframes glow {
-  0% { box-shadow: 0 0 5px rgba(62, 207, 142, 0.3); }
-  50% { box-shadow: 0 0 20px rgba(62, 207, 142, 0.5); }
-  100% { box-shadow: 0 0 5px rgba(62, 207, 142, 0.3); }
+  0% { box-shadow: 0 0 5px rgba(37, 99, 235, 0.3); }
+  50% { box-shadow: 0 0 20px rgba(37, 99, 235, 0.5); }
+  100% { box-shadow: 0 0 5px rgba(37, 99, 235, 0.3); }
 }
 
 // ========== 响应式断点 ==========
@@ -416,7 +420,7 @@ img {
   }
 }
 
-// ========== 深色主题特定样式 ==========
+// ========== 浅色主题特定样式 ==========
 
 // 代码块样式
 code {
@@ -443,7 +447,7 @@ pre {
 
 // 选中文本样式
 ::selection {
-  background-color: rgba(62, 207, 142, 0.3);
+  background-color: rgba(37, 99, 235, 0.3);
   color: $text-primary;
 }
 
