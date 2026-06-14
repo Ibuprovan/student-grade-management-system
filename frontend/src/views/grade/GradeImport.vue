@@ -403,6 +403,16 @@ function getPreviewRowClass({ row }: { row: ImportPreviewItem }) {
 async function handleStartImport() {
   if (!selectedFile.value) return
 
+  // 验证表单
+  if (!importForm.exam_type) {
+    ElMessage.warning('请选择考试类型')
+    return
+  }
+  if (!importForm.exam_date) {
+    ElMessage.warning('请选择考试日期')
+    return
+  }
+
   importing.value = true
   importProgress.value = 0
   importProgressStatus.value = '正在上传文件...'
