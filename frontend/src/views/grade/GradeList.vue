@@ -104,15 +104,15 @@
         </template>
       </el-table-column>
 
-      <el-table-column label="姓名" width="100" sortable="custom">
+      <el-table-column prop="student_name" label="姓名" width="100">
         <template #default="{ row }">
-          {{ row.student?.name || '-' }}
+          {{ row.student_name || '-' }}
         </template>
       </el-table-column>
 
-      <el-table-column label="班级" width="120">
+      <el-table-column prop="class_name" label="班级" width="120">
         <template #default="{ row }">
-          {{ row.student?.class_name || '-' }}
+          {{ row.class_name || '-' }}
         </template>
       </el-table-column>
 
