@@ -80,20 +80,6 @@ export function importGrades(file: File, examType: string, examDate: string) {
 }
 
 /**
- * 测试导入接口
- * @param file 文件
- * @param examType 考试类型
- * @param examDate 考试日期
- */
-export function testImport(file: File, examType: string, examDate: string) {
-  const formData = new FormData()
-  formData.append('file', file)
-  formData.append('exam_type', examType)
-  formData.append('exam_date', examDate)
-  return upload<any>('/import/test', formData)
-}
-
-/**
  * 导出成绩数据
  * @param params 筛选参数
  */

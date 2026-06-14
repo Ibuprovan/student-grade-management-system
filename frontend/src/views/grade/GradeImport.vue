@@ -297,7 +297,6 @@ import type { ImportPreviewItem, BatchImportResponse } from '@/types/grade'
 import type { UploadInstance, UploadFile, UploadRawFile, FormRules } from 'element-plus'
 import { ElForm } from 'element-plus'
 import { ElMessage } from 'element-plus'
-import { testImport } from '@/api/grade'
 
 const {
   examTypeOptions,
@@ -440,15 +439,6 @@ async function handleStartImport() {
   }, 100)
 
   try {
-    // 先测试接口
-    console.log('测试导入接口...')
-    const testResult = await testImport(
-      selectedFile.value,
-      importForm.exam_type,
-      importForm.exam_date,
-    )
-    console.log('测试结果:', testResult)
-    
     // 正式导入
     const result = await importGrades(
       selectedFile.value,
