@@ -103,6 +103,7 @@ class Student(Base):
 
     __table_args__ = (
         Index("idx_students_class_name", "class_name"),
+        Index("idx_students_enrollment_year", "enrollment_year"),
     )
 
     # ==================== 方法定义 ====================

@@ -11,6 +11,7 @@ from sqlalchemy import (
     String,
     Integer,
     Float,
+    Numeric,
     Date,
     DateTime,
     ForeignKey,
@@ -76,7 +77,7 @@ class Grade(Base):
 
     # 分数：0-100，支持1位小数
     score: Mapped[float] = mapped_column(
-        Float,
+        Numeric(4, 1),
         nullable=False,
         comment="分数",
     )
@@ -133,6 +134,8 @@ class Grade(Base):
         Index("idx_grades_student_id", "student_id"),
         # 按科目和考试类型查询的索引
         Index("idx_grades_subject_exam_type", "subject", "exam_type"),
+        # 按考试日期查询的索引
+        Index("idx_grades_exam_date", "exam_date"),
     )
 
     # ==================== 方法定义 ====================

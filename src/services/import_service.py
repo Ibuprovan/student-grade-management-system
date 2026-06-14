@@ -690,11 +690,12 @@ class ImportService:
             errors.append(f"学号格式错误，应为8位数字，当前值: {student_id}")
 
         # 验证科目
+        from src.core.constants import SUBJECTS
         subject = str(row.get('科目', '')).strip()
         if not subject:
             errors.append("科目不能为空")
-        elif len(subject) > 10:
-            errors.append(f"科目名称长度不能超过10个字符，当前长度: {len(subject)}")
+        elif subject not in SUBJECTS:
+            errors.append(f"科目'{subject}'不在允许范围内，有效科目: {', '.join(SUBJECTS)}")
 
         # 验证分数
         score = row.get('分数')

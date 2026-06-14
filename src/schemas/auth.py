@@ -30,7 +30,7 @@ class LoginRequest(BaseModel):
         min_length=6,
         max_length=128,
         description="密码",
-        examples=["admin123"],
+        examples=["your_password"],
     )
 
 

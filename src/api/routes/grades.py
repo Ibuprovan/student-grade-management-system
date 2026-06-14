@@ -248,7 +248,16 @@ def get_grades_by_student(
     按学生查询成绩（需要认证）
 
     - **student_id**: 学号
+    - 学生角色只能查看自己的成绩
     """
+    # 权限检查：学生只能查看自己的成绩
+    if current_user.role == "student" and current_user.username != student_id:
+        from fastapi import HTTPException
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="学生只能查看自己的成绩"
+        )
+
     skip = (page - 1) * page_size
     grades = service.get_grades_by_student(
         student_id=student_id,

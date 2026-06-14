@@ -32,6 +32,48 @@ from src.models.user import User
 router = APIRouter(prefix="/api/v1/import", tags=["批量导入"])
 
 
+async def validate_upload_file(file: UploadFile) -> bytes:
+    """
+    验证上传文件的通用逻辑
+
+    Args:
+        file: 上传的文件
+
+    Returns:
+        bytes: 文件内容
+
+    Raises:
+        HTTPException: 文件验证失败
+    """
+    # 验证文件类型
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="文件名不能为空")
+
+    allowed_extensions = ['.xlsx', '.csv']
+    file_ext = '.' + file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
+
+    if file_ext not in allowed_extensions:
+        raise HTTPException(
+            status_code=400,
+            detail=f"不支持的文件格式，请上传 {', '.join(allowed_extensions)} 文件"
+        )
+
+    # 验证文件大小（10MB）
+    max_size = 10 * 1024 * 1024  # 10MB
+    file_content = await file.read()
+
+    if len(file_content) > max_size:
+        raise HTTPException(
+            status_code=400,
+            detail="文件大小超过限制（最大 10MB）"
+        )
+
+    if len(file_content) == 0:
+        raise HTTPException(status_code=400, detail="文件内容为空")
+
+    return file_content
+
+
 @router.post("/students", response_model=ImportResponse, summary="批量导入学生")
 async def import_students(
     file: UploadFile = File(..., description="学生信息文件（.xlsx 或 .csv）"),
@@ -53,32 +95,8 @@ async def import_students(
     - 班级：2-20个字符
     - 入学年份：2000-2100之间的整数
     """
-    # 验证文件类型
-    if not file.filename:
-        raise HTTPException(status_code=400, detail="文件名不能为空")
-    
-    allowed_extensions = ['.xlsx', '.csv']
-    file_ext = '.' + file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
-    
-    if file_ext not in allowed_extensions:
-        raise HTTPException(
-            status_code=400, 
-            detail=f"不支持的文件格式，请上传 {', '.join(allowed_extensions)} 文件"
-        )
-    
-    # 验证文件大小（10MB）
-    max_size = 10 * 1024 * 1024  # 10MB
-    file_content = await file.read()
-    
-    if len(file_content) > max_size:
-        raise HTTPException(
-            status_code=400,
-            detail="文件大小超过限制（最大 10MB）"
-        )
-    
-    if len(file_content) == 0:
-        raise HTTPException(status_code=400, detail="文件内容为空")
-    
+    file_content = await validate_upload_file(file)
+
     try:
         import_service = ImportService(db)
         result = import_service.import_from_file(
@@ -126,8 +144,9 @@ async def import_students(
                 }
             )
         except Exception as e:
-            # 审计日志记录失败不影响主业务
-            pass
+            # 审计日志记录失败不影响主业务，但记录警告
+            import logging
+            logging.getLogger(__name__).warning(f"审计日志记录失败: {e}")
         
         return ImportResponse(
             success=True,
@@ -153,32 +172,8 @@ async def preview_import(
     - **file**: 上传的文件，支持 .xlsx 和 .csv 格式
     - 返回文件中的数据预览和校验结果
     """
-    # 验证文件类型
-    if not file.filename:
-        raise HTTPException(status_code=400, detail="文件名不能为空")
-    
-    allowed_extensions = ['.xlsx', '.csv']
-    file_ext = '.' + file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
-    
-    if file_ext not in allowed_extensions:
-        raise HTTPException(
-            status_code=400, 
-            detail=f"不支持的文件格式，请上传 {', '.join(allowed_extensions)} 文件"
-        )
-    
-    # 验证文件大小（10MB）
-    max_size = 10 * 1024 * 1024  # 10MB
-    file_content = await file.read()
-    
-    if len(file_content) > max_size:
-        raise HTTPException(
-            status_code=400,
-            detail="文件大小超过限制（最大 10MB）"
-        )
-    
-    if len(file_content) == 0:
-        raise HTTPException(status_code=400, detail="文件内容为空")
-    
+    file_content = await validate_upload_file(file)
+
     try:
         import_service = ImportService(db)
         result = import_service.preview_file(
@@ -299,32 +294,8 @@ async def import_grades(
     - 科目：如数学、语文、英语等
     - 分数：0-100之间的数字
     """
-    # 验证文件类型
-    if not file.filename:
-        raise HTTPException(status_code=400, detail="文件名不能为空")
-    
-    allowed_extensions = ['.xlsx', '.csv']
-    file_ext = '.' + file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
-    
-    if file_ext not in allowed_extensions:
-        raise HTTPException(
-            status_code=400, 
-            detail=f"不支持的文件格式，请上传 {', '.join(allowed_extensions)} 文件"
-        )
-    
-    # 验证文件大小（10MB）
-    max_size = 10 * 1024 * 1024  # 10MB
-    file_content = await file.read()
-    
-    if len(file_content) > max_size:
-        raise HTTPException(
-            status_code=400,
-            detail="文件大小超过限制（最大 10MB）"
-        )
-    
-    if len(file_content) == 0:
-        raise HTTPException(status_code=400, detail="文件内容为空")
-    
+    file_content = await validate_upload_file(file)
+
     # 验证考试类型
     valid_exam_types = ['期中', '期末', '月考', '单元测试']
     if exam_type not in valid_exam_types:
@@ -332,14 +303,14 @@ async def import_grades(
             status_code=400,
             detail=f"考试类型无效，有效值: {', '.join(valid_exam_types)}"
         )
-    
+
     # 验证日期格式
     try:
         from datetime import datetime
         datetime.strptime(exam_date, '%Y-%m-%d')
     except ValueError:
         raise HTTPException(status_code=400, detail="日期格式错误，应为 YYYY-MM-DD")
-    
+
     try:
         import_service = ImportService(db)
         result = import_service.import_grades_from_file(
