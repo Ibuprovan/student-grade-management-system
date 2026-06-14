@@ -32,6 +32,23 @@ from src.models.user import User
 router = APIRouter(prefix="/api/v1/import", tags=["批量导入"])
 
 
+@router.post("/test", summary="测试导入接口")
+async def test_import(
+    file: UploadFile = File(...),
+    exam_type: str = Form(...),
+    exam_date: str = Form(...)
+):
+    """测试接口，用于调试表单数据"""
+    return {
+        "success": True,
+        "data": {
+            "filename": file.filename,
+            "exam_type": exam_type,
+            "exam_date": exam_date
+        }
+    }
+
+
 @router.post("/students", response_model=ImportResponse, summary="批量导入学生")
 async def import_students(
     file: UploadFile = File(..., description="学生信息文件（.xlsx 或 .csv）"),
@@ -299,6 +316,11 @@ async def import_grades(
     - 科目：如数学、语文、英语等
     - 分数：0-100之间的数字
     """
+    # 调试日志
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"收到成绩导入请求: file={file.filename}, exam_type={exam_type}, exam_date={exam_date}")
+    
     # 验证文件类型
     if not file.filename:
         raise HTTPException(status_code=400, detail="文件名不能为空")
