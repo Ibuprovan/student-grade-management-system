@@ -131,10 +131,10 @@
       </el-row>
 
       <!-- 图表区域 -->
-      <el-row :gutter="16" class="chart-section">
+      <el-row :gutter="16" class="chart-section" align="stretch">
         <!-- 分数分布柱状图 -->
         <el-col :xs="24" :md="12">
-          <div class="page-card">
+          <div class="page-card chart-card-wrapper">
             <BarChart
               v-if="scoreDistributionData.xData.length > 0"
               title="分数分布"
@@ -144,7 +144,7 @@
               yLabel="人数"
               color="#409EFF"
               :showValue="true"
-              :height="300"
+              :height="360"
             />
             <div v-else class="chart-empty-wrapper">
               <EmptyState
@@ -159,7 +159,7 @@
 
         <!-- 成绩趋势折线图 -->
         <el-col :xs="24" :md="12">
-          <div class="page-card">
+          <div class="page-card chart-card-wrapper">
             <LineChart
               v-if="examTrendData.xData.length > 0"
               title="成绩趋势"
@@ -169,7 +169,7 @@
               yLabel="分数"
               :smooth="true"
               :areaStyle="true"
-              :height="300"
+              :height="360"
             />
             <div v-else class="chart-empty-wrapper">
               <EmptyState
@@ -183,10 +183,10 @@
         </el-col>
       </el-row>
 
-      <el-row :gutter="16" class="chart-section">
+      <el-row :gutter="16" class="chart-section" align="stretch">
         <!-- 科目占比饼图 -->
         <el-col :xs="24" :md="12">
-          <div class="page-card">
+          <div class="page-card chart-card-wrapper">
             <div class="chart-header">
               <h4 class="chart-title">科目平均分占比</h4>
               <p class="desc-text">各科目成绩占比</p>
@@ -196,7 +196,7 @@
               :data="subjectPieData"
               :isRing="true"
               centerTitle="科目分布"
-              :height="300"
+              :height="360"
             />
             <div v-else class="chart-empty-wrapper">
               <EmptyState
@@ -211,7 +211,7 @@
 
         <!-- 能力雷达图 -->
         <el-col :xs="24" :md="12">
-          <div class="page-card">
+          <div class="page-card chart-card-wrapper">
             <div class="chart-header">
               <h4 class="chart-title">能力雷达图</h4>
               <p class="desc-text">各科目平均分对比</p>
@@ -221,7 +221,7 @@
               title=""
               :indicators="radarData.indicators"
               :series="radarData.series"
-              :height="300"
+              :height="360"
             />
             <div v-else class="chart-empty-wrapper">
               <EmptyState
@@ -245,6 +245,7 @@
           :data="top10Rankings"
           border
           stripe
+          style="width: 100%"
           :header-cell-style="{ background: 'var(--bg-color)', color: 'var(--text-color)' }"
         >
           <el-table-column type="index" label="排名" width="80" align="center">
@@ -261,9 +262,9 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column prop="student_id" label="学号" width="120" align="center" />
-          <el-table-column prop="student_name" label="姓名" width="120" align="center" />
-          <el-table-column prop="score" label="分数" width="100" align="center">
+          <el-table-column prop="student_id" label="学号" min-width="120" align="center" />
+          <el-table-column prop="student_name" label="姓名" min-width="120" align="center" />
+          <el-table-column prop="score" label="分数" min-width="100" align="center">
             <template #default="{ row }">
               <span :style="{ color: getScoreColor(row.score), fontWeight: 'bold' }">
                 {{ formatScore(row.score) }}
@@ -378,13 +379,37 @@ const top10Rankings = computed(() => rankings.value.slice(0, 10))
 
   .chart-section {
     margin-bottom: 16px;
+
+    // 同行卡片等高
+    :deep(.el-row) {
+      display: flex;
+      flex-wrap: wrap;
+    }
+
+    :deep(.el-col) {
+      display: flex;
+    }
+
+    :deep(.page-card) {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+  }
+
+  .chart-card-wrapper {
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
   }
 
   .chart-empty-wrapper {
-    height: 300px;
+    height: 360px;
     display: flex;
     align-items: center;
     justify-content: center;
+    flex: 1;
   }
 
   .chart-header {

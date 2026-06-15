@@ -513,12 +513,28 @@ export function useSubjectStatistics() {
 
   /** 分数分布图表数据 */
   const scoreDistributionData = computed(() => {
-    if (!selectedSubjectStats.value) return { xData: [], yData: [] }
-    const dist = selectedSubjectStats.value.score_distribution
-    return {
-      xData: ['0-59', '60-69', '70-79', '80-89', '90-100'],
-      yData: [dist.fail, dist.pass, dist.medium, dist.good, dist.excellent],
+    const keys = ['0-59', '60-69', '70-79', '80-89', '90-100'] as const
+    if (selectedSubjectStats.value) {
+      const dist = selectedSubjectStats.value.score_distribution as unknown as Record<string, number>
+      return {
+        xData: [...keys],
+        yData: keys.map((k) => dist[k] || 0),
+      }
     }
+    if (subjectStats.value.length > 0) {
+      const agg: Record<string, number> = { '0-59': 0, '60-69': 0, '70-79': 0, '80-89': 0, '90-100': 0 }
+      subjectStats.value.forEach((s) => {
+        if (s.score_distribution) {
+          const dist = s.score_distribution as unknown as Record<string, number>
+          keys.forEach((k) => { agg[k] += dist[k] || 0 })
+        }
+      })
+      return {
+        xData: [...keys],
+        yData: keys.map((k) => agg[k]),
+      }
+    }
+    return { xData: [], yData: [] }
   })
 
   /** 能力雷达图数据 */

@@ -76,7 +76,7 @@ interface RadarChartProps {
 const props = withDefaults(defineProps<RadarChartProps>(), {
   title: '',
   showLegend: true,
-  height: 300,
+  height: 360,
   showTooltip: true,
   shape: 'polygon',
 })
@@ -235,6 +235,7 @@ defineExpose({
 <style lang="scss" scoped>
 .radar-chart {
   width: 100%;
+  overflow: hidden;
 
   .chart-header {
     margin-bottom: 16px;
@@ -252,6 +253,7 @@ defineExpose({
 
   .chart-container {
     width: 100%;
+    overflow: hidden;
   }
 
   .chart-empty {

@@ -347,26 +347,40 @@ const activeMenu = computed(() => {
 
 // 折叠状态下的特殊处理
 .app-sidebar.collapsed {
+  width: $sidebar-collapsed-width;
+
   .sidebar-logo {
     padding: 0;
     justify-content: center;
   }
 
+  .sidebar-footer {
+    display: none;
+  }
+
   .sidebar-menu {
-    padding: 0 $space-2;
+    padding: 0 $space-1;
 
     :deep(.el-menu-item),
     :deep(.el-sub-menu__title) {
       padding-left: 0 !important;
       justify-content: center;
+      text-align: center;
 
       .el-icon {
         margin-right: 0;
+        font-size: 20px;
       }
     }
 
     :deep(.el-menu--inline .el-menu-item) {
       padding-left: 0 !important;
+      justify-content: center;
+    }
+
+    // 子菜单箭头隐藏
+    :deep(.el-sub-menu__icon-arrow) {
+      display: none;
     }
   }
 }

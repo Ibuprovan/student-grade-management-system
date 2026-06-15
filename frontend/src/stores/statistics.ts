@@ -83,11 +83,11 @@ export const useStatisticsStore = defineStore('statistics', () => {
     const dist = metrics.value.score_distribution
     if (!dist) return null
     return {
-      excellent: dist['90-100'] || 0,
-      good: dist['80-89'] || 0,
-      medium: dist['70-79'] || 0,
-      pass: dist['60-69'] || 0,
-      fail: dist['0-59'] || 0,
+      '0-59': dist['0-59'] || 0,
+      '60-69': dist['60-69'] || 0,
+      '70-79': dist['70-79'] || 0,
+      '80-89': dist['80-89'] || 0,
+      '90-100': dist['90-100'] || 0,
     }
   })
 

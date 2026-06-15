@@ -127,32 +127,33 @@
           :data="classStats"
           border
           stripe
+          style="width: 100%"
           :header-cell-style="{ background: 'var(--bg-color)', color: 'var(--text-color)' }"
           @row-click="handleRowClick"
           highlight-current-row
         >
-          <el-table-column prop="class_name" label="班级" width="150" />
-          <el-table-column prop="student_count" label="学生人数" width="100" align="center" />
-          <el-table-column label="平均分" width="100" align="center">
+          <el-table-column prop="class_name" label="班级" min-width="120" />
+          <el-table-column prop="student_count" label="学生人数" min-width="100" align="center" />
+          <el-table-column label="平均分" min-width="100" align="center">
             <template #default="{ row }">
               <span :style="{ color: getScoreColor(row.average_score) }">
                 {{ formatScore(row.average_score) }}
               </span>
             </template>
           </el-table-column>
-          <el-table-column label="最高分" width="100" align="center">
+          <el-table-column label="最高分" min-width="100" align="center">
             <template #default="{ row }">
               {{ formatScore(row.max_score) }}
             </template>
           </el-table-column>
-          <el-table-column label="最低分" width="100" align="center">
+          <el-table-column label="最低分" min-width="100" align="center">
             <template #default="{ row }">
               <span :style="{ color: row.min_score < 60 ? '#F56C6C' : '#606266' }">
                 {{ formatScore(row.min_score) }}
               </span>
             </template>
           </el-table-column>
-          <el-table-column label="及格率" width="100" align="center">
+          <el-table-column label="及格率" min-width="140" align="center">
             <template #default="{ row }">
               <el-progress
                 :percentage="row.pass_rate"
@@ -164,7 +165,7 @@
               {{ formatPercent(row.pass_rate) }}
             </template>
           </el-table-column>
-          <el-table-column label="优秀率" width="100" align="center">
+          <el-table-column label="优秀率" min-width="140" align="center">
             <template #default="{ row }">
               <el-progress
                 :percentage="row.excellent_rate"
@@ -187,10 +188,10 @@
       </div>
 
       <!-- 图表区域 -->
-      <el-row :gutter="16">
+      <el-row :gutter="16" align="stretch">
         <!-- 班级平均分对比 -->
         <el-col :xs="24" :md="12">
-          <div class="page-card">
+          <div class="page-card chart-card-wrapper">
             <BarChart
               v-if="classComparisonData.xData.length > 0"
               title="各班级平均分对比"
@@ -200,7 +201,7 @@
               yLabel="平均分"
               color="#409EFF"
               :showValue="true"
-              :height="350"
+              :height="360"
             />
             <div v-else class="chart-empty-wrapper">
               <EmptyState
@@ -215,7 +216,7 @@
 
         <!-- 班级及格率/优秀率对比 -->
         <el-col :xs="24" :md="12">
-          <div class="page-card">
+          <div class="page-card chart-card-wrapper">
             <LineChart
               v-if="classPassRateData.xData.length > 0"
               title="班级及格率/优秀率对比"
@@ -225,7 +226,7 @@
               yLabel="百分比(%)"
               :smooth="true"
               :showLegend="true"
-              :height="350"
+              :height="360"
             />
             <div v-else class="chart-empty-wrapper">
               <EmptyState
@@ -317,11 +318,35 @@ function getProgressColor(value: number): string {
     margin-bottom: 16px;
   }
 
+  .chart-card-wrapper {
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
   .chart-empty-wrapper {
-    height: 350px;
+    height: 360px;
     display: flex;
     align-items: center;
     justify-content: center;
+    flex: 1;
+  }
+
+  :deep(.el-row[align="stretch"]) {
+    display: flex;
+    flex-wrap: wrap;
+
+    > .el-col {
+      display: flex;
+      flex-direction: column;
+
+      > .page-card {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+    }
   }
 }
 

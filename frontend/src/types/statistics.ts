@@ -90,9 +90,9 @@ export interface SubjectStatistics {
 
 /** 分数分布（前端展示用） */
 export interface ScoreDistribution {
-  excellent: number // 90-100 优秀
-  good: number // 80-89 良好
-  medium: number // 70-79 中等
-  pass: number // 60-69 及格
-  fail: number // 0-59 不及格
+  '0-59': number
+  '60-69': number
+  '70-79': number
+  '80-89': number
+  '90-100': number
 }

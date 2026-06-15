@@ -79,7 +79,7 @@ const props = withDefaults(defineProps<LineChartProps>(), {
   yLabel: '',
   smooth: false,
   areaStyle: false,
-  height: 300,
+  height: 360,
   showTooltip: true,
   showLegend: true,
   showGrid: true,
@@ -178,9 +178,9 @@ function updateChart() {
       itemGap: 16,
     } : undefined,
     grid: props.showGrid ? {
-      left: 50,
-      right: 30,
-      bottom: 50,
+      left: 60,
+      right: 40,
+      bottom: 60,
       top: props.title ? (props.showLegend && props.series.length > 1 ? 80 : 60) : (props.showLegend && props.series.length > 1 ? 60 : 40),
       containLabel: true,
     } : undefined,
@@ -297,6 +297,7 @@ defineExpose({
 <style lang="scss" scoped>
 .line-chart {
   width: 100%;
+  overflow: hidden;
 
   .chart-header {
     margin-bottom: 16px;
@@ -314,6 +315,7 @@ defineExpose({
 
   .chart-container {
     width: 100%;
+    overflow: hidden;
   }
 
   .chart-empty {

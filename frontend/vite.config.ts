@@ -67,10 +67,16 @@ export default defineConfig({
         chunkFileNames: 'js/[name]-[hash].js',
         entryFileNames: 'js/[name]-[hash].js',
         assetFileNames: '[ext]/[name]-[hash].[ext]',
-        manualChunks: {
-          vue: ['vue', 'vue-router', 'pinia'],
-          elementPlus: ['element-plus'],
-          echarts: ['echarts'],
+        manualChunks(id: string) {
+          if (id.includes('node_modules/vue') || id.includes('node_modules/vue-router') || id.includes('node_modules/pinia')) {
+            return 'vue'
+          }
+          if (id.includes('node_modules/element-plus')) {
+            return 'elementPlus'
+          }
+          if (id.includes('node_modules/echarts')) {
+            return 'echarts'
+          }
         },
       },
     },

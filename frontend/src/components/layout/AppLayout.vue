@@ -57,9 +57,20 @@ onMounted(() => {
   padding: $space-5;
   background: $bg-primary;
   overflow-y: auto;
-  max-width: 1440px;
-  margin: 0 auto;
+  overflow-x: hidden;
   width: 100%;
+}
+
+@media (max-width: $breakpoint-xl) {
+  .layout-content {
+    padding: $space-4;
+  }
+}
+
+@media (max-width: $breakpoint-lg) {
+  .layout-content {
+    padding: $space-3;
+  }
 }
 
 // 页面切换动画

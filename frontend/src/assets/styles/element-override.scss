@@ -93,10 +93,10 @@
 .el-button--default {
   background: transparent;
   border: 1px solid $border-primary;
-  color: $text-secondary;
+  color: $text-primary;
   
   &:hover {
-    color: $text-primary;
+    color: $accent-primary;
     border-color: $accent-primary;
     background: rgba(37, 99, 235, 0.05);
   }
@@ -220,6 +220,7 @@
   color: $text-primary !important;
   border-radius: $rounded-lg;
   overflow: hidden;
+  width: 100% !important;
   
   th.el-table__cell {
     background-color: $bg-tertiary !important;
@@ -235,6 +236,39 @@
     border-bottom: 1px solid $border-primary !important;
     font-size: $text-sm;
     padding: 12px 16px !important;
+  }
+  
+  // 排序三角标样式
+  .caret-wrapper {
+    .sort-caret {
+      border-width: 5px;
+      
+      &.ascending {
+        border-bottom-color: $text-muted;
+      }
+      
+      &.descending {
+        border-top-color: $text-muted;
+      }
+    }
+    
+    .ascending {
+      border-bottom-color: $accent-primary !important;
+    }
+    
+    .descending {
+      border-top-color: $accent-primary !important;
+    }
+  }
+  
+  // 表头排序列 hover 效果
+  th.is-sortable {
+    cursor: pointer;
+    user-select: none;
+    
+    &:hover {
+      color: $text-primary;
+    }
   }
   
   tr {
@@ -256,6 +290,12 @@
   .el-table__empty-text {
     color: $text-muted !important;
   }
+  
+  // 确保表格占满容器宽度
+  &__body-wrapper,
+  &__header-wrapper {
+    width: 100%;
+  }
 }
 
 // ========== 卡片样式 ==========
@@ -265,6 +305,8 @@
   border-radius: $rounded-lg !important;
   box-shadow: $shadow-sm !important;
   transition: all $transition-normal !important;
+  overflow: hidden;
+  width: 100%;
   
   &:hover {
     box-shadow: $shadow-lg !important;
@@ -278,6 +320,7 @@
   
   .el-card__body {
     padding: $space-6 !important;
+    width: 100%;
   }
 }
 

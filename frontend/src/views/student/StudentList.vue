@@ -95,7 +95,7 @@
         <el-table-column
           prop="student_id"
           label="学号"
-          width="120"
+          min-width="120"
           sortable="custom"
           show-overflow-tooltip
         >
@@ -108,14 +108,14 @@
         <el-table-column
           prop="name"
           label="姓名"
-          width="120"
+          min-width="120"
           sortable="custom"
           show-overflow-tooltip
         />
         <el-table-column
           prop="gender"
           label="性别"
-          width="80"
+          min-width="80"
           align="center"
           sortable="custom"
         >
@@ -128,21 +128,21 @@
         <el-table-column
           prop="class_name"
           label="班级"
-          width="150"
+          min-width="150"
           sortable="custom"
           show-overflow-tooltip
         />
         <el-table-column
           prop="enrollment_year"
           label="入学年份"
-          width="100"
+          min-width="100"
           align="center"
           sortable="custom"
         />
         <el-table-column
           prop="created_at"
           label="创建时间"
-          width="180"
+          min-width="180"
           sortable="custom"
         >
           <template #default="{ row }">

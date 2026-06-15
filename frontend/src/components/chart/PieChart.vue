@@ -76,7 +76,7 @@ const props = withDefaults(defineProps<PieChartProps>(), {
   radius: () => ['40%', '70%'],
   showLabel: true,
   showLegend: true,
-  height: 300,
+  height: 360,
   showTooltip: true,
   isRing: false,
   centerTitle: '',
@@ -139,11 +139,13 @@ function updateChart() {
       itemGap: 12,
       itemWidth: 12,
       itemHeight: 12,
+      type: 'scroll',
+      pageIconSize: 10,
     } : undefined,
     graphic: props.centerTitle ? [
       {
         type: 'group',
-        left: 'center',
+        left: '40%',
         top: 'center',
         children: [
           {
@@ -152,7 +154,7 @@ function updateChart() {
               text: props.centerTitle,
               textAlign: 'center',
               fill: '#303133',
-              fontSize: 18,
+              fontSize: 14,
               fontWeight: 'bold',
             },
             left: 'center',
@@ -168,7 +170,7 @@ function updateChart() {
             },
             left: 'center',
             top: 'center',
-            y: 25,
+            y: 22,
           },
         ],
       },
@@ -177,7 +179,7 @@ function updateChart() {
       {
         name: props.title || '数据',
         type: 'pie',
-        radius: props.isRing ? ['50%', '70%'] : props.radius,
+        radius: props.isRing ? ['55%', '70%'] : props.radius,
         center: ['40%', '50%'],
         avoidLabelOverlap: true,
         itemStyle: {
@@ -264,6 +266,7 @@ defineExpose({
 <style lang="scss" scoped>
 .pie-chart {
   width: 100%;
+  overflow: hidden;
 
   .chart-header {
     margin-bottom: 16px;
@@ -281,6 +284,7 @@ defineExpose({
 
   .chart-container {
     width: 100%;
+    overflow: hidden;
   }
 
   .chart-empty {

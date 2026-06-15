@@ -79,17 +79,19 @@
 html {
   height: 100%;
   -webkit-text-size-adjust: 100%;
+  overflow-x: hidden;
 }
 
 body {
   height: 100%;
   font-family: $font-sans;
   font-size: $text-base;
-  line-height: 1.6;
+  line-height: 1.55;
   color: $text-primary;
   background-color: $bg-primary;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
 a {
@@ -130,26 +132,38 @@ img {
 // ========== 字体与间距统一 ==========
 
 // 页面标题：24px / 700
-.page-header .page-title {
+.page-header .page-title,
+h1 {
   font-size: $text-2xl !important;
   font-weight: $font-bold !important;
   letter-spacing: -0.01em;
   color: $text-primary;
+  line-height: 1.4;
 }
 
 // 卡片标题：20px / 600
-.section-title {
+.section-title,
+h2 {
   font-size: $text-xl !important;
   font-weight: $font-semibold !important;
-  line-height: 1.4;
+  line-height: 1.45;
   color: $text-primary;
 }
 
 // 图表标题：16px / 600
-.chart-title {
+.chart-title,
+h3 {
   font-size: $text-base !important;
   font-weight: $font-semibold !important;
   color: $text-primary;
+  line-height: 1.5;
+}
+
+h4 {
+  font-size: $text-sm !important;
+  font-weight: $font-semibold !important;
+  color: $text-primary;
+  line-height: 1.5;
 }
 
 // 说明文字：14px / 400
@@ -157,6 +171,7 @@ img {
   font-size: $text-sm;
   font-weight: $font-normal;
   color: $text-secondary;
+  line-height: 1.55;
 }
 
 // ========== 骨架屏加载效果 ==========
@@ -265,6 +280,47 @@ img {
   flex: 1;
 }
 
+// Flex 行等高
+.flex-row-equal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+
+  & > * {
+    display: flex;
+    flex-direction: column;
+  }
+
+  & > * > .page-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+
+    .chart-container,
+    .chart-empty-wrapper {
+      flex: 1;
+    }
+  }
+}
+
+// 图标文字对齐
+.icon-text-center {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+}
+
+// 图表卡片容器 — 防止图表溢出
+.chart-card-wrapper {
+  overflow: hidden;
+  width: 100%;
+
+  .chart-container,
+  .chart-empty-wrapper {
+    overflow: hidden;
+  }
+}
+
 // 间距
 .mt-8 { margin-top: $space-2; }
 .mt-16 { margin-top: $space-4; }
@@ -294,10 +350,17 @@ img {
   padding: $space-6;
   margin-bottom: $space-6;
   transition: all $transition-normal;
+  overflow: hidden;
+  width: 100%;
 
   &:hover {
     box-shadow: $shadow-lg;
     border-color: $border-accent;
+  }
+
+  // 确保卡片内表格占满宽度
+  .el-table {
+    width: 100% !important;
   }
 }
 
@@ -306,8 +369,9 @@ img {
   padding: $space-5;
   height: 100%;
   overflow-y: auto;
-  max-width: 1440px;
-  margin: 0 auto;
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
 }
 
 // 页面标题
@@ -337,13 +401,6 @@ img {
   border-radius: $rounded-lg;
   border: 1px solid $border-primary;
   box-shadow: $shadow-sm;
-}
-
-// 表格操作列
-.table-actions {
-  display: flex;
-  align-items: center;
-  gap: $space-1;
 }
 
 // 空状态
@@ -385,6 +442,37 @@ img {
 }
 
 // ========== 响应式断点 ==========
+
+// 大屏 1920px
+@media (min-width: 1920px) {
+  .page-container {
+    padding: $space-6 $space-8;
+  }
+}
+
+// 中大屏 1440px
+@media (min-width: 1440px) and (max-width: 1919px) {
+  .page-container {
+    padding: $space-5 $space-6;
+  }
+}
+
+// 中屏 1280px
+@media (max-width: 1280px) {
+  .page-container {
+    padding: $space-4;
+  }
+
+  .page-card {
+    padding: $space-4;
+  }
+
+  .search-bar {
+    gap: $space-2;
+  }
+}
+
+// 小屏 1024px
 @media (max-width: $breakpoint-lg) {
   :root {
     --sidebar-width: 100%;
@@ -468,4 +556,39 @@ pre {
 .loading {
   opacity: 0.7;
   pointer-events: none;
+}
+
+// ========== z-index 层级管理 ==========
+// sidebar: 200 (fixed)
+// header: 100 (sticky)
+// loading-mask: 100
+// el-dialog / el-message / el-notification: 由 Element Plus 管理
+// dropdown: 确保不被 header 遮挡
+.el-popper {
+  z-index: 2000 !important;
+}
+
+.el-dialog__wrapper {
+  z-index: 2100 !important;
+}
+
+.el-message {
+  z-index: 3000 !important;
+}
+
+.el-notification {
+  z-index: 3000 !important;
+}
+
+// ========== 表格操作列样式 ==========
+.table-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $space-1;
+
+  .el-button {
+    padding: 4px 8px;
+    font-size: $text-xs;
+  }
 }

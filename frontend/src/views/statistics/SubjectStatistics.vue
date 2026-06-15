@@ -160,37 +160,38 @@
           :data="subjectStats"
           border
           stripe
+          style="width: 100%"
           :header-cell-style="{ background: 'var(--bg-color)', color: 'var(--text-color)' }"
           @row-click="handleRowClick"
           highlight-current-row
         >
-          <el-table-column prop="subject" label="科目" width="100" />
-          <el-table-column prop="student_count" label="参考人数" width="100" align="center" />
-          <el-table-column label="平均分" width="100" align="center">
+          <el-table-column prop="subject" label="科目" min-width="100" />
+          <el-table-column prop="student_count" label="参考人数" min-width="100" align="center" />
+          <el-table-column label="平均分" min-width="100" align="center">
             <template #default="{ row }">
               <span :style="{ color: getScoreColor(row.average_score) }">
                 {{ formatScore(row.average_score) }}
               </span>
             </template>
           </el-table-column>
-          <el-table-column label="最高分" width="100" align="center">
+          <el-table-column label="最高分" min-width="100" align="center">
             <template #default="{ row }">
               {{ formatScore(row.max_score) }}
             </template>
           </el-table-column>
-          <el-table-column label="最低分" width="100" align="center">
+          <el-table-column label="最低分" min-width="100" align="center">
             <template #default="{ row }">
               <span :style="{ color: row.min_score < 60 ? '#F56C6C' : '#606266' }">
                 {{ formatScore(row.min_score) }}
               </span>
             </template>
           </el-table-column>
-          <el-table-column label="及格率" width="100" align="center">
+          <el-table-column label="及格率" min-width="100" align="center">
             <template #default="{ row }">
               {{ formatPercent(row.pass_rate) }}
             </template>
           </el-table-column>
-          <el-table-column label="优秀率" width="100" align="center">
+          <el-table-column label="优秀率" min-width="100" align="center">
             <template #default="{ row }">
               {{ formatPercent(row.excellent_rate) }}
             </template>
@@ -206,10 +207,10 @@
       </div>
 
       <!-- 图表区域 -->
-      <el-row :gutter="16">
+      <el-row :gutter="16" align="stretch">
         <!-- 科目平均分对比 -->
         <el-col :xs="24" :md="12">
-          <div class="page-card">
+          <div class="page-card chart-card-wrapper">
             <div class="chart-header">
               <h4 class="chart-title">各科目平均分对比</h4>
               <p class="desc-text">各科目成绩占比</p>
@@ -223,7 +224,7 @@
               yLabel="平均分"
               color="#67C23A"
               :showValue="true"
-              :height="350"
+              :height="360"
             />
             <div v-else class="chart-empty-wrapper">
               <EmptyState
@@ -238,7 +239,7 @@
 
         <!-- 科目及格率/优秀率对比 -->
         <el-col :xs="24" :md="12">
-          <div class="page-card">
+          <div class="page-card chart-card-wrapper">
             <LineChart
               v-if="subjectRateData.xData.length > 0"
               title="科目及格率/优秀率对比"
@@ -248,7 +249,7 @@
               yLabel="百分比(%)"
               :smooth="true"
               :showLegend="true"
-              :height="350"
+              :height="360"
             />
             <div v-else class="chart-empty-wrapper">
               <EmptyState
@@ -262,10 +263,10 @@
         </el-col>
       </el-row>
 
-      <el-row :gutter="16">
+      <el-row :gutter="16" align="stretch">
         <!-- 分数分布 -->
         <el-col :xs="24" :md="12">
-          <div class="page-card">
+          <div class="page-card chart-card-wrapper">
             <BarChart
               v-if="scoreDistributionData.xData.length > 0"
               :title="selectedSubjectStats ? `${selectedSubjectStats.subject}成绩分布` : '成绩分布'"
@@ -275,7 +276,7 @@
               yLabel="人数"
               color="#E6A23C"
               :showValue="true"
-              :height="350"
+              :height="360"
             />
             <div v-else class="chart-empty-wrapper">
               <EmptyState
@@ -290,7 +291,7 @@
 
         <!-- 能力雷达图 -->
         <el-col :xs="24" :md="12">
-          <div class="page-card">
+          <div class="page-card chart-card-wrapper">
             <div class="chart-header">
               <h4 class="chart-title">科目能力雷达图</h4>
               <p class="desc-text">各科目平均分对比</p>
@@ -300,7 +301,7 @@
               title=""
               :indicators="radarData.indicators"
               :series="radarData.series"
-              :height="350"
+              :height="360"
             />
             <div v-else class="chart-empty-wrapper">
               <EmptyState
@@ -410,11 +411,35 @@ function handleRowClick(row: SubjectStatistics) {
     margin-bottom: 16px;
   }
 
+  .chart-card-wrapper {
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
   .chart-empty-wrapper {
-    height: 350px;
+    height: 360px;
     display: flex;
     align-items: center;
     justify-content: center;
+    flex: 1;
+  }
+
+  :deep(.el-row[align="stretch"]) {
+    display: flex;
+    flex-wrap: wrap;
+
+    > .el-col {
+      display: flex;
+      flex-direction: column;
+
+      > .page-card {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+    }
   }
 }
 

@@ -98,31 +98,31 @@
       @update:current-page="handlePageChange"
       @update:page-size="handleSizeChange"
     >
-      <el-table-column prop="student_id" label="学号" width="120" sortable="custom">
+      <el-table-column prop="student_id" label="学号" min-width="120" sortable="custom">
         <template #default="{ row }">
           <span class="student-id-link" @click="goToStudentDetail(row.student_id)">{{ row.student_id }}</span>
         </template>
       </el-table-column>
 
-      <el-table-column prop="student_name" label="姓名" width="100">
+      <el-table-column prop="student_name" label="姓名" min-width="100">
         <template #default="{ row }">
           {{ row.student_name || '-' }}
         </template>
       </el-table-column>
 
-      <el-table-column prop="class_name" label="班级" width="120">
+      <el-table-column prop="class_name" label="班级" min-width="120">
         <template #default="{ row }">
           {{ row.class_name || '-' }}
         </template>
       </el-table-column>
 
-      <el-table-column prop="subject" label="科目" width="80" align="center">
+      <el-table-column prop="subject" label="科目" min-width="80" align="center">
         <template #default="{ row }">
           <el-tag size="small" effect="plain">{{ row.subject }}</el-tag>
         </template>
       </el-table-column>
 
-      <el-table-column prop="exam_type" label="考试类型" width="100" align="center">
+      <el-table-column prop="exam_type" label="考试类型" min-width="100" align="center">
         <template #default="{ row }">
           <el-tag :type="getExamTypeTag(row.exam_type)" size="small">
             {{ row.exam_type }}
@@ -130,7 +130,7 @@
         </template>
       </el-table-column>
 
-      <el-table-column prop="score" label="分数" width="100" align="center" sortable="custom">
+      <el-table-column prop="score" label="分数" min-width="100" align="center" sortable="custom">
         <template #default="{ row }">
           <span :style="{ color: getScoreColor(row.score), fontWeight: 600 }">
             {{ formatScore(row.score) }}
@@ -138,7 +138,7 @@
         </template>
       </el-table-column>
 
-      <el-table-column prop="exam_date" label="考试日期" width="120" sortable="custom" />
+      <el-table-column prop="exam_date" label="考试日期" min-width="120" sortable="custom" />
 
       <template #actions="{ row }">
         <div class="table-actions">

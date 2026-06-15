@@ -178,6 +178,11 @@ function handleSizeChange(size: number) {
   background: var(--surface-color);
   border-radius: var(--border-radius-lg);
   overflow: hidden;
+  width: 100%;
+
+  :deep(.el-table) {
+    width: 100% !important;
+  }
 }
 
 .table-pagination {

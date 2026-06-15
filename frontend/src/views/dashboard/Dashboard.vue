@@ -191,6 +191,15 @@ onMounted(() => {
 // ===== 统计卡片 =====
 .stat-cards {
   margin-bottom: $space-6;
+
+  :deep(.el-row) {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  :deep(.el-col) {
+    display: flex;
+  }
 }
 
 .stat-card {
@@ -204,6 +213,8 @@ onMounted(() => {
   box-shadow: $shadow-sm;
   margin-bottom: $space-6;
   transition: all $transition-normal;
+  flex: 1;
+  width: 100%;
 
   &:hover {
     transform: translateY(-2px);
@@ -352,6 +363,7 @@ onMounted(() => {
   background: $bg-tertiary;
   border-radius: $rounded-lg;
   transition: all $transition-fast;
+  min-height: 100px;
 
   &:hover {
     background: rgba(37, 99, 235, 0.1);
