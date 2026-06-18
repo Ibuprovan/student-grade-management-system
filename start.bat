@@ -30,25 +30,27 @@ if %errorlevel% neq 0 (
 )
 
 echo [INFO] Installing frontend dependencies...
-cd /d "%~dp0frontend"
+pushd "%~dp0frontend"
 call npm install --legacy-peer-deps 2>nul
-cd /d "%~dp0"
+popd
 if %errorlevel% neq 0 (
     echo [WARNING] Frontend dependency installation may have issues, but will continue...
 )
 
 echo [INFO] Initializing database...
+pushd "%~dp0"
 python -m src.scripts.init_users
+popd
 if %errorlevel% neq 0 (
     echo [WARNING] Database initialization may have issues, but will continue...
 )
 
 echo.
 echo [INFO] Starting backend service...
-start "Backend" cmd /k "cd /d "%~dp0" && python -m uvicorn src.main:app --reload --host 0.0.0.0 --port 8000"
+start "Backend" /D "%~dp0" cmd /k python -m uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
 
 echo [INFO] Starting frontend service...
-start "Frontend" cmd /k "cd /d "%~dp0frontend" && npm run dev"
+start "Frontend" /D "%~dp0frontend" cmd /k npm run dev
 
 echo.
 echo ========================================
