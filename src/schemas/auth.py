@@ -78,12 +78,14 @@ class UserInfo(BaseModel):
         username: 用户名
         role: 用户角色
         is_active: 账户是否启用
+        need_change_password: 是否需要修改密码
     """
 
     id: int = Field(description="用户 ID")
     username: str = Field(description="用户名")
     role: str = Field(description="用户角色")
     is_active: bool = Field(description="账户是否启用")
+    need_change_password: bool = Field(default=False, description="是否需要修改密码")
 
 
 class ChangePasswordRequest(BaseModel):

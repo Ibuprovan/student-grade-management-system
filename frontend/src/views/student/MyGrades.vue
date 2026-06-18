@@ -24,100 +24,92 @@
     <!-- 概览卡片 -->
     <el-row :gutter="16" class="overview-cards">
       <el-col :xs="12" :sm="6">
-        <div class="overview-card overview-card--primary">
-          <div class="overview-value">{{ studentStats.average_score || '-' }}</div>
-          <div class="overview-label">平均分</div>
-        </div>
-      </el-col>
-      <el-col :xs="12" :sm="6">
         <div class="overview-card overview-card--success">
-          <div class="overview-value">{{ studentStats.total_score || '-' }}</div>
+          <div class="overview-value">{{ formatScore(studentStats.total_score) }}</div>
           <div class="overview-label">总分</div>
         </div>
       </el-col>
       <el-col :xs="12" :sm="6">
+        <div class="overview-card overview-card--primary">
+          <div class="overview-value">{{ studentStats.pass_count ?? '-' }}</div>
+          <div class="overview-label">及格科目</div>
+        </div>
+      </el-col>
+      <el-col :xs="12" :sm="6">
         <div class="overview-card overview-card--warning">
-          <div class="overview-value">
-            {{ studentStats.class_rank_total ? `第${studentStats.class_rank_total}名` : '-' }}
-          </div>
-          <div class="overview-label">班级排名</div>
+          <div class="overview-value">{{ studentStats.excellent_count ?? '-' }}</div>
+          <div class="overview-label">优秀科目</div>
         </div>
       </el-col>
       <el-col :xs="12" :sm="6">
         <div class="overview-card overview-card--accent">
-          <div class="overview-value">
-            {{ studentStats.grade_rank_total ? `第${studentStats.grade_rank_total}名` : '-' }}
-          </div>
-          <div class="overview-label">年级排名</div>
+          <div class="overview-value">{{ studentStats.class_name || '-' }}</div>
+          <div class="overview-label">班级</div>
         </div>
       </el-col>
     </el-row>
 
-    <!-- 成绩趋势图 -->
-    <div class="page-card chart-section">
-      <LineChart
-        title="成绩趋势"
-        :x-data="trendXData"
-        :series="trendSeries"
-        :smooth="true"
-        :area-style="true"
-        :height="320"
-        y-label="分数"
-      />
+    <!-- 评分标准提示 -->
+    <div class="standard-hint">
+      <span class="hint-item hint-pass">≥60 及格</span>
+      <span class="hint-item hint-excellent">≥90 优秀</span>
     </div>
 
     <!-- 各科成绩表格 -->
-    <div class="page-card">
+    <div class="page-card table-card">
       <h3 class="section-title">各科成绩明细</h3>
       <DataTable
         :data="grades"
         :loading="loading"
         :show-pagination="false"
       >
-        <el-table-column prop="subject" label="科目" width="120" align="center">
+        <el-table-column prop="subject" label="科目" min-width="100" align="center">
           <template #default="{ row }">
             <el-tag size="small" effect="plain">{{ row.subject }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="score" label="分数" width="120" align="center" sortable="custom">
+        <el-table-column prop="score" label="我的分数" min-width="100" align="center">
           <template #default="{ row }">
             <span :style="{ color: getScoreColor(row.score), fontWeight: 600, fontSize: '16px' }">
-              {{ row.score }}
+              {{ formatScore(row.score) }}
             </span>
           </template>
         </el-table-column>
-        <el-table-column prop="exam_type" label="考试类型" width="120" align="center">
+        <el-table-column label="班级平均分" min-width="100" align="center">
+          <template #default="{ row }">
+            <span class="text-secondary">{{ formatScore(row.class_average) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="班级最高分" min-width="100" align="center">
+          <template #default="{ row }">
+            <span class="text-success">{{ formatScore(row.class_max) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="班级最低分" min-width="100" align="center">
+          <template #default="{ row }">
+            <span class="text-danger">{{ formatScore(row.class_min) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="exam_type" label="考试类型" min-width="100" align="center">
           <template #default="{ row }">
             <el-tag :type="getExamTypeTag(row.exam_type)" size="small">
               {{ row.exam_type }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="exam_date" label="考试日期" width="140" />
-        <el-table-column label="班级排名" width="120" align="center">
-          <template #default="{ row }">
-            {{ row.class_rank ? `第${row.class_rank}名` : '-' }}
-          </template>
-        </el-table-column>
-        <el-table-column label="年级排名" width="120" align="center">
-          <template #default="{ row }">
-            {{ row.grade_rank ? `第${row.grade_rank}名` : '-' }}
-          </template>
-        </el-table-column>
+        <el-table-column prop="exam_date" label="考试日期" min-width="120" align="center" />
       </DataTable>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { getCurrentStudentInfo } from '@/api/auth'
 import { getStudentStatistics } from '@/api/statistics'
-import { getGradeList } from '@/api/grade'
 import DataTable from '@/components/common/DataTable.vue'
-import LineChart from '@/components/chart/LineChart.vue'
-import type { StudentStatisticsResponse } from '@/types/statistics'
-import type { Grade, ExamType } from '@/types/grade'
+import type { StudentStatisticsResponse, StudentSubjectStats } from '@/types/statistics'
+import type { ExamType } from '@/types/grade'
 import { EXAM_TYPES } from '@/types/grade'
 import { ElMessage } from 'element-plus'
 
@@ -130,9 +122,6 @@ const selectedExamType = ref<ExamType | ''>('')
 /** 加载状态 */
 const loading = ref(false)
 
-/** 学生信息加载状态 */
-const studentInfoLoading = ref(true)
-
 /** 学生统计数据 */
 const studentStats = ref<StudentStatisticsResponse>({
   student_id: '',
@@ -143,31 +132,17 @@ const studentStats = ref<StudentStatisticsResponse>({
   average_score: 0,
 })
 
-/** 成绩列表 */
-const grades = ref<Grade[]>([])
+/** 成绩列表（包含班级统计） */
+const grades = ref<StudentSubjectStats[]>([])
 
 /** 学生ID（从后端接口获取） */
 const studentId = ref('')
 
-/** 学生姓名 */
-const studentName = ref('')
-
-/** 趋势图 X 轴数据（按科目） */
-const trendXData = computed(() => {
-  return studentStats.value.subjects.map((s: { subject: string }) => s.subject)
-})
-
-/** 趋势图系列数据 */
-const trendSeries = computed(() => {
-  if (studentStats.value.subjects.length === 0) return []
-  return [
-    {
-      name: '分数',
-      data: studentStats.value.subjects.map((s: { score: number }) => s.score),
-      color: '#2A9D8F',
-    },
-  ]
-})
+/** 格式化分数（保留1位小数） */
+function formatScore(score: number | undefined | null): string {
+  if (score === undefined || score === null) return '-'
+  return Number(score).toFixed(1)
+}
 
 /** 获取分数颜色 */
 function getScoreColor(score: number): string {
@@ -178,14 +153,14 @@ function getScoreColor(score: number): string {
 }
 
 /** 获取考试类型标签样式 */
-function getExamTypeTag(examType: string): '' | 'success' | 'warning' | 'danger' | 'info' {
-  const map: Record<string, '' | 'success' | 'warning' | 'danger' | 'info'> = {
-    '期中': '',
+function getExamTypeTag(examType: string): 'primary' | 'success' | 'warning' | 'danger' | 'info' {
+  const map: Record<string, 'primary' | 'success' | 'warning' | 'danger' | 'info'> = {
+    '期中': 'primary',
     '期末': 'success',
     '月考': 'warning',
     '单元测试': 'info',
   }
-  return map[examType] || ''
+  return map[examType] || 'info'
 }
 
 /** 获取学生信息 */
@@ -194,13 +169,13 @@ async function fetchStudentInfo() {
     const response = await getCurrentStudentInfo()
     if (response.success && response.data) {
       studentId.value = response.data.student_id
-      studentName.value = response.data.name
       return true
     }
     return false
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('获取学生信息失败:', error)
-    const message = error?.response?.data?.detail || '获取学生信息失败，请联系管理员'
+    const err = error as { response?: { data?: { detail?: string } } }
+    const message = err?.response?.data?.detail || '获取学生信息失败，请联系管理员'
     ElMessage.error(message)
     return false
   }
@@ -208,37 +183,20 @@ async function fetchStudentInfo() {
 
 /** 获取成绩数据 */
 async function fetchData() {
-  // 如果还没有学生信息，先获取
   if (!studentId.value) {
     const success = await fetchStudentInfo()
     if (!success) return
   }
 
-  // 再次检查 studentId
   if (!studentId.value) return
 
   loading.value = true
   try {
     const examType = selectedExamType.value || undefined
-
-    // 并行获取统计数据和成绩列表
-    const [statsRes, gradesRes] = await Promise.allSettled([
-      getStudentStatistics(studentId.value, { exam_type: examType }),
-      getGradeList({
-        student_id: studentId.value,
-        exam_type: examType as ExamType | undefined,
-        page_size: 100,
-      }),
-    ])
-
-    if (statsRes.status === 'fulfilled') {
-      const data = (statsRes.value as any).data || statsRes.value
-      studentStats.value = data
-    }
-
-    if (gradesRes.status === 'fulfilled') {
-      const data = (gradesRes.value as any).data || gradesRes.value
-      grades.value = data.items || []
+    const res = await getStudentStatistics(studentId.value, { exam_type: examType }) as unknown as { success: boolean; data: StudentStatisticsResponse }
+    if (res?.success && res.data) {
+      studentStats.value = res.data
+      grades.value = res.data.subjects || []
     }
   } catch (error) {
     console.error('获取成绩数据失败:', error)
@@ -247,10 +205,7 @@ async function fetchData() {
   }
 }
 
-onMounted(async () => {
-  studentInfoLoading.value = true
-  await fetchStudentInfo()
-  studentInfoLoading.value = false
+onMounted(() => {
   fetchData()
 })
 </script>
@@ -313,9 +268,36 @@ onMounted(async () => {
     &--accent .overview-value { color: #E06469; }
   }
 
-  // ===== 图表区域 =====
-  .chart-section {
-    margin-bottom: 16px;
+  // ===== 表格卡片 =====
+  .table-card {
+    width: 100%;
+    overflow: hidden;
+  }
+
+  // ===== 评分标准提示 =====
+  .standard-hint {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 12px;
+    padding-left: 4px;
+
+    .hint-item {
+      font-size: 12px;
+      font-weight: 500;
+      padding: 2px 8px;
+      border-radius: 4px;
+      line-height: 1.6;
+
+      &.hint-pass {
+        color: #67c23a;
+        background: #f0f9eb;
+      }
+
+      &.hint-excellent {
+        color: #52B788;
+        background: #ecf7f1;
+      }
+    }
   }
 
   // ===== 区块标题 =====
@@ -324,6 +306,19 @@ onMounted(async () => {
     font-weight: 600;
     color: var(--text-color);
     margin: 0 0 16px;
+  }
+
+  // ===== 文本颜色 =====
+  .text-secondary {
+    color: var(--text-color-secondary);
+  }
+
+  .text-success {
+    color: #67c23a;
+  }
+
+  .text-danger {
+    color: #f56c6c;
   }
 }
 

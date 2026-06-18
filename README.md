@@ -24,7 +24,8 @@
 
 - **专业教育 UI** - 浅色主题，专业蓝主色调，清晰现代
 - **JWT 双令牌认证** - Access Token + Refresh Token 安全机制
-- **RBAC 权限控制** - 管理员/教师/学生三级角色权限
+- **RBAC 权限控制** - 管理员/班主任/教师/学生四级角色权限
+- **班主任专属空间** - 只读查看本班学生、成绩与统计
 - **数据可视化** - ECharts 图表（折线图、柱状图、饼图、雷达图）
 - **批量导入** - Excel/CSV 文件一键导入学生和成绩
 - **响应式布局** - 适配 1280px / 1440px / 1920px 多种分辨率
@@ -84,6 +85,7 @@ npm run dev
 | 角色 | 用户名 | 密码 | 权限 |
 |------|--------|------|------|
 | 管理员 | `admin` | `admin123` | 全部权限 |
+| 班主任 | `2026001` | `123456` | 查看本班数据（只读），首次登录强制改密 |
 | 教师 | `teacher` | `teacher123` | 学生和成绩管理 |
 | 学生 | `student` | `student123` | 查看自己的成绩 |
 
@@ -110,15 +112,25 @@ npm run dev
 - 批量导入（每人一行模板：学号+姓名+9 科成绩+考试类型+日期）
 - 成绩导出
 
+### 班主任空间（Class Teacher）
+- **专属仪表盘**：班级概况、学生/成绩统计卡片
+- **本班学生列表**：仅展示本班学生，支持搜索/筛选/分页
+- **本班成绩列表**：仅展示本班学生成绩，支持科目/日期筛选、总分排名
+- **本班统计分析**：总分统计概览 + 单科分数分布（只读）
+- **首次登录强制改密**：初始密码 `123456`，登录后需立即修改
+- **自动账号创建**：管理员分配班主任时自动生成用户账号
+
 ### 统计分析
 - **统计概览**：总分统计卡片、总分分布柱状图、科目趋势折线图、科目占比饼图、三维能力雷达图、总分排名表、可选科目单科排名
-- **班级统计**：班级平均分对比、及格率/优秀率对比、按班级名称排序、支持平均分/及格率/优秀率排序
+- **班级统计**：班级平均分对比、及格率/优秀率对比、按班级名称排序（2026级1班→2班→3班→4班→5班）、支持平均分/及格率/优秀率排序
 - **科目统计**：科目对比柱状图、及格率/优秀率折线图、分数分布、三维能力雷达图（平均分+及格率+优秀率）
 - 所有图表统一 360px 高度，卡片等宽等高
 
 ### 权限管理
 - 用户管理（管理员）
-- 角色权限控制
+- 班主任管理（管理员分配班级、自动创建账号）
+- 四级角色权限控制：管理员 / 班主任 / 教师 / 学生
+- 班主任只读权限，只能查看本班数据
 - 操作审计日志
 
 ---
@@ -153,18 +165,27 @@ $border-primary: #e5e7eb;   // 边框
 student-grade-management-system/
 ├── src/                          # 后端代码
 │   ├── api/routes/               # API 路由
+│   │   ├── auth.py               # 认证（含首次登录改密）
+│   │   ├── class_teachers.py     # 班主任管理（管理员 CRUD）
+│   │   ├── class_teacher_scoped.py # 班主任数据查询（只读）
+│   │   ├── students.py           # 学生管理
+│   │   ├── grades.py             # 成绩管理
+│   │   ├── statistics.py         # 统计分析
+│   │   └── import_export.py      # 导入导出
 │   ├── core/                     # 核心配置
 │   ├── models/                   # 数据模型
+│   │   ├── student.py
+│   │   ├── grade.py
+│   │   ├── user.py
+│   │   └── class_teacher.py      # 班主任模型
 │   ├── schemas/                  # 数据验证
 │   ├── repositories/             # 数据访问层
-│   └── services/                 # 业务逻辑层
+│   ├── services/                 # 业务逻辑层
+│   └── scripts/                  # 工具脚本
 ├── frontend/                     # 前端代码
 │   └── src/
-│       ├── api/                  # API 封装
-│       ├── assets/styles/        # 样式（global/variables/element-override）
-│       ├── components/           # 组件（chart/layout/common）
-│       ├── composables/          # 组合式函数
-│       ├── stores/               # Pinia 状态管理
+│       ├── api/                  # API 封装（含 classTeacher.ts）
+│       ├── stores/               # Pinia 状态管理（含 auth：isClassTeacher）
 │       ├── types/                # TypeScript 类型
 │       ├── views/                # 页面
 │       └── router/               # 路由
@@ -198,6 +219,15 @@ student-grade-management-system/
 | 统计 | GET | `/api/v1/statistics/report` | 综合统计报告 |
 | 导入 | POST | `/api/v1/import/students` | 批量导入学生 |
 | 导入 | POST | `/api/v1/import/grades` | 批量导入成绩 |
+| 班主任管理 | GET | `/api/v1/class-teachers` | 班主任列表（管理员） |
+| 班主任管理 | POST | `/api/v1/class-teachers` | 新增班主任（管理员） |
+| 班主任管理 | DELETE | `/api/v1/class-teachers/{id}` | 删除班主任（管理员） |
+| 班主任管理 | GET | `/api/v1/class-teachers/available-classes` | 可分配班级列表 |
+| 班主任数据 | GET | `/api/v1/class-teacher/dashboard` | 班级仪表盘 |
+| 班主任数据 | GET | `/api/v1/class-teacher/students` | 本班学生列表 |
+| 班主任数据 | GET | `/api/v1/class-teacher/grades` | 本班成绩列表 |
+| 班主任数据 | GET | `/api/v1/class-teacher/statistics/overview` | 本班统计概览 |
+| 班主任数据 | GET | `/api/v1/class-teacher/statistics/subject` | 本班科目统计 |
 
 ---
 
@@ -218,6 +248,7 @@ npm run build
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| **V5.0.0** | **2026-06-19** | **新增班主任角色、班级名称统一为"2026级X班"、MyGrades 优化、分数分布修复** |
 | V4.3.0 | 2026-06-15 | 成绩录入/导入改造（每人一次录入所有科目）、统计概览重构、班级统计排序 |
 | V4.2.0 | 2026-06-15 | 学生总分查看与分析功能（总分排名、各科汇总、三端同步） |
 | V4.1.0 | 2026-06-15 | 布局修复与数据可视化优化（图表溢出、卡片对齐、分数分布数据、饼图重叠） |

@@ -32,16 +32,19 @@ DEFAULT_USERS = [
         "username": "admin",
         "password": "admin123",
         "role": "admin",
+        "need_change_password": False,
     },
     {
         "username": "teacher",
         "password": "teacher123",
         "role": "teacher",
+        "need_change_password": False,
     },
     {
         "username": "student",
         "password": "student123",
         "role": "student",
+        "need_change_password": False,
     },
 ]
 
@@ -71,6 +74,7 @@ def init_users(db: Session) -> None:
             hashed_password=hash_password(user_data["password"]),
             role=user_data["role"],
             is_active=True,
+            need_change_password=user_data.get("need_change_password", False),
         )
         db.add(new_user)
         logger.info(f"创建用户: {user_data['username']} (角色: {user_data['role']})")

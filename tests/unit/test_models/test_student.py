@@ -23,7 +23,7 @@ class TestStudentModel:
         assert student.student_id == "20260001"
         assert student.name == "张三"
         assert student.gender == "男"
-        assert student.class_name == "三年一班"
+        assert student.class_name == "2026级1班"
         assert student.enrollment_year == 2026
         assert student.created_at is not None
         assert student.updated_at is not None

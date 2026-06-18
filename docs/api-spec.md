@@ -100,7 +100,7 @@
     "student_id": "20260001",
     "name": "张三",
     "gender": "男",
-    "class_name": "三年一班",
+    "class_name": "2026级1班",
     "enrollment_year": 2026
 }
 ```
@@ -122,7 +122,7 @@
         "student_id": "20260001",
         "name": "张三",
         "gender": "男",
-        "class_name": "三年一班",
+        "class_name": "2026级1班",
         "enrollment_year": 2026,
         "created_at": "2026-06-05T10:00:00",
         "updated_at": "2026-06-05T10:00:00"
@@ -167,13 +167,13 @@
 |------|------|------|------|------|
 | page | integer | 否 | 页码（默认：1） | `?page=1` |
 | page_size | integer | 否 | 每页数量（默认：20，最大：100） | `?page_size=10` |
-| class_name | string | 否 | 按班级筛选 | `?class_name=三年一班` |
+| class_name | string | 否 | 按班级筛选 | `?class_name=2026级1班` |
 | keyword | string | 否 | 按学号或姓名搜索 | `?keyword=张三` |
 
 #### 请求示例
 
 ```
-GET /api/v1/students?page=1&page_size=10&class_name=三年一班
+GET /api/v1/students?page=1&page_size=10&class_name=2026级1班
 ```
 
 #### 成功响应
@@ -187,7 +187,7 @@ GET /api/v1/students?page=1&page_size=10&class_name=三年一班
                 "student_id": "20260001",
                 "name": "张三",
                 "gender": "男",
-                "class_name": "三年一班",
+                "class_name": "2026级1班",
                 "enrollment_year": 2026,
                 "created_at": "2026-06-05T10:00:00",
                 "updated_at": "2026-06-05T10:00:00"
@@ -230,7 +230,7 @@ GET /api/v1/students/20260001
         "student_id": "20260001",
         "name": "张三",
         "gender": "男",
-        "class_name": "三年一班",
+        "class_name": "2026级1班",
         "enrollment_year": 2026,
         "created_at": "2026-06-05T10:00:00",
         "updated_at": "2026-06-05T10:00:00"
@@ -269,7 +269,7 @@ GET /api/v1/students/20260001
 ```json
 {
     "name": "张三丰",
-    "class_name": "三年二班"
+    "class_name": "2026级2班"
 }
 ```
 
@@ -289,7 +289,7 @@ GET /api/v1/students/20260001
         "student_id": "20260001",
         "name": "张三丰",
         "gender": "男",
-        "class_name": "三年二班",
+        "class_name": "2026级2班",
         "enrollment_year": 2026,
         "created_at": "2026-06-05T10:00:00",
         "updated_at": "2026-06-05T11:00:00"
@@ -489,7 +489,7 @@ DELETE /api/v1/students/20260001
 | 参数 | 类型 | 必填 | 说明 | 示例 |
 |------|------|------|------|------|
 | student_id | string | 否 | 按学号筛选 | `?student_id=20260001` |
-| class_name | string | 否 | 按班级筛选 | `?class_name=三年一班` |
+| class_name | string | 否 | 按班级筛选 | `?class_name=2026级1班` |
 | subject | string | 否 | 按科目筛选 | `?subject=数学` |
 | exam_type | string | 否 | 按考试类型筛选 | `?exam_type=期中` |
 | page | integer | 否 | 页码 | `?page=1` |
@@ -498,7 +498,7 @@ DELETE /api/v1/students/20260001
 #### 请求示例
 
 ```
-GET /api/v1/grades?class_name=三年一班&subject=数学&exam_type=期中
+GET /api/v1/grades?class_name=2026级1班&subject=数学&exam_type=期中
 ```
 
 #### 成功响应
@@ -512,7 +512,7 @@ GET /api/v1/grades?class_name=三年一班&subject=数学&exam_type=期中
                 "grade_id": 1,
                 "student_id": "20260001",
                 "student_name": "张三",
-                "class_name": "三年一班",
+                "class_name": "2026级1班",
                 "subject": "数学",
                 "score": 95.5,
                 "exam_type": "期中",
@@ -522,7 +522,7 @@ GET /api/v1/grades?class_name=三年一班&subject=数学&exam_type=期中
                 "grade_id": 2,
                 "student_id": "20260002",
                 "student_name": "李四",
-                "class_name": "三年一班",
+                "class_name": "2026级1班",
                 "subject": "数学",
                 "score": 88.0,
                 "exam_type": "期中",
@@ -614,7 +614,7 @@ GET /api/v1/grades?class_name=三年一班&subject=数学&exam_type=期中
 
 | 参数 | 类型 | 必填 | 说明 | 示例 |
 |------|------|------|------|------|
-| class_name | string | 否 | 按班级统计 | `?class_name=三年一班` |
+| class_name | string | 否 | 按班级统计 | `?class_name=2026级1班` |
 | subject | string | 否 | 按科目统计 | `?subject=数学` |
 | exam_type | string | 否 | 按考试类型统计 | `?exam_type=期中` |
 | metrics | string | 否 | 统计指标（逗号分隔） | `?metrics=avg,max,min,pass_rate` |
@@ -634,7 +634,7 @@ GET /api/v1/grades?class_name=三年一班&subject=数学&exam_type=期中
 #### 请求示例
 
 ```
-GET /api/v1/statistics?class_name=三年一班&subject=数学&exam_type=期中&metrics=avg,max,min,pass_rate
+GET /api/v1/statistics?class_name=2026级1班&subject=数学&exam_type=期中&metrics=avg,max,min,pass_rate
 ```
 
 #### 成功响应
@@ -644,7 +644,7 @@ GET /api/v1/statistics?class_name=三年一班&subject=数学&exam_type=期中&m
     "success": true,
     "data": {
         "query": {
-            "class_name": "三年一班",
+            "class_name": "2026级1班",
             "subject": "数学",
             "exam_type": "期中"
         },
@@ -671,7 +671,7 @@ GET /api/v1/statistics?class_name=三年一班&subject=数学&exam_type=期中&m
 
 | 参数 | 类型 | 必填 | 说明 | 示例 |
 |------|------|------|------|------|
-| class_name | string | 条件必填 | 班级排名时必填 | `?class_name=三年一班` |
+| class_name | string | 条件必填 | 班级排名时必填 | `?class_name=2026级1班` |
 | subject | string | 是 | 科目 | `?subject=数学` |
 | exam_type | string | 是 | 考试类型 | `?exam_type=期中` |
 | scope | string | 否 | 排名范围（class/grade） | `?scope=class` |
@@ -680,7 +680,7 @@ GET /api/v1/statistics?class_name=三年一班&subject=数学&exam_type=期中&m
 #### 请求示例
 
 ```
-GET /api/v1/statistics/ranking?class_name=三年一班&subject=数学&exam_type=期中&scope=class&limit=10
+GET /api/v1/statistics/ranking?class_name=2026级1班&subject=数学&exam_type=期中&scope=class&limit=10
 ```
 
 #### 成功响应
@@ -690,7 +690,7 @@ GET /api/v1/statistics/ranking?class_name=三年一班&subject=数学&exam_type=
     "success": true,
     "data": {
         "query": {
-            "class_name": "三年一班",
+            "class_name": "2026级1班",
             "subject": "数学",
             "exam_type": "期中",
             "scope": "class"
@@ -753,7 +753,7 @@ GET /api/v1/statistics/student/20260001?exam_type=期中
     "data": {
         "student_id": "20260001",
         "student_name": "张三",
-        "class_name": "三年一班",
+        "class_name": "2026级1班",
         "exam_type": "期中",
         "subjects": [
             {
@@ -849,7 +849,7 @@ student_id,subject,score
 #### 请求示例
 
 ```
-GET /api/v1/export/grades?class_name=三年一班&exam_type=期中&format=csv
+GET /api/v1/export/grades?class_name=2026级1班&exam_type=期中&format=csv
 ```
 
 #### 响应
@@ -858,9 +858,9 @@ GET /api/v1/export/grades?class_name=三年一班&exam_type=期中&format=csv
 
 ```csv
 学号,姓名,班级,科目,分数,考试类型,考试日期
-20260001,张三,三年一班,语文,85.0,期中,2026-04-15
-20260001,张三,三年一班,数学,95.5,期中,2026-04-15
-20260002,李四,三年一班,语文,78.0,期中,2026-04-15
+20260001,张三,2026级1班,语文,85.0,期中,2026-04-15
+20260001,张三,2026级1班,数学,95.5,期中,2026-04-15
+20260002,李四,2026级1班,语文,78.0,期中,2026-04-15
 ```
 
 ---
@@ -899,9 +899,9 @@ GET /api/v1/export/grades?class_name=三年一班&exam_type=期中&format=csv
 
 ```
 学号,姓名,性别,班级,入学年份
-20260001,张三,男,三年一班,2026
-20260002,李四,女,三年一班,2026
-20260003,王五,男,三年二班,2026
+20260001,张三,男,2026级1班,2026
+20260002,李四,女,2026级1班,2026
+20260003,王五,男,2026级2班,2026
 ```
 
 #### 成功响应
@@ -1010,8 +1010,8 @@ GET /api/v1/import/students/template?format=xlsx
 
 ```
 学号,姓名,性别,班级,入学年份
-20260001,张三,男,三年一班,2026
-20260002,李四,女,三年一班,2026
+20260001,张三,男,2026级1班,2026
+20260002,李四,女,2026级1班,2026
 ```
 
 ---
@@ -1047,7 +1047,7 @@ GET /api/v1/import/students/template?format=xlsx
                 "student_id": "20260001",
                 "name": "张三",
                 "gender": "男",
-                "class_name": "三年一班",
+                "class_name": "2026级1班",
                 "enrollment_year": 2026,
                 "status": "valid"
             },
@@ -1056,7 +1056,7 @@ GET /api/v1/import/students/template?format=xlsx
                 "student_id": "20260002",
                 "name": "李四",
                 "gender": "女",
-                "class_name": "三年一班",
+                "class_name": "2026级1班",
                 "enrollment_year": 2026,
                 "status": "valid"
             },
@@ -1065,7 +1065,7 @@ GET /api/v1/import/students/template?format=xlsx
                 "student_id": "20260003",
                 "name": "",
                 "gender": "男",
-                "class_name": "三年二班",
+                "class_name": "2026级2班",
                 "enrollment_year": 2026,
                 "status": "invalid",
                 "errors": ["姓名不能为空"]
@@ -1377,12 +1377,12 @@ curl -X POST http://localhost:8000/api/v1/students \
     "student_id": "20260001",
     "name": "张三",
     "gender": "男",
-    "class_name": "三年一班",
+    "class_name": "2026级1班",
     "enrollment_year": 2026
   }'
 
 # 查询学生列表
-curl http://localhost:8000/api/v1/students?class_name=三年一班
+curl http://localhost:8000/api/v1/students?class_name=2026级1班
 
 # 录入成绩
 curl -X POST http://localhost:8000/api/v1/grades \
@@ -1396,7 +1396,7 @@ curl -X POST http://localhost:8000/api/v1/grades \
   }'
 
 # 查询统计数据
-curl "http://localhost:8000/api/v1/statistics?class_name=三年一班&subject=数学&metrics=avg,pass_rate"
+curl "http://localhost:8000/api/v1/statistics?class_name=2026级1班&subject=数学&metrics=avg,pass_rate"
 ```
 
 ### 8.2 使用 Python requests 测试
@@ -1411,7 +1411,7 @@ response = requests.post(f"{BASE_URL}/students", json={
     "student_id": "20260001",
     "name": "张三",
     "gender": "男",
-    "class_name": "三年一班",
+    "class_name": "2026级1班",
     "enrollment_year": 2026
 })
 print(response.json())
@@ -1430,7 +1430,7 @@ print(response.json())
 
 # 获取排名
 response = requests.get(f"{BASE_URL}/statistics/ranking", params={
-    "class_name": "三年一班",
+    "class_name": "2026级1班",
     "subject": "数学",
     "exam_type": "期中",
     "scope": "class",

@@ -234,6 +234,7 @@ def get_me(
             username=current_user.username,
             role=current_user.role,
             is_active=current_user.is_active,
+            need_change_password=current_user.need_change_password,
         ).model_dump(),
     )
 
@@ -283,7 +284,10 @@ def change_password(
 
     # 3. 哈希新密码并更新
     new_hashed_password = hash_password(data.new_password)
-    user_repo.update(current_user.id, {"hashed_password": new_hashed_password})
+    user_repo.update(current_user.id, {
+        "hashed_password": new_hashed_password,
+        "need_change_password": False,
+    })
 
     logger.info(f"用户密码修改成功: user_id={current_user.id}")
 

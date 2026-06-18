@@ -33,7 +33,7 @@ class UserCreate(BaseModel):
     )
     role: str = Field(
         default="student",
-        description="用户角色（admin / teacher / student）",
+        description="用户角色（admin / teacher / class_teacher / student）",
         examples=["teacher"],
     )
     is_active: bool = Field(
@@ -45,7 +45,7 @@ class UserCreate(BaseModel):
     @classmethod
     def validate_role(cls, v: str) -> str:
         """验证角色值"""
-        allowed_roles = {"admin", "teacher", "student"}
+        allowed_roles = {"admin", "teacher", "class_teacher", "student"}
         if v not in allowed_roles:
             raise ValueError(f"角色必须是以下之一：{', '.join(allowed_roles)}")
         return v
@@ -78,7 +78,7 @@ class UserUpdate(BaseModel):
     def validate_role(cls, v: Optional[str]) -> Optional[str]:
         """验证角色值"""
         if v is not None:
-            allowed_roles = {"admin", "teacher", "student"}
+            allowed_roles = {"admin", "teacher", "class_teacher", "student"}
             if v not in allowed_roles:
                 raise ValueError(f"角色必须是以下之一：{', '.join(allowed_roles)}")
         return v

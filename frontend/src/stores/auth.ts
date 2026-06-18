@@ -51,6 +51,9 @@ export const useAuthStore = defineStore('auth', () => {
   /** 是否是教师 */
   const isTeacher = computed(() => user.value?.role === 'teacher')
 
+  /** 是否是班主任 */
+  const isClassTeacher = computed(() => user.value?.role === 'class_teacher')
+
   /** 是否是学生 */
   const isStudent = computed(() => user.value?.role === 'student')
 
@@ -73,6 +76,7 @@ export const useAuthStore = defineStore('auth', () => {
         username: payload.username || '',
         role: payload.role || 'student',
         is_active: true,
+        need_change_password: false,
       }
     } catch (e) {
       console.error('解析 Token 失败:', e)
@@ -323,6 +327,7 @@ export const useAuthStore = defineStore('auth', () => {
     userRole,
     isAdmin,
     isTeacher,
+    isClassTeacher,
     isStudent,
 
     // 操作

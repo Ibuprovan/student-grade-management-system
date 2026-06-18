@@ -1,7 +1,7 @@
 <template>
   <aside class="app-sidebar" :class="{ collapsed: appStore.sidebarCollapsed }">
     <!-- Logo -->
-    <div class="sidebar-logo" @click="router.push('/dashboard')">
+    <div class="sidebar-logo" @click="router.push(authStore.isStudent ? '/my-grades' : '/dashboard')">
       <div class="logo-icon-wrap">
         <img src="@/assets/images/logo.svg" alt="Logo" class="logo-img" />
       </div>
@@ -23,10 +23,22 @@
         router
         class="sidebar-menu"
       >
-        <!-- 仪表盘（所有角色可见） -->
-        <el-menu-item index="/dashboard">
+        <!-- 仪表盘（仅管理员和教师可见） -->
+        <el-menu-item v-if="authStore.isAdmin || authStore.isTeacher" index="/dashboard">
           <el-icon><Odometer /></el-icon>
           <template #title>仪表盘</template>
+        </el-menu-item>
+
+        <!-- 班主任仪表盘 -->
+        <el-menu-item v-if="authStore.isClassTeacher" index="/ct/dashboard">
+          <el-icon><Odometer /></el-icon>
+          <template #title>班级仪表盘</template>
+        </el-menu-item>
+
+        <!-- 我的成绩（仅学生可见，放在最上面） -->
+        <el-menu-item v-if="authStore.isStudent" index="/my-grades">
+          <el-icon><Trophy /></el-icon>
+          <template #title>我的成绩</template>
         </el-menu-item>
 
         <!-- 学生管理（仅管理员和教师可见） -->
@@ -44,6 +56,12 @@
             <template #title>添加学生</template>
           </el-menu-item>
         </el-sub-menu>
+
+        <!-- 班主任 - 学生信息 -->
+        <el-menu-item v-if="authStore.isClassTeacher" index="/ct/students">
+          <el-icon><User /></el-icon>
+          <template #title>学生信息</template>
+        </el-menu-item>
 
         <!-- 成绩管理（仅管理员和教师可见） -->
         <el-sub-menu v-if="authStore.isAdmin || authStore.isTeacher" index="/grade">
@@ -65,33 +83,52 @@
           </el-menu-item>
         </el-sub-menu>
 
-        <!-- 统计分析 -->
-        <el-sub-menu index="/statistics">
+        <!-- 班主任 - 成绩信息 -->
+        <el-menu-item v-if="authStore.isClassTeacher" index="/ct/grades">
+          <el-icon><Document /></el-icon>
+          <template #title>成绩信息</template>
+        </el-menu-item>
+
+        <!-- 统计分析（仅管理员和教师可见） -->
+        <el-sub-menu v-if="authStore.isAdmin || authStore.isTeacher" index="/statistics">
           <template #title>
             <el-icon><DataAnalysis /></el-icon>
             <span>统计分析</span>
           </template>
-          <!-- 统计概览（所有角色可见） -->
           <el-menu-item index="/statistics/overview">
             <el-icon><TrendCharts /></el-icon>
             <template #title>统计概览</template>
           </el-menu-item>
-          <!-- 班级统计（仅管理员和教师可见） -->
-          <el-menu-item v-if="authStore.isAdmin || authStore.isTeacher" index="/statistics/class">
+          <el-menu-item index="/statistics/class">
             <el-icon><School /></el-icon>
             <template #title>班级统计</template>
           </el-menu-item>
-          <!-- 科目统计（仅管理员和教师可见） -->
-          <el-menu-item v-if="authStore.isAdmin || authStore.isTeacher" index="/statistics/subject">
+          <el-menu-item index="/statistics/subject">
             <el-icon><Collection /></el-icon>
             <template #title>科目统计</template>
           </el-menu-item>
         </el-sub-menu>
 
-        <!-- 我的成绩（仅学生可见） -->
-        <el-menu-item v-if="authStore.isStudent" index="/my-grades">
-          <el-icon><Trophy /></el-icon>
-          <template #title>我的成绩</template>
+        <!-- 班主任 - 统计分析 -->
+        <el-sub-menu v-if="authStore.isClassTeacher" index="/ct/statistics">
+          <template #title>
+            <el-icon><DataAnalysis /></el-icon>
+            <span>统计分析</span>
+          </template>
+          <el-menu-item index="/ct/statistics/overview">
+            <el-icon><TrendCharts /></el-icon>
+            <template #title>统计概览</template>
+          </el-menu-item>
+          <el-menu-item index="/ct/statistics/subject">
+            <el-icon><Collection /></el-icon>
+            <template #title>科目统计</template>
+          </el-menu-item>
+        </el-sub-menu>
+
+        <!-- 管理员 - 班主任管理 -->
+        <el-menu-item v-if="authStore.isAdmin" index="/admin/class-teachers">
+          <el-icon><UserFilled /></el-icon>
+          <template #title>班主任管理</template>
         </el-menu-item>
       </el-menu>
     </el-scrollbar>
@@ -130,6 +167,9 @@ const activeMenu = computed(() => {
   }
   if (path.startsWith('/grade/import')) {
     return '/grade/list'
+  }
+  if (path.startsWith('/ct/statistics/')) {
+    return '/ct/statistics'
   }
   return path
 })

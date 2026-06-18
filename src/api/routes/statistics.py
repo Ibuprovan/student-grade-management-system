@@ -15,7 +15,7 @@
 
 from typing import Optional, List
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException, status
 
 from src.api.dependencies import get_statistics_service
 from src.api.auth import get_current_user
@@ -451,6 +451,50 @@ def get_batch_subject_statistics(
     """
     result = service.get_batch_subject_statistics(
         class_name=class_name,
+        exam_type=exam_type,
+    )
+    return ApiResponse(
+        success=True,
+        data=result,
+    )
+
+
+@router.get(
+    "/student/{student_id}",
+    response_model=ApiResponse,
+    summary="学生综合统计",
+    description="获取学生各科成绩及所在班级的平均分、最高分和最低分（需要认证）",
+    responses={
+        401: {"description": "未认证"},
+        403: {"description": "权限不足"},
+        404: {"description": "学生不存在"},
+    },
+)
+def get_student_statistics(
+    student_id: str,
+    exam_type: Optional[str] = Query(None, description="考试类型（可选）"),
+    service: StatisticsService = Depends(get_statistics_service),
+    current_user: User = Depends(get_current_user),
+) -> ApiResponse:
+    """
+    获取学生综合统计（需要认证）
+
+    - **student_id**: 学号
+    - **exam_type**: 考试类型（可选）
+
+    权限控制：
+    - 学生只能查看自己的统计
+    - 教师和管理员可以查看任何学生的统计
+    """
+    # 权限检查：学生只能查看自己的统计
+    if current_user.role == "student" and current_user.username != student_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="只能查看自己的成绩统计",
+        )
+
+    result = service.get_student_statistics(
+        student_id=student_id,
         exam_type=exam_type,
     )
     return ApiResponse(

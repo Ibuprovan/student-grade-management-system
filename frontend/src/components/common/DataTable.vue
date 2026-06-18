@@ -178,9 +178,20 @@ function handleSizeChange(size: number) {
   background: var(--surface-color);
   border-radius: var(--border-radius-lg);
   width: 100%;
+  overflow: hidden;
 
   :deep(.el-table) {
     width: 100% !important;
+
+    // 确保表格填满容器
+    .el-table__body-wrapper {
+      width: 100%;
+    }
+
+    // 移除表格右侧边框
+    &::before {
+      display: none;
+    }
   }
 }
 

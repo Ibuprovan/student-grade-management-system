@@ -151,7 +151,7 @@ const classOptions = computed(() => {
   if (studentStore.classList.length > 0) {
     return studentStore.classList
   }
-  return ['三年一班', '三年二班', '三年三班', '三年四班']
+  return ['2026级1班', '2026级2班', '2026级3班', '2026级4班', '2026级5班']
 })
 
 /** 年份选项（2000-2100） */

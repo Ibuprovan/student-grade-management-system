@@ -76,6 +76,14 @@ class User(Base):
         comment="账户是否启用",
     )
 
+    # 是否需要修改密码（首次登录时为 True）
+    need_change_password: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        comment="是否需要修改密码",
+    )
+
     # 创建时间
     created_at: Mapped[datetime] = mapped_column(
         DateTime,

@@ -63,6 +63,11 @@ export interface TotalRankingResponse {
 export interface StudentSubjectStats {
   subject: string
   score: number
+  exam_type?: string
+  exam_date?: string
+  class_average?: number
+  class_max?: number
+  class_min?: number
   class_rank?: number
   grade_rank?: number
 }
@@ -76,6 +81,9 @@ export interface StudentStatisticsResponse {
   subjects: StudentSubjectStats[]
   total_score: number
   average_score: number
+  pass_count?: number
+  excellent_count?: number
+  subject_count?: number
   class_rank_total?: number
   grade_rank_total?: number
 }
@@ -107,9 +115,16 @@ export interface SubjectStatistics {
 
 /** 分数分布（前端展示用） */
 export interface ScoreDistribution {
+  // 非主科（满分100）
   '0-59': number
   '60-69': number
   '70-79': number
   '80-89': number
   '90-100': number
+  // 主科 语数外（满分150）
+  '0-89'?: number
+  '90-104'?: number
+  '105-119'?: number
+  '120-134'?: number
+  '135-150'?: number
 }

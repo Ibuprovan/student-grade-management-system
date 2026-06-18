@@ -271,22 +271,11 @@ const {
   handleExport,
 } = useClassStatistics()
 
-/** 中文数字映射 */
-const chineseNumMap: Record<string, number> = {
-  '一': 1, '二': 2, '三': 3, '四': 4, '五': 5,
-  '六': 6, '七': 7, '八': 8, '九': 9, '十': 10,
-}
-
-/** 从班级名称中提取数字用于排序 */
+/** 从班级名称中提取数字用于排序（格式：2026级1班 → 1） */
 function getClassSortKey(className: string): number {
-  // 匹配 "三年一班" 中的 "一" 或 "1班" 中的 "1"
-  const match = className.match(/([一二三四五六七八九十]+)班/)
+  const match = className.match(/(\d+)班/)
   if (match) {
-    return chineseNumMap[match[1]] || 999
-  }
-  const numMatch = className.match(/(\d+)班/)
-  if (numMatch) {
-    return parseInt(numMatch[1])
+    return parseInt(match[1])
   }
   return 999
 }

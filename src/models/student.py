@@ -27,7 +27,7 @@ class Student(Base):
         student_id: 学号（主键），格式：YYYY + 4位序号（如：20260001）
         name: 学生姓名，2-20个字符
         gender: 性别，只能是"男"或"女"
-        class_name: 班级名称，如"三年一班"
+        class_name: 班级名称，如"2026级1班"
         enrollment_year: 入学年份
         created_at: 记录创建时间
         updated_at: 记录最后更新时间
@@ -60,7 +60,7 @@ class Student(Base):
         comment="性别",
     )
 
-    # 班级：格式如 "三年一班"
+    # 班级：格式如 "2026级1班"
     class_name: Mapped[str] = mapped_column(
         String(20),
         nullable=False,

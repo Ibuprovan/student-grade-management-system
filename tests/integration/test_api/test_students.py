@@ -166,7 +166,7 @@ def sample_student():
         "student_id": "20260001",
         "name": "张三",
         "gender": "男",
-        "class_name": "三年一班",
+        "class_name": "2026级1班",
         "enrollment_year": 2026,
     }
 
@@ -179,21 +179,21 @@ def sample_students():
             "student_id": "20260001",
             "name": "张三",
             "gender": "男",
-            "class_name": "三年一班",
+            "class_name": "2026级1班",
             "enrollment_year": 2026,
         },
         {
             "student_id": "20260002",
             "name": "李四",
             "gender": "女",
-            "class_name": "三年一班",
+            "class_name": "2026级1班",
             "enrollment_year": 2026,
         },
         {
             "student_id": "20260003",
             "name": "王五",
             "gender": "男",
-            "class_name": "三年二班",
+            "class_name": "2026级2班",
             "enrollment_year": 2026,
         },
     ]
@@ -231,7 +231,7 @@ class TestStudentAPI:
             "student_id": "invalid",
             "name": "张三",
             "gender": "男",
-            "class_name": "三年一班",
+            "class_name": "2026级1班",
             "enrollment_year": 2026,
         }
 
@@ -278,7 +278,7 @@ class TestStudentAPI:
             client.post("/api/v1/students", json=student, headers=auth_headers)
 
         # 按班级筛选
-        response = client.get("/api/v1/students?class_name=三年一班", headers=auth_headers)
+        response = client.get("/api/v1/students?class_name=2026级1班", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -387,7 +387,7 @@ class TestStudentAPI:
 
         # 搜索并按班级筛选
         response = client.get(
-            "/api/v1/students/search?keyword=2026&class_name=三年一班",
+            "/api/v1/students/search?keyword=2026&class_name=2026级1班",
             headers=auth_headers,
         )
 

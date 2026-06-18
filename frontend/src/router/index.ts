@@ -7,7 +7,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 
 /** 用户角色类型 */
-type UserRole = 'admin' | 'teacher' | 'student'
+type UserRole = 'admin' | 'teacher' | 'class_teacher' | 'student'
 
 /** 路由元信息接口扩展 */
 declare module 'vue-router' {
@@ -59,7 +59,7 @@ const protectedRoutes: RouteRecordRaw[] = [
     path: '/dashboard',
     name: 'Dashboard',
     component: () => import('@/views/dashboard/Dashboard.vue'),
-    meta: { title: '仪表盘', icon: 'Odometer', requiresAuth: true, roles: ['admin', 'teacher', 'student'] },
+    meta: { title: '仪表盘', icon: 'Odometer', requiresAuth: true, roles: ['admin', 'teacher'] },
   },
   {
     path: '/student',
@@ -129,13 +129,13 @@ const protectedRoutes: RouteRecordRaw[] = [
     path: '/statistics',
     name: 'Statistics',
     redirect: '/statistics/overview',
-    meta: { title: '统计分析', icon: 'DataAnalysis', requiresAuth: true, roles: ['admin', 'teacher', 'student'] },
+    meta: { title: '统计分析', icon: 'DataAnalysis', requiresAuth: true, roles: ['admin', 'teacher'] },
     children: [
       {
         path: 'overview',
         name: 'StatisticsOverview',
         component: () => import('@/views/statistics/StatisticsOverview.vue'),
-        meta: { title: '统计概览', icon: 'PieChart', requiresAuth: true, roles: ['admin', 'teacher', 'student'] },
+        meta: { title: '统计概览', icon: 'PieChart', requiresAuth: true, roles: ['admin', 'teacher'] },
       },
       {
         path: 'class',
@@ -156,6 +156,52 @@ const protectedRoutes: RouteRecordRaw[] = [
     name: 'MyGrades',
     component: () => import('@/views/student/MyGrades.vue'),
     meta: { title: '我的成绩', icon: 'Trophy', requiresAuth: true, roles: ['student'] },
+  },
+  // 管理员路由
+  {
+    path: '/admin/class-teachers',
+    name: 'ClassTeacherManagement',
+    component: () => import('@/views/admin/ClassTeacherManagement.vue'),
+    meta: { title: '班主任管理', icon: 'UserFilled', requiresAuth: true, roles: ['admin'] },
+  },
+  // 班主任专用路由
+  {
+    path: '/ct/dashboard',
+    name: 'CtDashboard',
+    component: () => import('@/views/class-teacher/CtDashboard.vue'),
+    meta: { title: '班级仪表盘', icon: 'Odometer', requiresAuth: true, roles: ['class_teacher'] },
+  },
+  {
+    path: '/ct/students',
+    name: 'CtStudents',
+    component: () => import('@/views/class-teacher/CtStudentList.vue'),
+    meta: { title: '学生信息', icon: 'User', requiresAuth: true, roles: ['class_teacher'] },
+  },
+  {
+    path: '/ct/grades',
+    name: 'CtGrades',
+    component: () => import('@/views/class-teacher/CtGradeList.vue'),
+    meta: { title: '成绩信息', icon: 'Document', requiresAuth: true, roles: ['class_teacher'] },
+  },
+  {
+    path: '/ct/statistics',
+    name: 'CtStatistics',
+    redirect: '/ct/statistics/overview',
+    meta: { title: '统计分析', icon: 'DataAnalysis', requiresAuth: true, roles: ['class_teacher'] },
+    children: [
+      {
+        path: 'overview',
+        name: 'CtStatisticsOverview',
+        component: () => import('@/views/class-teacher/CtStatisticsOverview.vue'),
+        meta: { title: '统计概览', icon: 'PieChart', requiresAuth: true, roles: ['class_teacher'] },
+      },
+      {
+        path: 'subject',
+        name: 'CtSubjectStatistics',
+        component: () => import('@/views/class-teacher/CtSubjectStatistics.vue'),
+        meta: { title: '科目统计', icon: 'Collection', requiresAuth: true, roles: ['class_teacher'] },
+      },
+    ],
   },
   // 404 页面 - 放在最后
   {
@@ -198,7 +244,14 @@ router.beforeEach(async (to, _from, next) => {
   if (isPublicRoute) {
     // 如果已登录，跳转到首页
     if (authStore.isAuthenticated && to.path === '/login') {
-      next('/dashboard')
+      // 学生跳转到我的成绩页面
+      if (authStore.userRole === 'student') {
+        next('/my-grades')
+      } else if (authStore.userRole === 'class_teacher') {
+        next('/ct/dashboard')
+      } else {
+        next('/dashboard')
+      }
       return
     }
     next()
@@ -240,6 +293,18 @@ router.beforeEach(async (to, _from, next) => {
       })
       return
     }
+  }
+
+  // 学生访问根路径或仪表盘时，重定向到我的成绩页面
+  if (authStore.userRole === 'student' && (to.path === '/' || to.path === '/dashboard')) {
+    next('/my-grades')
+    return
+  }
+
+  // 班主任访问根路径或管理员仪表盘时，重定向到班级仪表盘
+  if (authStore.userRole === 'class_teacher' && (to.path === '/' || to.path === '/dashboard')) {
+    next('/ct/dashboard')
+    return
   }
 
   // 检查角色权限

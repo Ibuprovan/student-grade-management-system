@@ -53,7 +53,7 @@ class StudentBase(BaseModel):
         min_length=CLASS_NAME_MIN_LENGTH,
         max_length=CLASS_NAME_MAX_LENGTH,
         description="班级",
-        examples=["三年一班"],
+        examples=["2026级1班"],
     )
     enrollment_year: int = Field(
         ...,

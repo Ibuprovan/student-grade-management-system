@@ -79,7 +79,7 @@ CREATE TABLE students (
     student_id VARCHAR(8) PRIMARY KEY,      -- 学号（如：20260001）
     name VARCHAR(20) NOT NULL,              -- 姓名
     gender VARCHAR(2) NOT NULL,             -- 性别（男/女）
-    class_name VARCHAR(20) NOT NULL,        -- 班级（如：三年一班）
+    class_name VARCHAR(20) NOT NULL,        -- 班级（如：2026级1班）
     enrollment_year INTEGER NOT NULL,       -- 入学年份
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP

@@ -20,16 +20,40 @@
         </router-view>
       </main>
     </div>
+
+    <!-- 首次登录修改密码对话框 -->
+    <ChangePasswordDialog
+      v-model="showChangePassword"
+      @success="onPasswordChanged"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import AppHeader from './AppHeader.vue'
 import AppSidebar from './AppSidebar.vue'
+import ChangePasswordDialog from '@/components/common/ChangePasswordDialog.vue'
 import { useAppStore } from '@/stores/app'
+import { useAuthStore } from '@/stores/auth'
 
 const appStore = useAppStore()
+const authStore = useAuthStore()
+
+/** 是否显示修改密码对话框 */
+const showChangePassword = ref(false)
+
+/** 监听用户信息变化，检查是否需要修改密码 */
+watch(() => authStore.user, (user) => {
+  if (user?.need_change_password) {
+    showChangePassword.value = true
+  }
+}, { immediate: true })
+
+/** 密码修改成功回调 */
+function onPasswordChanged() {
+  showChangePassword.value = false
+}
 
 /** 初始化应用状态 */
 onMounted(() => {

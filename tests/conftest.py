@@ -59,7 +59,7 @@ def sample_student_data():
         "student_id": "20260001",
         "name": "张三",
         "gender": "男",
-        "class_name": "三年一班",
+        "class_name": "2026级1班",
         "enrollment_year": 2026,
     }
 
@@ -85,21 +85,21 @@ def sample_students():
             "student_id": "20260001",
             "name": "张三",
             "gender": "男",
-            "class_name": "三年一班",
+            "class_name": "2026级1班",
             "enrollment_year": 2026,
         },
         {
             "student_id": "20260002",
             "name": "李四",
             "gender": "女",
-            "class_name": "三年一班",
+            "class_name": "2026级1班",
             "enrollment_year": 2026,
         },
         {
             "student_id": "20260003",
             "name": "王五",
             "gender": "男",
-            "class_name": "三年二班",
+            "class_name": "2026级2班",
             "enrollment_year": 2026,
         },
     ]

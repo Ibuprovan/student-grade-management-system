@@ -127,7 +127,7 @@
 ├────┼─────────────────────────────────────────────────────────┤
 │    │ name          VARCHAR(20)   姓名                        │
 │    │ gender        VARCHAR(2)    性别（男/女）                │
-│    │ class_name    VARCHAR(20)   班级（如：三年一班）          │
+│    │ class_name    VARCHAR(20)   班级（如：2026级1班）          │
 │    │ enrollment_year INTEGER     入学年份                    │
 │    │ created_at    DATETIME      创建时间                    │
 │    │ updated_at    DATETIME      更新时间                    │

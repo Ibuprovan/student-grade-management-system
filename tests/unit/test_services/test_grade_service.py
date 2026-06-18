@@ -278,12 +278,12 @@ class TestGradeService:
             service.create_grade(GradeCreate(**grade_data))
 
         # 按班级查询
-        grades = service.get_grades_by_class("三年一班")
+        grades = service.get_grades_by_class("2026级1班")
 
-        # 三年一班有 3 条成绩：20260001-数学, 20260001-语文, 20260002-数学
+        # 2026级1班有 3 条成绩：20260001-数学, 20260001-语文, 20260002-数学
         assert len(grades) == 3
         for grade in grades:
-            assert grade.student.class_name == "三年一班"
+            assert grade.student.class_name == "2026级1班"
 
     def test_get_grades_by_class_with_subject_filter(
         self, db_session, sample_students, sample_grades
@@ -300,7 +300,7 @@ class TestGradeService:
             service.create_grade(GradeCreate(**grade_data))
 
         # 按班级和科目查询
-        grades = service.get_grades_by_class("三年一班", subject="数学")
+        grades = service.get_grades_by_class("2026级1班", subject="数学")
 
         assert len(grades) == 2  # 20260001-数学, 20260002-数学
 
@@ -341,7 +341,7 @@ class TestGradeService:
 
         # 组合查询
         grades, total = service.search_grades(
-            class_name="三年一班",
+            class_name="2026级1班",
             subject="数学",
         )
 
@@ -487,8 +487,8 @@ class TestGradeService:
             service.create_grade(GradeCreate(**grade_data))
 
         # 统计班级成绩数量
-        # 三年一班有 3 条成绩：20260001-数学, 20260001-语文, 20260002-数学
-        count = service.count_grades_by_class("三年一班")
+        # 2026级1班有 3 条成绩：20260001-数学, 20260001-语文, 20260002-数学
+        count = service.count_grades_by_class("2026级1班")
 
         assert count == 3
 

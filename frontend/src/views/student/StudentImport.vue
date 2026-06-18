@@ -43,7 +43,7 @@
               <li><strong>学号</strong>：8位数字，格式为年份+4位序号（如：20260001）</li>
               <li><strong>姓名</strong>：2-20个字符</li>
               <li><strong>性别</strong>：男 或 女</li>
-              <li><strong>班级</strong>：2-20个字符（如：三年一班）</li>
+              <li><strong>班级</strong>：2-20个字符（如：2026级1班）</li>
               <li><strong>入学年份</strong>：2000-2100之间的整数</li>
             </ul>
           </div>

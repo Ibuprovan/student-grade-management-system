@@ -37,7 +37,7 @@
 | `student_id` | VARCHAR(8) | PRIMARY KEY, INDEX | — | 学号，格式：YYYY + 4位序号（如 `20260001`） |
 | `name` | VARCHAR(20) | NOT NULL | — | 学生姓名，2–20 个字符 |
 | `gender` | VARCHAR(2) | NOT NULL | — | 性别，取值：`男` / `女` |
-| `class_name` | VARCHAR(20) | NOT NULL, INDEX | — | 班级名称，如 `三年一班` |
+| `class_name` | VARCHAR(20) | NOT NULL, INDEX | — | 班级名称，如 `2026级1班` |
 | `enrollment_year` | INTEGER | NOT NULL | — | 入学年份 |
 | `created_at` | DATETIME | — | UTC 当前时间 | 记录创建时间 |
 | `updated_at` | DATETIME | — | UTC 当前时间（自动更新） | 记录最后更新时间 |

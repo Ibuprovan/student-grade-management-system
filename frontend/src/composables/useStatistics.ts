@@ -9,7 +9,7 @@ import { useStudentStore } from '@/stores/student'
 import { ElMessage } from 'element-plus'
 import type { Subject, ExamType } from '@/types/grade'
 import { SUBJECTS, EXAM_TYPES } from '@/types/grade'
-import type { StatisticsQuery, RankingItem, TotalRankingItem } from '@/types/statistics'
+import type { StatisticsQuery, RankingItem, TotalRankingItem, ScoreDistribution } from '@/types/statistics'
 import { formatScore, formatPercent } from '@/utils/format'
 import * as statisticsApi from '@/api/statistics'
 
@@ -527,30 +527,33 @@ export function useSubjectStatistics() {
     }
   })
 
+  /** 主科（满分150）分布区间键名 */
+  const MAJOR_KEYS = ['0-89', '90-104', '105-119', '120-134', '135-150'] as const
+
+  /** 非主科（满分100）分布区间键名 */
+  const NORMAL_KEYS = ['0-59', '60-69', '70-79', '80-89', '90-100'] as const
+
+  /** 是否为满分150的主科 */
+  function isMajorSubject(subject: string): boolean {
+    return ['语文', '数学', '英语'].includes(subject)
+  }
+
+  /** 根据科目获取分布区间键名 */
+  function getDistributionKeys(subject: string): readonly string[] {
+    return isMajorSubject(subject) ? MAJOR_KEYS : NORMAL_KEYS
+  }
+
   /** 分数分布图表数据 */
   const scoreDistributionData = computed(() => {
-    const keys = ['0-59', '60-69', '70-79', '80-89', '90-100'] as const
-    if (selectedSubjectStats.value) {
-      const dist = selectedSubjectStats.value.score_distribution as unknown as Record<string, number>
-      return {
-        xData: [...keys],
-        yData: keys.map((k) => dist[k] || 0),
-      }
+    if (!filterForm.value.subject || !selectedSubjectStats.value) {
+      return { xData: [], yData: [] }
     }
-    if (subjectStats.value.length > 0) {
-      const agg: Record<string, number> = { '0-59': 0, '60-69': 0, '70-79': 0, '80-89': 0, '90-100': 0 }
-      subjectStats.value.forEach((s) => {
-        if (s.score_distribution) {
-          const dist = s.score_distribution as unknown as Record<string, number>
-          keys.forEach((k) => { agg[k] += dist[k] || 0 })
-        }
-      })
-      return {
-        xData: [...keys],
-        yData: keys.map((k) => agg[k]),
-      }
+    const dist = selectedSubjectStats.value.score_distribution
+    const keys = getDistributionKeys(filterForm.value.subject)
+    return {
+      xData: [...keys],
+      yData: keys.map((k) => dist[k as keyof ScoreDistribution] || 0),
     }
-    return { xData: [], yData: [] }
   })
 
   /** 能力雷达图数据 - 平均分、及格率、优秀率三维对比 */

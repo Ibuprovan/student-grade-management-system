@@ -172,7 +172,7 @@ def sample_student():
         "student_id": "20260001",
         "name": "张三",
         "gender": "男",
-        "class_name": "三年一班",
+        "class_name": "2026级1班",
         "enrollment_year": 2026,
     }
 
@@ -185,21 +185,21 @@ def sample_students():
             "student_id": "20260001",
             "name": "张三",
             "gender": "男",
-            "class_name": "三年一班",
+            "class_name": "2026级1班",
             "enrollment_year": 2026,
         },
         {
             "student_id": "20260002",
             "name": "李四",
             "gender": "女",
-            "class_name": "三年一班",
+            "class_name": "2026级1班",
             "enrollment_year": 2026,
         },
         {
             "student_id": "20260003",
             "name": "王五",
             "gender": "男",
-            "class_name": "三年二班",
+            "class_name": "2026级2班",
             "enrollment_year": 2026,
         },
     ]
@@ -509,12 +509,12 @@ class TestGradeAPI:
             client.post("/api/v1/grades", json=grade, headers=auth_headers)
 
         # 按班级查询
-        response = client.get("/api/v1/grades/class/三年一班", headers=auth_headers)
+        response = client.get("/api/v1/grades/class/2026级1班", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
         assert data["success"] is True
-        # 三年一班有 3 条成绩：20260001-数学, 20260001-语文, 20260002-数学
+        # 2026级1班有 3 条成绩：20260001-数学, 20260001-语文, 20260002-数学
         assert data["data"]["total"] == 3
 
     def test_get_grades_by_class_with_subject_filter(
@@ -530,7 +530,7 @@ class TestGradeAPI:
             client.post("/api/v1/grades", json=grade, headers=auth_headers)
 
         # 按班级和科目查询
-        response = client.get("/api/v1/grades/class/三年一班?subject=数学", headers=auth_headers)
+        response = client.get("/api/v1/grades/class/2026级1班?subject=数学", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -588,7 +588,7 @@ class TestGradeAPI:
             client.post("/api/v1/grades", json=grade, headers=auth_headers)
 
         # 组合查询
-        response = client.get("/api/v1/grades/search?class_name=三年一班&subject=数学", headers=auth_headers)
+        response = client.get("/api/v1/grades/search?class_name=2026级1班&subject=数学", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -650,7 +650,7 @@ class TestGradeAPI:
             client.post("/api/v1/grades", json=grade, headers=auth_headers)
 
         # 查询不存在的班级
-        response = client.get("/api/v1/grades/search?class_name=三年三班", headers=auth_headers)
+        response = client.get("/api/v1/grades/search?class_name=2026级3班", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()

@@ -30,7 +30,7 @@ class TestStudentService:
             "student_id": "20260001",
             "name": "张三",
             "gender": "男",
-            "class_name": "三年一班",
+            "class_name": "2026级1班",
             "enrollment_year": 2026,
         }
         defaults.update(kwargs)
@@ -49,7 +49,7 @@ class TestStudentService:
         assert student.student_id == "20260001"
         assert student.name == "张三"
         assert student.gender == "男"
-        assert student.class_name == "三年一班"
+        assert student.class_name == "2026级1班"
         assert student.enrollment_year == 2026
 
     def test_create_student_duplicate_id(self, db_session, sample_student_data):
@@ -115,7 +115,7 @@ class TestStudentService:
 
         # 按班级筛选
         students, total = service.get_student_list(
-            page=1, page_size=10, class_name="三年一班"
+            page=1, page_size=10, class_name="2026级1班"
         )
 
         assert len(students) == 2
@@ -231,7 +231,7 @@ class TestStudentService:
 
         # 搜索并按班级筛选
         students, total = service.search_students(
-            keyword="2026", class_name="三年一班"
+            keyword="2026", class_name="2026级1班"
         )
 
         assert len(students) == 2

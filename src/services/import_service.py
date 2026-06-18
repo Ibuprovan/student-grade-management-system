@@ -15,6 +15,8 @@ from sqlalchemy.orm import Session
 from src.models.student import Student
 from src.models.exam_total import StudentExamTotal
 from src.repositories.student_repo import StudentRepository
+from src.repositories.user_repo import UserRepository
+from src.core.security import hash_password
 from src.core.exceptions import ValidationException
 
 
@@ -24,6 +26,7 @@ class ImportService:
     def __init__(self, db: Session):
         self.db = db
         self.student_repo = StudentRepository(db)
+        self.user_repo = UserRepository(db)
 
     def parse_csv_file(self, file_content: bytes) -> dict:
         """
@@ -274,6 +277,18 @@ class ImportService:
 
                 # 创建学生记录
                 self.student_repo.create(student_data)
+                
+                # 自动创建学生登录账号（用户名为学号，初始密码为 123456）
+                if not self.user_repo.username_exists(student_data['student_id']):
+                    user_data = {
+                        "username": student_data['student_id'],
+                        "hashed_password": hash_password("123456"),
+                        "role": "student",
+                        "is_active": True,
+                        "need_change_password": True,
+                    }
+                    self.user_repo.create(user_data)
+                
                 success_count += 1
 
             except Exception as e:
@@ -483,9 +498,9 @@ class ImportService:
         writer.writerow(['学号', '姓名', '性别', '班级', '入学年份'])
         
         # 写入示例数据
-        writer.writerow(['20260001', '张三', '男', '三年一班', '2026'])
-        writer.writerow(['20260002', '李四', '女', '三年一班', '2026'])
-        
+        writer.writerow(['20260001', '张三', '男', '2026级1班', '2026'])
+
+        writer.writerow(['20260002', '李四', '女', '2026级1班', '2026'])
         return output.getvalue().encode('utf-8-sig')  # 使用 utf-8-sig 以支持 Excel 打开
 
     def _generate_excel_template(self) -> bytes:
@@ -522,8 +537,8 @@ class ImportService:
 
         # 写入示例数据
         example_data = [
-            ['20260001', '张三', '男', '三年一班', 2026],
-            ['20260002', '李四', '女', '三年一班', 2026],
+            ['20260001', '张三', '男', '2026级1班', 2026],
+            ['20260002', '李四', '女', '2026级1班', 2026],
         ]
         
         for row_idx, row_data in enumerate(example_data, start=2):
@@ -537,7 +552,7 @@ class ImportService:
         ws.cell(row=6, column=1, value="1. 学号：8位数字，格式为年份+4位序号（如：20260001）")
         ws.cell(row=7, column=1, value="2. 姓名：2-20个字符")
         ws.cell(row=8, column=1, value="3. 性别：男 或 女")
-        ws.cell(row=9, column=1, value="4. 班级：2-20个字符（如：三年一班）")
+        ws.cell(row=9, column=1, value="4. 班级：格式为 20xx级x班（如：2026级1班）")
         ws.cell(row=10, column=1, value="5. 入学年份：2000-2100之间的整数")
 
         # 设置列宽

@@ -46,7 +46,7 @@ class TestStudentRepository:
         for data in sample_students:
             repo.create(data)
 
-        students = repo.get_by_class("三年一班")
+        students = repo.get_by_class("2026级1班")
         assert len(students) == 2
 
     def test_count_by_class(self, db_session, sample_students):
@@ -55,7 +55,7 @@ class TestStudentRepository:
         for data in sample_students:
             repo.create(data)
 
-        count = repo.count_by_class("三年一班")
+        count = repo.count_by_class("2026级1班")
         assert count == 2
 
     def test_search_by_name(self, db_session, sample_students):
@@ -86,8 +86,8 @@ class TestStudentRepository:
 
         classes = repo.get_all_classes()
         assert len(classes) == 2
-        assert "三年一班" in classes
-        assert "三年二班" in classes
+        assert "2026级1班" in classes
+        assert "2026级2班" in classes
 
     def test_student_id_exists(self, db_session, sample_student_data):
         """测试检查学号是否存在"""
@@ -127,7 +127,7 @@ class TestGradeRepository:
             student_id="20260001",
             name="张三",
             gender="男",
-            class_name="三年一班",
+            class_name="2026级1班",
             enrollment_year=2026,
         )
         db_session.add(student)

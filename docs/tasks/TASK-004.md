@@ -94,7 +94,7 @@
         "count": 30,
         "subject": "数学",
         "exam_type": "期中",
-        "class_name": "三年一班"
+        "class_name": "2026级1班"
     }
 }
 ```
@@ -111,7 +111,7 @@
         "total_count": 30,
         "subject": "数学",
         "exam_type": "期中",
-        "class_name": "三年一班"
+        "class_name": "2026级1班"
     }
 }
 ```
@@ -123,7 +123,7 @@
 {
     "success": true,
     "data": {
-        "class_name": "三年一班",
+        "class_name": "2026级1班",
         "subject": "数学",
         "exam_type": "期中",
         "statistics": {
@@ -164,7 +164,7 @@
     "data": {
         "subject": "数学",
         "exam_type": "期中",
-        "class_name": "三年一班",
+        "class_name": "2026级1班",
         "rankings": [
             {
                 "rank": 1,
@@ -187,22 +187,22 @@
 
 ```bash
 # 平均分统计
-python -m src.cli stats average [--class 三年一班] [--subject 数学] [--exam-type 期中]
+python -m src.cli stats average [--class 2026级1班] [--subject 数学] [--exam-type 期中]
 
 # 及格率统计
-python -m src.cli stats pass-rate [--class 三年一班] [--subject 数学] [--exam-type 期中]
+python -m src.cli stats pass-rate [--class 2026级1班] [--subject 数学] [--exam-type 期中]
 
 # 优秀率统计
-python -m src.cli stats excellent-rate [--class 三年一班] [--subject 数学] [--exam-type 期中]
+python -m src.cli stats excellent-rate [--class 2026级1班] [--subject 数学] [--exam-type 期中]
 
 # 综合统计报告
-python -m src.cli stats report [--class 三年一班] [--subject 数学]
+python -m src.cli stats report [--class 2026级1班] [--subject 数学]
 
 # 单科排名
-python -m src.cli stats ranking --subject 数学 --exam-type 期中 [--class 三年一班] [--order desc]
+python -m src.cli stats ranking --subject 数学 --exam-type 期中 [--class 2026级1班] [--order desc]
 
 # 总分排名
-python -m src.cli stats total-ranking --exam-type 期中 [--class 三年一班]
+python -m src.cli stats total-ranking --exam-type 期中 [--class 2026级1班]
 ```
 
 ---

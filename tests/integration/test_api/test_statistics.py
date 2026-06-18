@@ -163,11 +163,11 @@ def auth_headers(client):
 def sample_students():
     """多个示例学生数据"""
     return [
-        {"student_id": "20260001", "name": "张三", "gender": "男", "class_name": "三年一班", "enrollment_year": 2026},
-        {"student_id": "20260002", "name": "李四", "gender": "女", "class_name": "三年一班", "enrollment_year": 2026},
-        {"student_id": "20260003", "name": "王五", "gender": "男", "class_name": "三年一班", "enrollment_year": 2026},
-        {"student_id": "20260004", "name": "赵六", "gender": "女", "class_name": "三年二班", "enrollment_year": 2026},
-        {"student_id": "20260005", "name": "钱七", "gender": "男", "class_name": "三年二班", "enrollment_year": 2026},
+        {"student_id": "20260001", "name": "张三", "gender": "男", "class_name": "2026级1班", "enrollment_year": 2026},
+        {"student_id": "20260002", "name": "李四", "gender": "女", "class_name": "2026级1班", "enrollment_year": 2026},
+        {"student_id": "20260003", "name": "王五", "gender": "男", "class_name": "2026级1班", "enrollment_year": 2026},
+        {"student_id": "20260004", "name": "赵六", "gender": "女", "class_name": "2026级2班", "enrollment_year": 2026},
+        {"student_id": "20260005", "name": "钱七", "gender": "男", "class_name": "2026级2班", "enrollment_year": 2026},
     ]
 
 
@@ -224,13 +224,13 @@ class TestStatisticsAPI:
         """测试按班级统计平均分"""
         self._setup_test_data(client, sample_students, sample_grades, auth_headers)
 
-        response = client.get("/api/v1/statistics/average?class_name=三年一班", headers=auth_headers)
+        response = client.get("/api/v1/statistics/average?class_name=2026级1班", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
         assert data["success"] is True
         assert data["data"]["count"] == 6
-        assert data["data"]["class_name"] == "三年一班"
+        assert data["data"]["class_name"] == "2026级1班"
 
     def test_get_average_by_subject(self, client, auth_headers, sample_students, sample_grades):
         """测试按科目统计平均分"""
@@ -272,7 +272,7 @@ class TestStatisticsAPI:
         """测试按班级统计最高分"""
         self._setup_test_data(client, sample_students, sample_grades, auth_headers)
 
-        response = client.get("/api/v1/statistics/max?class_name=三年二班", headers=auth_headers)
+        response = client.get("/api/v1/statistics/max?class_name=2026级2班", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -312,7 +312,7 @@ class TestStatisticsAPI:
         """测试按班级统计及格率"""
         self._setup_test_data(client, sample_students, sample_grades, auth_headers)
 
-        response = client.get("/api/v1/statistics/pass-rate?class_name=三年一班", headers=auth_headers)
+        response = client.get("/api/v1/statistics/pass-rate?class_name=2026级1班", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -375,11 +375,11 @@ class TestStatisticsAPI:
         """测试班级综合统计报告"""
         self._setup_test_data(client, sample_students, sample_grades, auth_headers)
 
-        response = client.get("/api/v1/statistics/report?class_name=三年一班", headers=auth_headers)
+        response = client.get("/api/v1/statistics/report?class_name=2026级1班", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
-        assert data["data"]["class_name"] == "三年一班"
+        assert data["data"]["class_name"] == "2026级1班"
         assert data["data"]["statistics"]["count"] == 6
 
     # ==================== 单科排名测试 ====================
@@ -407,14 +407,14 @@ class TestStatisticsAPI:
         self._setup_test_data(client, sample_students, sample_grades, auth_headers)
 
         response = client.get(
-            "/api/v1/statistics/ranking/subject?subject=数学&exam_type=期中&class_name=三年一班",
+            "/api/v1/statistics/ranking/subject?subject=数学&exam_type=期中&class_name=2026级1班",
             headers=auth_headers,
         )
 
         assert response.status_code == 200
         data = response.json()
         assert data["data"]["total_count"] == 3
-        assert data["data"]["class_name"] == "三年一班"
+        assert data["data"]["class_name"] == "2026级1班"
 
     def test_get_subject_ranking_asc(self, client, auth_headers, sample_students, sample_grades):
         """测试单科排名（升序）"""
@@ -466,14 +466,14 @@ class TestStatisticsAPI:
         self._setup_test_data(client, sample_students, sample_grades, auth_headers)
 
         response = client.get(
-            "/api/v1/statistics/ranking/total?exam_type=期中&class_name=三年一班",
+            "/api/v1/statistics/ranking/total?exam_type=期中&class_name=2026级1班",
             headers=auth_headers,
         )
 
         assert response.status_code == 200
         data = response.json()
         assert data["data"]["total_count"] == 3
-        assert data["data"]["class_name"] == "三年一班"
+        assert data["data"]["class_name"] == "2026级1班"
 
     def test_get_total_ranking_with_subject_scores(self, client, auth_headers, sample_students, sample_grades):
         """测试总分排名包含各科成绩"""
@@ -524,7 +524,7 @@ class TestStatisticsAPI:
         self._setup_test_data(client, sample_students, sample_grades, auth_headers)
 
         response = client.get(
-            "/api/v1/statistics?class_name=三年一班&subject=数学&metrics=avg,max",
+            "/api/v1/statistics?class_name=2026级1班&subject=数学&metrics=avg,max",
             headers=auth_headers,
         )
 

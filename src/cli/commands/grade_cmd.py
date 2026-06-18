@@ -202,7 +202,7 @@ def query(
 
     示例：
     - 按学生查询：python -m src.cli grade query --student-id 20260001
-    - 按班级查询：python -m src.cli grade query --class 三年一班 [--subject 数学] [--exam-type 期中]
+    - 按班级查询：python -m src.cli grade query --class 2026级1班 [--subject 数学] [--exam-type 期中]
     - 按科目查询：python -m src.cli grade query --subject 数学 [--exam-type 期中]
     """
     db = None

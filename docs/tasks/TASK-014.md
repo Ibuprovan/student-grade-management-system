@@ -63,7 +63,7 @@ total = self.repo.count_search(keyword=keyword)
 
 ```
 GET /api/v1/students/classes
-Response: { "success": true, "data": ["三年一班", "三年二班", ...] }
+Response: { "success": true, "data": ["2026级1班", "2026级2班", ...] }
 ```
 
 ---

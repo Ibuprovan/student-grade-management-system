@@ -897,6 +897,113 @@ class StatisticsService:
 
         return {"subjects": subjects}
 
+    def get_student_statistics(
+        self,
+        student_id: str,
+        exam_type: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        获取学生综合统计数据
+
+        返回学生各科成绩，以及所在班级各科的平均分、最高分和最低分。
+
+        Args:
+            student_id: 学号
+            exam_type: 考试类型（可选）
+
+        Returns:
+            Dict[str, Any]: 学生统计数据
+        """
+        # 查询学生信息
+        student = self.student_repo.get_by_student_id(student_id)
+        if not student:
+            return {
+                "student_id": student_id,
+                "student_name": "",
+                "class_name": "",
+                "subjects": [],
+                "total_score": 0,
+                "average_score": 0,
+            }
+
+        # 查询学生各科成绩
+        stmt = (
+            select(Grade.subject, Grade.score, Grade.exam_type, Grade.exam_date)
+            .where(Grade.student_id == student_id)
+        )
+        if exam_type:
+            stmt = stmt.where(Grade.exam_type == exam_type)
+
+        result = self.db.execute(stmt)
+        student_grades = result.all()
+
+        if not student_grades:
+            return {
+                "student_id": student_id,
+                "student_name": student.name,
+                "class_name": student.class_name,
+                "subjects": [],
+                "total_score": 0,
+                "average_score": 0,
+            }
+
+        # 获取学生各科成绩
+        subjects_data = []
+        for grade in student_grades:
+            subject = grade[0]
+            score = float(grade[1])
+
+            # 查询班级该科目统计
+            class_stmt = (
+                select(
+                    func.avg(Grade.score).label("avg"),
+                    func.max(Grade.score).label("max"),
+                    func.min(Grade.score).label("min"),
+                )
+                .join(Student, Grade.student_id == Student.student_id)
+                .where(
+                    and_(
+                        Grade.subject == subject,
+                        Student.class_name == student.class_name,
+                    )
+                )
+            )
+            if exam_type:
+                class_stmt = class_stmt.where(Grade.exam_type == exam_type)
+
+            class_result = self.db.execute(class_stmt)
+            class_stats = class_result.one()
+
+            subjects_data.append({
+                "subject": subject,
+                "score": score,
+                "exam_type": grade[2],
+                "exam_date": str(grade[3]) if grade[3] else "",
+                "class_average": round(float(class_stats[0]), 2) if class_stats[0] else 0,
+                "class_max": float(class_stats[1]) if class_stats[1] else 0,
+                "class_min": float(class_stats[2]) if class_stats[2] else 0,
+            })
+
+        # 计算总分和平均分
+        total_score = round(sum(s["score"] for s in subjects_data), 1)
+        average_score = round(total_score / len(subjects_data), 1) if subjects_data else 0
+
+        # 计算及格科目数和优秀科目数
+        pass_count = sum(1 for s in subjects_data if s["score"] >= 60)
+        excellent_count = sum(1 for s in subjects_data if s["score"] >= 90)
+
+        return {
+            "student_id": student_id,
+            "student_name": student.name,
+            "class_name": student.class_name,
+            "subjects": subjects_data,
+            "total_score": total_score,
+            "average_score": average_score,
+            "pass_count": pass_count,
+            "excellent_count": excellent_count,
+            "subject_count": len(subjects_data),
+        }
+
     def get_statistics_metrics(
         self,
         class_name: Optional[str] = None,

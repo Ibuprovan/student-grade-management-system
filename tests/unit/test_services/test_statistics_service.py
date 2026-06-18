@@ -41,11 +41,11 @@ class TestStatisticsService:
         """辅助方法：创建测试数据"""
         # 创建学生
         students = [
-            {"student_id": "20260001", "name": "张三", "gender": "男", "class_name": "三年一班", "enrollment_year": 2026},
-            {"student_id": "20260002", "name": "李四", "gender": "女", "class_name": "三年一班", "enrollment_year": 2026},
-            {"student_id": "20260003", "name": "王五", "gender": "男", "class_name": "三年一班", "enrollment_year": 2026},
-            {"student_id": "20260004", "name": "赵六", "gender": "女", "class_name": "三年二班", "enrollment_year": 2026},
-            {"student_id": "20260005", "name": "钱七", "gender": "男", "class_name": "三年二班", "enrollment_year": 2026},
+            {"student_id": "20260001", "name": "张三", "gender": "男", "class_name": "2026级1班", "enrollment_year": 2026},
+            {"student_id": "20260002", "name": "李四", "gender": "女", "class_name": "2026级1班", "enrollment_year": 2026},
+            {"student_id": "20260003", "name": "王五", "gender": "男", "class_name": "2026级1班", "enrollment_year": 2026},
+            {"student_id": "20260004", "name": "赵六", "gender": "女", "class_name": "2026级2班", "enrollment_year": 2026},
+            {"student_id": "20260005", "name": "钱七", "gender": "男", "class_name": "2026级2班", "enrollment_year": 2026},
         ]
         for student_data in students:
             self._create_student(db_session, student_data)
@@ -85,10 +85,10 @@ class TestStatisticsService:
         self._setup_test_data(db_session)
         service = StatisticsService(db_session)
 
-        result = service.get_average(class_name="三年一班")
+        result = service.get_average(class_name="2026级1班")
 
         assert result["count"] == 6
-        # 三年一班总分: 95+88+72+91+58+65 = 469
+        # 2026级1班总分: 95+88+72+91+58+65 = 469
         # 平均分: 469/6 ≈ 78.17
         assert result["average"] == 78.17
 
@@ -109,10 +109,10 @@ class TestStatisticsService:
         self._setup_test_data(db_session)
         service = StatisticsService(db_session)
 
-        result = service.get_average(class_name="三年一班", subject="数学")
+        result = service.get_average(class_name="2026级1班", subject="数学")
 
         assert result["count"] == 3
-        # 三年一班数学: 95+72+58 = 225
+        # 2026级1班数学: 95+72+58 = 225
         # 平均分: 225/3 = 75.0
         assert result["average"] == 75.0
 
@@ -143,7 +143,7 @@ class TestStatisticsService:
         self._setup_test_data(db_session)
         service = StatisticsService(db_session)
 
-        result = service.get_max_score(class_name="三年二班")
+        result = service.get_max_score(class_name="2026级2班")
 
         assert result["max_score"] == 85.0
         assert result["student_id"] == "20260004"
@@ -184,7 +184,7 @@ class TestStatisticsService:
         self._setup_test_data(db_session)
         service = StatisticsService(db_session)
 
-        result = service.get_min_score(class_name="三年一班")
+        result = service.get_min_score(class_name="2026级1班")
 
         assert result["min_score"] == 58.0
         assert result["student_id"] == "20260003"
@@ -217,10 +217,10 @@ class TestStatisticsService:
         self._setup_test_data(db_session)
         service = StatisticsService(db_session)
 
-        result = service.get_pass_rate(class_name="三年一班")
+        result = service.get_pass_rate(class_name="2026级1班")
 
         assert result["total_count"] == 6
-        # 三年一班: 95,88,72,91,58,65 -> 及格: 95,88,72,91,65 = 5人
+        # 2026级1班: 95,88,72,91,58,65 -> 及格: 95,88,72,91,65 = 5人
         assert result["passed_count"] == 5
         assert result["pass_rate"] == round(5 / 6 * 100, 2)
 
@@ -265,10 +265,10 @@ class TestStatisticsService:
         self._setup_test_data(db_session)
         service = StatisticsService(db_session)
 
-        result = service.get_excellent_rate(class_name="三年一班")
+        result = service.get_excellent_rate(class_name="2026级1班")
 
         assert result["total_count"] == 6
-        # 三年一班: 95,88,72,91,58,65 -> 优秀: 95,91 = 2人
+        # 2026级1班: 95,88,72,91,58,65 -> 优秀: 95,91 = 2人
         assert result["excellent_count"] == 2
         assert result["excellent_rate"] == round(2 / 6 * 100, 2)
 
@@ -311,9 +311,9 @@ class TestStatisticsService:
         self._setup_test_data(db_session)
         service = StatisticsService(db_session)
 
-        result = service.get_report(class_name="三年一班")
+        result = service.get_report(class_name="2026级1班")
 
-        assert result["class_name"] == "三年一班"
+        assert result["class_name"] == "2026级1班"
         assert result["statistics"]["count"] == 6
 
     def test_get_report_top_students(self, db_session):
@@ -388,11 +388,11 @@ class TestStatisticsService:
         result = service.get_subject_ranking(
             subject="数学",
             exam_type="期中",
-            class_name="三年一班",
+            class_name="2026级1班",
         )
 
         assert result["total_count"] == 3
-        assert result["class_name"] == "三年一班"
+        assert result["class_name"] == "2026级1班"
 
     def test_get_subject_ranking_with_limit(self, db_session):
         """测试单科排名限制数量"""
@@ -422,9 +422,9 @@ class TestStatisticsService:
     def test_get_subject_ranking_tied_scores(self, db_session):
         """测试并列分数的排名"""
         # 创建学生
-        self._create_student(db_session, {"student_id": "20260001", "name": "张三", "gender": "男", "class_name": "三年一班", "enrollment_year": 2026})
-        self._create_student(db_session, {"student_id": "20260002", "name": "李四", "gender": "女", "class_name": "三年一班", "enrollment_year": 2026})
-        self._create_student(db_session, {"student_id": "20260003", "name": "王五", "gender": "男", "class_name": "三年一班", "enrollment_year": 2026})
+        self._create_student(db_session, {"student_id": "20260001", "name": "张三", "gender": "男", "class_name": "2026级1班", "enrollment_year": 2026})
+        self._create_student(db_session, {"student_id": "20260002", "name": "李四", "gender": "女", "class_name": "2026级1班", "enrollment_year": 2026})
+        self._create_student(db_session, {"student_id": "20260003", "name": "王五", "gender": "男", "class_name": "2026级1班", "enrollment_year": 2026})
 
         # 创建相同分数的成绩
         self._create_grade(db_session, {"student_id": "20260001", "subject": "数学", "score": 90.0, "exam_type": "期中", "exam_date": date(2026, 4, 15)})
@@ -476,11 +476,11 @@ class TestStatisticsService:
 
         result = service.get_total_ranking(
             exam_type="期中",
-            class_name="三年一班",
+            class_name="2026级1班",
         )
 
         assert result["total_count"] == 3
-        assert result["class_name"] == "三年一班"
+        assert result["class_name"] == "2026级1班"
 
     def test_get_total_ranking_with_limit(self, db_session):
         """测试总分排名限制数量"""
@@ -567,7 +567,7 @@ class TestStatisticsService:
         service = StatisticsService(db_session)
 
         result = service.get_statistics_metrics(
-            class_name="三年一班",
+            class_name="2026级1班",
             subject="数学",
             metrics=["avg", "max"],
         )
@@ -590,8 +590,8 @@ class TestStatisticsService:
     def test_all_students_pass(self, db_session):
         """测试所有学生都及格的情况"""
         # 创建学生
-        self._create_student(db_session, {"student_id": "20260001", "name": "张三", "gender": "男", "class_name": "三年一班", "enrollment_year": 2026})
-        self._create_student(db_session, {"student_id": "20260002", "name": "李四", "gender": "女", "class_name": "三年一班", "enrollment_year": 2026})
+        self._create_student(db_session, {"student_id": "20260001", "name": "张三", "gender": "男", "class_name": "2026级1班", "enrollment_year": 2026})
+        self._create_student(db_session, {"student_id": "20260002", "name": "李四", "gender": "女", "class_name": "2026级1班", "enrollment_year": 2026})
 
         # 所有成绩都及格
         self._create_grade(db_session, {"student_id": "20260001", "subject": "数学", "score": 90.0, "exam_type": "期中", "exam_date": date(2026, 4, 15)})
@@ -606,8 +606,8 @@ class TestStatisticsService:
     def test_no_students_pass(self, db_session):
         """测试所有学生都不及格的情况"""
         # 创建学生
-        self._create_student(db_session, {"student_id": "20260001", "name": "张三", "gender": "男", "class_name": "三年一班", "enrollment_year": 2026})
-        self._create_student(db_session, {"student_id": "20260002", "name": "李四", "gender": "女", "class_name": "三年一班", "enrollment_year": 2026})
+        self._create_student(db_session, {"student_id": "20260001", "name": "张三", "gender": "男", "class_name": "2026级1班", "enrollment_year": 2026})
+        self._create_student(db_session, {"student_id": "20260002", "name": "李四", "gender": "女", "class_name": "2026级1班", "enrollment_year": 2026})
 
         # 所有成绩都不及格
         self._create_grade(db_session, {"student_id": "20260001", "subject": "数学", "score": 50.0, "exam_type": "期中", "exam_date": date(2026, 4, 15)})
@@ -622,8 +622,8 @@ class TestStatisticsService:
     def test_all_students_excellent(self, db_session):
         """测试所有学生都优秀的情况"""
         # 创建学生
-        self._create_student(db_session, {"student_id": "20260001", "name": "张三", "gender": "男", "class_name": "三年一班", "enrollment_year": 2026})
-        self._create_student(db_session, {"student_id": "20260002", "name": "李四", "gender": "女", "class_name": "三年一班", "enrollment_year": 2026})
+        self._create_student(db_session, {"student_id": "20260001", "name": "张三", "gender": "男", "class_name": "2026级1班", "enrollment_year": 2026})
+        self._create_student(db_session, {"student_id": "20260002", "name": "李四", "gender": "女", "class_name": "2026级1班", "enrollment_year": 2026})
 
         # 所有成绩都优秀
         self._create_grade(db_session, {"student_id": "20260001", "subject": "数学", "score": 95.0, "exam_type": "期中", "exam_date": date(2026, 4, 15)})
@@ -637,7 +637,7 @@ class TestStatisticsService:
 
     def test_score_at_boundary_pass(self, db_session):
         """测试及格边界分数（60分）"""
-        self._create_student(db_session, {"student_id": "20260001", "name": "张三", "gender": "男", "class_name": "三年一班", "enrollment_year": 2026})
+        self._create_student(db_session, {"student_id": "20260001", "name": "张三", "gender": "男", "class_name": "2026级1班", "enrollment_year": 2026})
         self._create_grade(db_session, {"student_id": "20260001", "subject": "数学", "score": 60.0, "exam_type": "期中", "exam_date": date(2026, 4, 15)})
 
         service = StatisticsService(db_session)
@@ -648,7 +648,7 @@ class TestStatisticsService:
 
     def test_score_at_boundary_excellent(self, db_session):
         """测试优秀边界分数（90分）"""
-        self._create_student(db_session, {"student_id": "20260001", "name": "张三", "gender": "男", "class_name": "三年一班", "enrollment_year": 2026})
+        self._create_student(db_session, {"student_id": "20260001", "name": "张三", "gender": "男", "class_name": "2026级1班", "enrollment_year": 2026})
         self._create_grade(db_session, {"student_id": "20260001", "subject": "数学", "score": 90.0, "exam_type": "期中", "exam_date": date(2026, 4, 15)})
 
         service = StatisticsService(db_session)

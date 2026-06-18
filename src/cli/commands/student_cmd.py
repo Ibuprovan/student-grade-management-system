@@ -55,7 +55,7 @@ def add(
     """
     添加学生
 
-    示例：python -m src.cli student add --id 20260001 --name 张三 --gender 男 --class 三年一班 --year 2026
+    示例：python -m src.cli student add --id 20260001 --name 张三 --gender 男 --class 2026级1班 --year 2026
     """
     db = None
     try:
@@ -105,7 +105,7 @@ def list(
     """
     学生列表
 
-    示例：python -m src.cli student list --class 三年一班 --page 1 --size 10
+    示例：python -m src.cli student list --class 2026级1班 --page 1 --size 10
     """
     db = None
     try:

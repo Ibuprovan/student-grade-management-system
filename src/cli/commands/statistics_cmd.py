@@ -56,7 +56,7 @@ def average(
 
     示例：
     - python -m src.cli stats average
-    - python -m src.cli stats average --class 三年一班
+    - python -m src.cli stats average --class 2026级1班
     - python -m src.cli stats average --subject 数学 --exam-type 期中
     """
     db = None
@@ -111,7 +111,7 @@ def pass_rate(
 
     示例：
     - python -m src.cli stats pass-rate
-    - python -m src.cli stats pass-rate --class 三年一班 --subject 数学
+    - python -m src.cli stats pass-rate --class 2026级1班 --subject 数学
     """
     db = None
     try:
@@ -166,7 +166,7 @@ def excellent_rate(
 
     示例：
     - python -m src.cli stats excellent-rate
-    - python -m src.cli stats excellent-rate --class 三年一班 --subject 数学
+    - python -m src.cli stats excellent-rate --class 2026级1班 --subject 数学
     """
     db = None
     try:
@@ -222,7 +222,7 @@ def report(
 
     示例：
     - python -m src.cli stats report
-    - python -m src.cli stats report --class 三年一班 --subject 数学
+    - python -m src.cli stats report --class 2026级1班 --subject 数学
     """
     db = None
     try:
@@ -318,7 +318,7 @@ def ranking(
 
     示例：
     - python -m src.cli stats ranking --subject 数学 --exam-type 期中
-    - python -m src.cli stats ranking --subject 数学 --exam-type 期中 --class 三年一班
+    - python -m src.cli stats ranking --subject 数学 --exam-type 期中 --class 2026级1班
     - python -m src.cli stats ranking --subject 数学 --exam-type 期中 --limit 10
     """
     db = None
@@ -390,7 +390,7 @@ def total_ranking(
 
     示例：
     - python -m src.cli stats total-ranking --exam-type 期中
-    - python -m src.cli stats total-ranking --exam-type 期中 --class 三年一班
+    - python -m src.cli stats total-ranking --exam-type 期中 --class 2026级1班
     - python -m src.cli stats total-ranking --exam-type 期中 --limit 10
     """
     db = None

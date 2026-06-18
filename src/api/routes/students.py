@@ -16,15 +16,19 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Query, Path, status
 from fastapi.responses import StreamingResponse
+from sqlalchemy.orm import Session
 
-from src.api.dependencies import get_student_service
+from src.api.dependencies import get_student_service, get_user_repository
 from src.api.auth import get_current_user, require_admin, require_teacher_or_admin
 from src.core.config import settings
+from src.core.database import get_db
+from src.core.security import hash_password
 from src.core.utils import build_paginated_response
 from src.schemas.student import StudentCreate, StudentUpdate, StudentResponse
 from src.schemas.batch import BatchDeleteRequest, BatchDeleteResponse
 from src.schemas.common import ApiResponse, PaginatedResponse, SuccessResponse
 from src.services.student_service import StudentService
+from src.repositories.user_repo import UserRepository
 from src.models.user import User
 
 # 创建路由器
@@ -36,7 +40,7 @@ router = APIRouter(prefix="/api/v1/students", tags=["学生管理"])
     response_model=ApiResponse,
     status_code=status.HTTP_201_CREATED,
     summary="添加学生",
-    description="创建新的学生记录，学号必须唯一（需要教师权限）",
+    description="创建新的学生记录，学号必须唯一（需要教师权限）。同时会自动创建学生登录账号（用户名为学号，初始密码为 123456）",
     responses={
         401: {"description": "未认证"},
         403: {"description": "权限不足"},
@@ -47,6 +51,7 @@ router = APIRouter(prefix="/api/v1/students", tags=["学生管理"])
 def create_student(
     data: StudentCreate,
     service: StudentService = Depends(get_student_service),
+    user_repo: UserRepository = Depends(get_user_repository),
     current_user: User = Depends(require_teacher_or_admin),
 ) -> ApiResponse:
     """
@@ -57,12 +62,30 @@ def create_student(
     - **gender**: 性别（男/女）
     - **class_name**: 班级名称
     - **enrollment_year**: 入学年份（2000-2100）
+
+    添加学生时会自动创建对应的登录账号：
+    - 用户名：学号
+    - 初始密码：123456
+    - 角色：student
     """
+    # 创建学生记录
     student = service.create_student(data)
+
+    # 自动创建学生登录账号（用户名为学号，初始密码为 123456）
+    if not user_repo.username_exists(data.student_id):
+        user_data = {
+            "username": data.student_id,
+            "hashed_password": hash_password("123456"),
+            "role": "student",
+            "is_active": True,
+            "need_change_password": True,
+        }
+        user_repo.create(user_data)
+
     return ApiResponse(
         success=True,
         data=StudentResponse.model_validate(student),
-        message="学生添加成功",
+        message="学生添加成功，登录账号已自动创建（用户名：学号，初始密码：123456）",
     )
 
 
