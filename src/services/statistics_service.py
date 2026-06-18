@@ -465,8 +465,7 @@ class StatisticsService:
             total = float(row[0])
             sid = row[1]
             name = row[2]
-            subj_count = int(row[3]) if len(row) > 3 and row[3] else 0
-            score_list.append((total, sid, name, subj_count))
+            score_list.append((total, sid, name))
 
         scores = [s[0] for s in score_list]
         count = len(scores)
@@ -474,21 +473,13 @@ class StatisticsService:
         max_score = max(scores)
         min_score = min(scores)
 
-        # 及格率/优秀率：按平均分判断（总分 / 科目数 >= 60 / 90）
-        # 如果没有科目数信息，则按总分的 60% / 90% 判断
-        passed_count = 0
-        excellent_count = 0
-        for total, sid, name, subj_count in score_list:
-            if subj_count > 0:
-                avg = total / subj_count
-            else:
-                # 无科目数信息，按总分 60% 及格、90% 优秀判断
-                avg = total / (total / 60) if total > 0 else 0
-            if avg >= PASS_SCORE:
-                passed_count += 1
-            if avg >= EXCELLENT_SCORE:
-                excellent_count += 1
+        # 满分 750：语文150 + 数学150 + 英语150 + 3门选修各100
+        MAX_TOTAL = 750
+        PASS_THRESHOLD = MAX_TOTAL * 0.6   # 450
+        EXCELLENT_THRESHOLD = MAX_TOTAL * 0.9  # 675
 
+        passed_count = sum(1 for s in scores if s >= PASS_THRESHOLD)
+        excellent_count = sum(1 for s in scores if s >= EXCELLENT_THRESHOLD)
         pass_rate = round((passed_count / count) * 100, 2)
         excellent_rate = round((excellent_count / count) * 100, 2)
 
