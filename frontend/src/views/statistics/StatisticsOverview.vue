@@ -369,7 +369,7 @@ async function handleSearch() {
     const [reportRes, subjectStatsRes, totalRankRes] = await Promise.allSettled([
       getReport({ exam_type: examType, class_name: className, top_n: 10 }),
       getBatchSubjectStatistics({ exam_type: examType as ExamType, class_name: className }),
-      getTotalRanking({ exam_type: examType, class_name: className, limit: 10 }),
+      getTotalRanking({ exam_type: examType, class_name: className }),
     ])
 
     if (reportRes.status === 'fulfilled') {

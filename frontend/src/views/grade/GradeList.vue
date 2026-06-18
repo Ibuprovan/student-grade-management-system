@@ -275,7 +275,6 @@ async function fetchTotalRanking() {
     const res = await getTotalRanking({
       exam_type: rankingExamType.value,
       class_name: rankingClassName.value || undefined,
-      limit: 50,
     })
     const data = (res as any).data || res
     totalRankings.value = data.rankings || []

@@ -123,18 +123,20 @@
       <div class="page-card">
         <h3 class="section-title">班级统计信息</h3>
         <el-table
-          v-if="classStats.length > 0"
-          :data="classStats"
+          v-if="sortedClassStats.length > 0"
+          :data="sortedClassStats"
           border
           stripe
           style="width: 100%"
           :header-cell-style="{ background: 'var(--bg-color)', color: 'var(--text-color)' }"
           @row-click="handleRowClick"
+          @sort-change="handleSortChange"
           highlight-current-row
+          :default-sort="{ prop: 'class_name', order: 'ascending' }"
         >
-          <el-table-column prop="class_name" label="班级" min-width="120" />
+          <el-table-column prop="class_name" label="班级" min-width="120" sortable="custom" />
           <el-table-column prop="student_count" label="学生人数" min-width="100" align="center" />
-          <el-table-column label="平均分" min-width="100" align="center">
+          <el-table-column label="平均分" prop="average_score" min-width="100" align="center" sortable="custom">
             <template #default="{ row }">
               <span :style="{ color: getScoreColor(row.average_score) }">
                 {{ formatScore(row.average_score) }}
@@ -153,7 +155,7 @@
               </span>
             </template>
           </el-table-column>
-          <el-table-column label="及格率" min-width="140" align="center">
+          <el-table-column label="及格率" prop="pass_rate" min-width="140" align="center" sortable="custom">
             <template #default="{ row }">
               <el-progress
                 :percentage="row.pass_rate"
@@ -165,7 +167,7 @@
               {{ formatPercent(row.pass_rate) }}
             </template>
           </el-table-column>
-          <el-table-column label="优秀率" min-width="140" align="center">
+          <el-table-column label="优秀率" prop="excellent_rate" min-width="140" align="center" sortable="custom">
             <template #default="{ row }">
               <el-progress
                 :percentage="row.excellent_rate"
@@ -245,6 +247,7 @@
 
 <script setup lang="ts">
 import { Download, Search, RefreshRight, School, DataLine, TrendCharts, CircleCloseFilled } from '@element-plus/icons-vue'
+import { ref, computed } from 'vue'
 import { useClassStatistics } from '@/composables/useStatistics'
 import { formatScore, formatPercent, getScoreColor } from '@/utils/format'
 import type { ClassStatistics } from '@/types/statistics'
@@ -267,6 +270,65 @@ const {
   handleReset,
   handleExport,
 } = useClassStatistics()
+
+/** 中文数字映射 */
+const chineseNumMap: Record<string, number> = {
+  '一': 1, '二': 2, '三': 3, '四': 4, '五': 5,
+  '六': 6, '七': 7, '八': 8, '九': 9, '十': 10,
+}
+
+/** 从班级名称中提取数字用于排序 */
+function getClassSortKey(className: string): number {
+  // 匹配 "三年一班" 中的 "一" 或 "1班" 中的 "1"
+  const match = className.match(/([一二三四五六七八九十]+)班/)
+  if (match) {
+    return chineseNumMap[match[1]] || 999
+  }
+  const numMatch = className.match(/(\d+)班/)
+  if (numMatch) {
+    return parseInt(numMatch[1])
+  }
+  return 999
+}
+
+/** 排序状态 */
+const sortState = ref({ prop: 'class_name', order: 'ascending' })
+
+/** 排序后的班级统计 */
+const sortedClassStats = computed(() => {
+  const data = [...classStats.value]
+  const { prop, order } = sortState.value
+
+  data.sort((a, b) => {
+    let valA: number, valB: number
+
+    if (prop === 'class_name') {
+      valA = getClassSortKey(a.class_name)
+      valB = getClassSortKey(b.class_name)
+    } else if (prop === 'average_score') {
+      valA = a.average_score
+      valB = b.average_score
+    } else if (prop === 'pass_rate') {
+      valA = a.pass_rate
+      valB = b.pass_rate
+    } else if (prop === 'excellent_rate') {
+      valA = a.excellent_rate
+      valB = b.excellent_rate
+    } else {
+      return 0
+    }
+
+    const diff = valA - valB
+    return order === 'ascending' ? diff : -diff
+  })
+
+  return data
+})
+
+/** 处理排序变化 */
+function handleSortChange({ prop, order }: { prop: string; order: string | null }) {
+  sortState.value = { prop: prop || 'class_name', order: order || 'ascending' }
+}
 
 /** 点击表格行 */
 function handleRowClick(row: ClassStatistics) {
