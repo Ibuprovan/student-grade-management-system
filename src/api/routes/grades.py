@@ -14,7 +14,8 @@
 - DELETE /api/v1/grades/{grade_id}          删除成绩（需要管理员权限）
 """
 
-from typing import Optional, List, List
+from typing import Optional, List
+from datetime import datetime, date as date_type
 
 from fastapi import APIRouter, Depends, Query, Path, status
 from fastapi.responses import StreamingResponse
@@ -43,12 +44,33 @@ def _build_grade_response(grade: Grade) -> GradeResponse:
     构建包含学生信息的成绩响应
 
     Args:
-        grade: 成绩对象（已加载 student 关联）
+        grade: 成绩对象（已加载 student 关系）
 
     Returns:
         GradeResponse: 包含学生姓名和班级的成绩响应
     """
-    grade_data = GradeResponse.model_validate(grade)
+    try:
+        grade_data = GradeResponse.model_validate(grade)
+    except Exception:
+        # 如果序列化失败（如 exam_date 格式异常），手动构建
+        exam_date = grade.exam_date
+        if isinstance(exam_date, str):
+            try:
+                exam_date = datetime.strptime(exam_date, '%Y-%m-%d').date()
+            except ValueError:
+                exam_date = date_type.today()
+
+        grade_data = GradeResponse(
+            grade_id=grade.grade_id,
+            student_id=grade.student_id,
+            subject=grade.subject,
+            score=float(grade.score),
+            exam_type=grade.exam_type,
+            exam_date=exam_date,
+            created_at=grade.created_at or datetime.now(),
+            updated_at=grade.updated_at,
+        )
+
     if hasattr(grade, 'student') and grade.student:
         grade_data.student_name = grade.student.name
         grade_data.class_name = grade.student.class_name
