@@ -24,8 +24,10 @@
 
 - **专业教育 UI** - 浅色主题，专业蓝主色调，清晰现代
 - **JWT 双令牌认证** - Access Token + Refresh Token 安全机制
-- **RBAC 权限控制** - 管理员/班主任/教师/学生四级角色权限
+- **RBAC 权限控制** - 管理员/班主任/学科组长/教师/学生五级角色权限
 - **班主任专属空间** - 只读查看本班学生、成绩与统计
+- **学科组长专属空间** - 查看全年级某学科成绩与班级对比统计
+- **统一账号管理** - 管理员一站式管理所有角色账号与密码重置
 - **数据可视化** - ECharts 图表（折线图、柱状图、饼图、雷达图）
 - **批量导入** - Excel/CSV 文件一键导入学生和成绩
 - **响应式布局** - 适配 1280px / 1440px / 1920px 多种分辨率
@@ -86,6 +88,7 @@ npm run dev
 |------|--------|------|------|
 | 管理员 | `admin` | `admin123` | 全部权限 |
 | 班主任 | `2026001` | `123456` | 查看本班数据（只读），首次登录强制改密 |
+| 学科组长 | `chinese` / `math` / `english` ... | `123456` | 查看负责学科全年级数据（只读），首次登录强制改密 |
 | 教师 | `teacher` | `teacher123` | 学生和成绩管理 |
 | 学生 | `student` | `student123` | 查看自己的成绩 |
 
@@ -118,7 +121,14 @@ npm run dev
 - **本班成绩列表**：仅展示本班学生成绩，支持科目/日期筛选、总分排名
 - **本班统计分析**：总分统计概览 + 单科分数分布（只读）
 - **首次登录强制改密**：初始密码 `123456`，登录后需立即修改
-- **自动账号创建**：管理员分配班主任时自动生成用户账号
+- **自动账号生成**：管理员分配班主任时自动创建用户账号 + 成绩汇总数据
+
+### 学科组长空间（Subject Leader）
+- **学科仪表盘**：学科学生数、成绩记录数、平均分、最高分、最低分
+- **成绩管理**：查看全年级该学科成绩，支持班级/考试类型筛选
+- **统计概览**：班级分数对比（平均分/最高分/最低分图表）
+- **首次登录强制改密**：初始密码 `123456`，登录后需立即修改
+- **账号规则**：用户名 = 学科英文名小写（如 `chinese`），同一学科仅一位组长
 
 ### 统计分析
 - **统计概览**：总分统计卡片、总分分布柱状图、科目趋势折线图、科目占比饼图、三维能力雷达图、总分排名表、可选科目单科排名
@@ -129,8 +139,10 @@ npm run dev
 ### 权限管理
 - 用户管理（管理员）
 - 班主任管理（管理员分配班级、自动创建账号）
-- 四级角色权限控制：管理员 / 班主任 / 教师 / 学生
-- 班主任只读权限，只能查看本班数据
+- 学科组长管理（管理员分配学科、自动创建账号）
+- 统一账号管理（学生/班主任/学科组长账号查看与密码重置）
+- 五级角色权限控制：管理员 / 班主任 / 学科组长 / 教师 / 学生
+- 班主任/学科组长只读权限
 - 操作审计日志
 
 ---
@@ -166,8 +178,11 @@ student-grade-management-system/
 ├── src/                          # 后端代码
 │   ├── api/routes/               # API 路由
 │   │   ├── auth.py               # 认证（含首次登录改密）
+│   │   ├── accounts.py           # 账号管理（列表 + 密码重置）
 │   │   ├── class_teachers.py     # 班主任管理（管理员 CRUD）
 │   │   ├── class_teacher_scoped.py # 班主任数据查询（只读）
+│   │   ├── subject_leaders.py    # 学科组长管理（管理员 CRUD）
+│   │   ├── subject_leader_scoped.py # 学科组长数据查询（只读）
 │   │   ├── students.py           # 学生管理
 │   │   ├── grades.py             # 成绩管理
 │   │   ├── statistics.py         # 统计分析
@@ -177,7 +192,8 @@ student-grade-management-system/
 │   │   ├── student.py
 │   │   ├── grade.py
 │   │   ├── user.py
-│   │   └── class_teacher.py      # 班主任模型
+│   │   ├── class_teacher.py      # 班主任模型
+│   │   └── subject_leader.py     # 学科组长模型
 │   ├── schemas/                  # 数据验证
 │   ├── repositories/             # 数据访问层
 │   ├── services/                 # 业务逻辑层
@@ -191,7 +207,7 @@ student-grade-management-system/
 │       └── router/               # 路由
 ├── docs/                         # 文档
 ├── tests/                        # 测试
-├── CHANGELOG/                    # 版本更新日志
+├── CHANGELOG/                    # 版本更新日志（V5.2.0 / V5.1.0 / V5.0.1 / V5.0.0 ...）
 ├── .env.example                  # 环境变量模板
 ├── start.bat                     # 启动脚本
 └── requirements.txt              # Python 依赖
@@ -228,6 +244,17 @@ student-grade-management-system/
 | 班主任数据 | GET | `/api/v1/class-teacher/grades` | 本班成绩列表 |
 | 班主任数据 | GET | `/api/v1/class-teacher/statistics/overview` | 本班统计概览 |
 | 班主任数据 | GET | `/api/v1/class-teacher/statistics/subject` | 本班科目统计 |
+| 学科组长管理 | GET | `/api/v1/subject-leaders` | 学科组长列表（管理员） |
+| 学科组长管理 | POST | `/api/v1/subject-leaders` | 新增学科组长（管理员） |
+| 学科组长管理 | DELETE | `/api/v1/subject-leaders/{id}` | 删除学科组长（管理员） |
+| 学科组长管理 | GET | `/api/v1/subject-leaders/available-subjects` | 可分配学科列表 |
+| 学科组长数据 | GET | `/api/v1/subject-leader/dashboard` | 学科仪表盘 |
+| 学科组长数据 | GET | `/api/v1/subject-leader/grades` | 学科成绩列表 |
+| 学科组长数据 | GET | `/api/v1/subject-leader/statistics` | 学科统计概览 |
+| 账号管理 | GET | `/api/v1/accounts/students` | 学生账号列表 |
+| 账号管理 | GET | `/api/v1/accounts/class-teachers` | 班主任账号列表 |
+| 账号管理 | GET | `/api/v1/accounts/subject-leaders` | 学科组长账号列表 |
+| 账号管理 | POST | `/api/v1/accounts/{user_id}/reset-password` | 重置密码为 123456 |
 
 ---
 
@@ -248,6 +275,9 @@ npm run build
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| **V5.2.0** | **2026-06-19** | **管理员端统一账号管理板块：学生/班主任/学科组长账号查看与密码重置** |
+| **V5.1.0** | **2026-06-19** | **新增学科教研组组长角色、专属仪表盘/成绩管理/统计概览** |
+| **V5.0.1** | **2026-06-19** | **班主任对话框修复、成绩汇总自动生成、科目排序统一** |
 | **V5.0.0** | **2026-06-19** | **新增班主任角色、班级名称统一为"2026级X班"、MyGrades 优化、分数分布修复** |
 | V4.4.0 | 2026-06-18 | 成绩计算验证优化（150分满分、及格率/优秀率修复）、CSV导入增强、GradeList重构 |
 | V4.3.0 | 2026-06-15 | 成绩录入/导入改造（每人一次录入所有科目）、统计概览重构、班级统计排序 |
