@@ -62,5 +62,12 @@ echo   Admin: admin / admin123
 echo   Teacher: teacher / teacher123
 echo   Student: student / student123
 echo.
+echo Class teacher accounts (initial password: 123456):
+echo   2026001 (2026级1班)
+echo   2026002 (2026级2班)
+echo   2026003 (2026级3班)
+echo   2026004 (2026级4班)
+echo   2026005 (2026级5班)
+echo.
 echo Press any key to exit this window (services will continue running)...
 pause >nul

@@ -72,5 +72,12 @@ Write-Host "  管理员: admin / admin123" -ForegroundColor White
 Write-Host "  教师:   teacher / teacher123" -ForegroundColor White
 Write-Host "  学生:   student / student123" -ForegroundColor White
 Write-Host ""
+Write-Host "班主任账户（初始密码均为 123456）:" -ForegroundColor Yellow
+Write-Host "  2026001 (2026级1班)" -ForegroundColor White
+Write-Host "  2026002 (2026级2班)" -ForegroundColor White
+Write-Host "  2026003 (2026级3班)" -ForegroundColor White
+Write-Host "  2026004 (2026级4班)" -ForegroundColor White
+Write-Host "  2026005 (2026级5班)" -ForegroundColor White
+Write-Host ""
 Write-Host "按任意键退出此窗口（服务将继续运行）..." -ForegroundColor Gray
 $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
