@@ -69,6 +69,11 @@ export function getCtGrades(params?: { class_name?: string; subject?: string; ex
   return get<{ success: boolean; data: { items: unknown[]; total: number; page: number; page_size: number; total_pages: number } }>('/class-teacher/grades', { params })
 }
 
+/** 班主任：获取班级总分成绩列表（每人一行，各科展开为列） */
+export function getCtGradesTotal(params?: { class_name?: string; exam_type?: string; page?: number; page_size?: number }) {
+  return get<{ success: boolean; data: { items: unknown[]; total: number; page: number; page_size: number; total_pages: number; subjects: string[] } }>('/class-teacher/grades/total', { params })
+}
+
 /** 班主任：获取班级统计概览 */
 export function getCtStatisticsOverview(params?: { class_name?: string; exam_type?: string }) {
   return get<{ success: boolean; data: Record<string, unknown> }>('/class-teacher/statistics/overview', { params })

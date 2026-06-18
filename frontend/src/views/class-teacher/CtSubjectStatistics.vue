@@ -92,7 +92,12 @@
     <el-row :gutter="16" class="chart-row">
       <el-col :xs="24" :md="12">
         <div class="page-card chart-card-wrapper">
-          <h4 class="chart-title">{{ selectedSubject ? `${selectedSubject}成绩分布` : '成绩分布' }}</h4>
+          <div class="chart-title-row">
+            <h4 class="chart-title">成绩分布</h4>
+            <el-select v-model="selectedSubject" placeholder="选择科目" style="width: 140px" size="small">
+              <el-option v-for="s in subjects" :key="s.subject" :label="s.subject" :value="s.subject" />
+            </el-select>
+          </div>
           <BarChart
             v-if="distData.xData.length > 0"
             title=""
@@ -104,7 +109,7 @@
             :showValue="true"
             :height="340"
           />
-          <div v-else class="chart-empty">请在表格中选择科目查看分布</div>
+          <div v-else class="chart-empty">请选择科目查看分布</div>
         </div>
       </el-col>
       <el-col :xs="24" :md="12">
@@ -266,6 +271,14 @@ onMounted(() => {
   }
 
   .chart-title { font-size: 16px; font-weight: 600; color: var(--text-color); margin: 0 0 16px; }
+
+  .chart-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    .chart-title { margin: 0; }
+  }
 
   .chart-empty {
     height: 340px;

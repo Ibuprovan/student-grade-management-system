@@ -2,15 +2,11 @@
   <div class="ct-grades page-container">
     <div class="page-header">
       <h1 class="page-title">成绩信息</h1>
-    </div>
-
-    <div class="search-bar">
-      <el-select v-model="filterSubject" placeholder="科目" clearable style="width: 140px" @change="fetchGrades">
-        <el-option v-for="s in subjects" :key="s" :label="s" :value="s" />
-      </el-select>
-      <el-select v-model="filterExamType" placeholder="考试类型" clearable style="width: 140px" @change="fetchGrades">
-        <el-option v-for="t in examTypes" :key="t" :label="t" :value="t" />
-      </el-select>
+      <div class="header-actions">
+        <el-select v-model="filterExamType" placeholder="考试类型" clearable style="width: 140px" @change="fetchGrades">
+          <el-option v-for="t in examTypes" :key="t" :label="t" :value="t" />
+        </el-select>
+      </div>
     </div>
 
     <div class="page-card">
@@ -22,24 +18,32 @@
         v-loading="loading"
         :header-cell-style="{ background: 'var(--bg-color)', color: 'var(--text-color)' }"
       >
-        <el-table-column prop="student_id" label="学号" min-width="120" />
-        <el-table-column prop="student_name" label="姓名" min-width="100" />
-        <el-table-column prop="subject" label="科目" min-width="100" align="center">
-          <template #default="{ row }">
-            <el-tag size="small" effect="plain">{{ row.subject }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="score" label="分数" min-width="80" align="center">
-          <template #default="{ row }">
-            <span :style="{ color: getScoreColor(row.score), fontWeight: 600 }">{{ row.score }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="exam_type" label="考试类型" min-width="100" align="center">
+        <el-table-column prop="student_id" label="学号" min-width="100" fixed="left" />
+        <el-table-column prop="student_name" label="姓名" min-width="90" fixed="left" />
+        <el-table-column prop="exam_type" label="考试类型" min-width="90" align="center">
           <template #default="{ row }">
             <el-tag :type="getExamTypeTag(row.exam_type)" size="small">{{ row.exam_type }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="exam_date" label="考试日期" min-width="120" align="center" />
+        <el-table-column prop="exam_date" label="考试日期" min-width="100" align="center" />
+        <el-table-column
+          v-for="subj in subjects"
+          :key="subj"
+          :prop="subj"
+          :label="subj"
+          min-width="80"
+          align="center"
+        >
+          <template #default="{ row }">
+            <span v-if="row[subj] !== null && row[subj] !== undefined" :style="{ color: getScoreColor(row[subj]), fontWeight: 500 }">{{ row[subj] }}</span>
+            <span v-else class="score-empty">-</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="total_score" label="总分" min-width="90" align="center" fixed="right">
+          <template #default="{ row }">
+            <span class="total-score">{{ row.total_score }}</span>
+          </template>
+        </el-table-column>
       </el-table>
 
       <div class="table-pagination" v-if="total > 0">
@@ -58,28 +62,25 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { getCtGrades } from '@/api/classTeacher'
-import { SUBJECTS, EXAM_TYPES } from '@/types/grade'
+import { getCtGradesTotal } from '@/api/classTeacher'
+import { EXAM_TYPES } from '@/types/grade'
 
-interface GradeItem {
-  grade_id: number
+interface GradeRow {
   student_id: string
   student_name: string
-  subject: string
-  score: number
   exam_type: string
   exam_date: string
-  class_name: string
+  total_score: number
+  [subject: string]: unknown
 }
 
-const subjects = SUBJECTS
 const examTypes = EXAM_TYPES
 const loading = ref(false)
-const grades = ref<GradeItem[]>([])
+const grades = ref<GradeRow[]>([])
+const subjects = ref<string[]>([])
 const currentPage = ref(1)
 const pageSize = ref(20)
 const total = ref(0)
-const filterSubject = ref('')
 const filterExamType = ref('')
 
 function getScoreColor(score: number): string {
@@ -98,16 +99,18 @@ function getExamTypeTag(t: string): 'primary' | 'success' | 'warning' | 'info' {
 async function fetchGrades() {
   loading.value = true
   try {
-    const res = await getCtGrades({
+    const res = await getCtGradesTotal({
       page: currentPage.value,
       page_size: pageSize.value,
-      subject: filterSubject.value || undefined,
       exam_type: filterExamType.value || undefined,
     })
     if (res?.data) {
-      const d = res.data as { items: GradeItem[]; total: number }
+      const d = res.data as { items: GradeRow[]; total: number; subjects: string[] }
       grades.value = d.items || []
       total.value = d.total || 0
+      if (d.subjects && d.subjects.length > 0) {
+        subjects.value = d.subjects
+      }
     }
   } catch (e) {
     console.error('获取成绩列表失败:', e)
@@ -126,15 +129,25 @@ onMounted(() => {
   animation: fadeIn 0.3s ease;
 
   .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
     .page-title { margin: 0; font-size: 22px; font-weight: 700; }
+    .header-actions { display: flex; gap: 12px; }
   }
 
-  .search-bar {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 16px;
-    flex-wrap: wrap;
+  .score-empty {
+    color: var(--text-color-secondary);
+    font-size: 12px;
+  }
+
+  .total-score {
+    font-weight: 700;
+    font-size: 15px;
+    color: #409eff;
   }
 
   .table-pagination {

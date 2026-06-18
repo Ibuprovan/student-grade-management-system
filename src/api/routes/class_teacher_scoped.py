@@ -245,6 +245,100 @@ def get_class_grades(
     )
 
 
+# ==================== 总分成绩列表 ====================
+
+
+@router.get("/grades/total", response_model=ApiResponse)
+def get_class_grades_total(
+    class_name: Optional[str] = Query(None),
+    exam_type: Optional[str] = Query(None),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_class_teacher_or_admin),
+) -> ApiResponse:
+    """获取班级总分成绩列表（每人一行，各科成绩展开为列）"""
+    cn = _get_class_name_for_teacher(current_user, db, class_name)
+
+    # 查询该班级所有成绩，按学生+考试类型+考试日期分组
+    stmt = (
+        select(
+            Grade.student_id,
+            Student.name.label("student_name"),
+            Grade.exam_type,
+            Grade.exam_date,
+            Grade.subject,
+            Grade.score,
+        )
+        .join(Student, Grade.student_id == Student.student_id)
+        .where(Student.class_name == cn)
+    )
+    if exam_type:
+        stmt = stmt.where(Grade.exam_type == exam_type)
+    stmt = stmt.order_by(Grade.student_id, Grade.exam_type, Grade.exam_date, Grade.subject)
+
+    rows = db.execute(stmt).all()
+
+    # 按 student_id + exam_type + exam_date 分组
+    from collections import defaultdict
+    groups: dict[tuple, dict] = {}
+    subjects_set: list[str] = []
+
+    for student_id, student_name, etype, edate, subject, score in rows:
+        key = (student_id, etype, edate)
+        if key not in groups:
+            groups[key] = {
+                "student_id": student_id,
+                "student_name": student_name,
+                "exam_type": etype,
+                "exam_date": edate.isoformat() if edate else None,
+                "subjects": {},
+                "total_score": 0.0,
+            }
+        groups[key]["subjects"][subject] = float(score)
+        groups[key]["total_score"] += float(score)
+        if subject not in subjects_set:
+            subjects_set.append(subject)
+
+    # 排序科目：语文、数学、英语在前，其他按字母
+    main = ["语文", "数学", "英语"]
+    other = sorted([s for s in subjects_set if s not in main])
+    ordered_subjects = [s for s in main if s in subjects_set] + other
+
+    # 构建分页
+    all_items = list(groups.values())
+    all_items.sort(key=lambda x: (-x["total_score"], x["student_id"]))
+    total = len(all_items)
+    skip = (page - 1) * page_size
+    page_items = all_items[skip: skip + page_size]
+
+    # 构建返回数据
+    items = []
+    for item in page_items:
+        row = {
+            "student_id": item["student_id"],
+            "student_name": item["student_name"],
+            "exam_type": item["exam_type"],
+            "exam_date": item["exam_date"],
+            "total_score": round(item["total_score"], 1),
+        }
+        for subj in ordered_subjects:
+            row[subj] = item["subjects"].get(subj)
+        items.append(row)
+
+    return ApiResponse(
+        success=True,
+        data={
+            "items": items,
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "total_pages": (total + page_size - 1) // page_size,
+            "subjects": ordered_subjects,
+        },
+    )
+
+
 # ==================== 统计概览 ====================
 
 
