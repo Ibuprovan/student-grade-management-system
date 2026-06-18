@@ -95,15 +95,6 @@ def main():
     finally:
         db.close()
 
-    # 初始化班主任账号
-    logger.info("初始化班主任账号...")
-    from src.scripts.init_class_teachers import init_class_teachers
-    db = SessionLocal()
-    try:
-        init_class_teachers(db)
-    finally:
-        db.close()
-
     logger.info("=" * 50)
     logger.info("默认用户创建完成！")
     logger.info("")
@@ -112,12 +103,7 @@ def main():
     logger.info("  教师   - 用户名: teacher, 密码: teacher123")
     logger.info("  学生   - 用户名: student, 密码: student123")
     logger.info("")
-    logger.info("班主任账户（初始密码均为 123456）：")
-    logger.info("  2026级1班 -> 用户名: 2026001")
-    logger.info("  2026级2班 -> 用户名: 2026002")
-    logger.info("  2026级3班 -> 用户名: 2026003")
-    logger.info("  2026级4班 -> 用户名: 2026004")
-    logger.info("  2026级5班 -> 用户名: 2026005")
+    logger.info("班主任账号请在管理员端手动添加")
     logger.info("")
     logger.info("⚠️  安全提醒：生产环境部署后请立即修改默认密码！")
     logger.info("=" * 50)
