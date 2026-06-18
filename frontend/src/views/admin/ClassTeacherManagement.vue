@@ -104,7 +104,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, watch, nextTick, onMounted } from 'vue'
 import { Plus } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
@@ -170,14 +170,23 @@ async function fetchAvailableClasses() {
       availableClasses.value = res.data as unknown as AvailableClass[]
     }
   } catch (e) {
+    ElMessage.error('获取可分配班级失败，请刷新重试')
     console.error('获取可分配班级失败:', e)
   } finally {
     loadingClasses.value = false
   }
 }
 
+/** 监听对话框打开，等 DOM 渲染后再加载班级数据 */
+watch(showAddDialog, async (opened) => {
+  if (opened) {
+    await nextTick()
+    await fetchAvailableClasses()
+  }
+})
+
 async function openAddDialog() {
-  await fetchAvailableClasses()
+  resetForm()
   showAddDialog.value = true
 }
 
@@ -217,6 +226,7 @@ async function handleDelete(row: ClassTeacherInfo) {
 
 function resetForm() {
   form.value = { class_name: '', enrollment_year: 0, class_number: 0, teacher_name: '' }
+  availableClasses.value = []
 }
 
 onMounted(() => {
