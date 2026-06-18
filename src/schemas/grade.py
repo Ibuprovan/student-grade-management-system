@@ -21,11 +21,10 @@ from src.core.constants import (
 
 def _validate_score_precision(v: float) -> float:
     """
-    验证分数精度和范围（公共验证函数）
+    验证分数精度
 
-    分数最多支持 1 位小数，且必须在 SCORE_MIN ~ SCORE_MAX 之间。
-    此函数供 GradeBase、GradeBatchItem、GradeUpdate 共同复用，
-    避免在多个 Schema 类中重复相同的验证逻辑。
+    分数最多支持 1 位小数。
+    范围验证由各 Schema 的 model_validator 根据科目单独处理。
 
     Args:
         v: 分数值
@@ -34,18 +33,16 @@ def _validate_score_precision(v: float) -> float:
         float: 四舍五入到 1 位小数后的分数
 
     Raises:
-        ValueError: 小数位数超过 1 位，或分数超出允许范围
+        ValueError: 小数位数超过 1 位
     """
-    # 检查小数位数
     score_str = str(v)
     if "." in score_str:
         decimal_places = len(score_str.split(".")[1])
         if decimal_places > 1:
             raise ValueError("分数最多支持1位小数")
 
-    # 检查范围
-    if v < SCORE_MIN or v > SCORE_MAX:
-        raise ValueError(f"分数必须在{SCORE_MIN}-{SCORE_MAX}之间")
+    if v < SCORE_MIN:
+        raise ValueError(f"分数不能小于{SCORE_MIN}")
 
     return round(v, 1)
 
