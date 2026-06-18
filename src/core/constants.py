@@ -41,11 +41,20 @@ GENDERS: List[str] = [
 SCORE_MIN: float = 0.0
 SCORE_MAX: float = 100.0
 
-# 及格分数线
+# 及格分数线（单科 0-100）
 PASS_SCORE: float = 60.0
 
-# 优秀分数线
+# 优秀分数线（单科 0-100）
 EXCELLENT_SCORE: float = 90.0
+
+# 总分满分（语文150 + 数学150 + 英语150 + 3门选修各100）
+TOTAL_SCORE_MAX: float = 750.0
+
+# 总分及格线（750 * 60%）
+TOTAL_PASS_SCORE: float = TOTAL_SCORE_MAX * 0.6  # 450
+
+# 总分优秀线（750 * 90%）
+TOTAL_EXCELLENT_SCORE: float = TOTAL_SCORE_MAX * 0.9  # 675
 
 # ==================== 格式常量 ====================
 
