@@ -369,7 +369,7 @@ async function handleParseFile() {
 
       // 验证
       const errors: string[] = []
-      if (!row.student_id || row.student_id.length !== 8) {
+      if (!row['学号'] || row['学号'].length !== 8) {
         errors.push('学号格式错误')
       }
 
@@ -402,9 +402,9 @@ async function handleParseFile() {
         errors.push('至少需要一个科目成绩')
       }
 
-      // 使用表单中的考试类型和日期
-      row.exam_type = importForm.exam_type || row.exam_type || ''
-      row.exam_date = importForm.exam_date || row.exam_date || ''
+      // 使用表单中的考试类型和日期（优先），否则使用CSV中的值
+      row.exam_type = importForm.exam_type || row['考试类型'] || ''
+      row.exam_date = importForm.exam_date || row['考试日期'] || ''
 
       if (!row.exam_type) errors.push('缺少考试类型')
       if (!row.exam_date) errors.push('缺少考试日期')
@@ -444,7 +444,7 @@ async function handleStartImport() {
         const score = row[sub]
         if (score !== undefined && score !== null && !isNaN(score)) {
           allGrades.push({
-            student_id: row.student_id,
+            student_id: row['学号'],
             subject: sub,
             score: score,
             total_score: totalScore,
