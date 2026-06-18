@@ -159,8 +159,8 @@
             :row-class-name="getPreviewRowClass"
           >
             <el-table-column type="index" label="行号" width="60" align="center" />
-            <el-table-column prop="student_id" label="学号" width="100" />
-            <el-table-column prop="name" label="姓名" width="80" />
+            <el-table-column prop="学号" label="学号" width="100" />
+            <el-table-column prop="姓名" label="姓名" width="80" />
             <el-table-column v-for="sub in subjectColumns" :key="sub" :prop="sub" :label="sub" width="65" align="center" />
             <el-table-column prop="exam_type" label="考试类型" width="80" />
             <el-table-column prop="exam_date" label="考试日期" width="100" />
@@ -457,10 +457,10 @@ async function handleStartImport() {
 
     importProgress.value = 30
 
-    // 按考试类型和日期分组提交
+    // 按科目+考试类型+日期分组（batchCreateGrades 要求同一批次同一科目）
     const groups = new Map<string, any[]>()
     for (const g of allGrades) {
-      const key = `${g.exam_type}_${g.exam_date}`
+      const key = `${g.subject}_${g.exam_type}_${g.exam_date}`
       if (!groups.has(key)) groups.set(key, [])
       groups.get(key)!.push(g)
     }
@@ -471,10 +471,10 @@ async function handleStartImport() {
     let groupIdx = 0
 
     for (const [key, grades] of groups) {
-      const [examType, examDate] = key.split('_')
+      const [subject, examType, examDate] = key.split('_')
       try {
         await batchCreateGrades({
-          subject: grades[0].subject,
+          subject: subject as any,
           exam_type: examType as ExamType,
           exam_date: examDate,
           grades: grades.map((g) => ({ student_id: g.student_id, score: g.score })),
