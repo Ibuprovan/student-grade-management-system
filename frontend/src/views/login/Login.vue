@@ -62,21 +62,6 @@
 
       <!-- 底部提示 -->
       <div class="login-footer">
-        <div v-if="showDefaultAccount" class="hint-box">
-          <el-icon class="hint-icon"><InfoFilled /></el-icon>
-          <span>默认账号：admin / admin123</span>
-        </div>
-        <el-button
-          v-else
-          link
-          type="info"
-          size="small"
-          class="show-hint-btn"
-          @click="showDefaultAccount = true"
-        >
-          查看默认账号
-        </el-button>
-      </div>
     </div>
   </div>
 </template>
@@ -86,7 +71,7 @@ import { ref, reactive } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElForm } from 'element-plus'
 import type { FormRules } from 'element-plus'
-import { User, Lock, School, InfoFilled } from '@element-plus/icons-vue'
+import { User, Lock, School } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
@@ -98,9 +83,6 @@ const formRef = ref<InstanceType<typeof ElForm>>()
 
 /** 加载状态 */
 const loading = ref(false)
-
-/** 是否显示默认账号提示 */
-const showDefaultAccount = ref(false)
 
 /** 登录表单 */
 const loginForm = reactive({
@@ -310,30 +292,6 @@ async function handleLogin() {
 /* 底部提示 */
 .login-footer {
   text-align: center;
-}
-
-.hint-box {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  background: #F0FAF8;
-  border-radius: 8px;
-  font-size: 13px;
-  color: #2A9D8F;
-}
-
-.hint-icon {
-  font-size: 14px;
-}
-
-.show-hint-btn {
-  font-size: 13px;
-  color: #7B8794;
-
-  &:hover {
-    color: #2A9D8F;
-  }
 }
 
 /* 响应式设计 */
