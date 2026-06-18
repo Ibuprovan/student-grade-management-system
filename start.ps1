@@ -69,10 +69,8 @@ Write-Host "前端界面: http://localhost:5173" -ForegroundColor Green
 Write-Host ""
 Write-Host "默认账户:" -ForegroundColor Yellow
 Write-Host "  管理员: admin / admin123" -ForegroundColor White
-Write-Host "  教师:   teacher / teacher123" -ForegroundColor White
-Write-Host "  学生:   student / student123" -ForegroundColor White
 Write-Host ""
-Write-Host "班主任账号请在管理员端手动添加" -ForegroundColor Yellow
+Write-Host "班主任、学科组长账号请在管理员端手动添加" -ForegroundColor Yellow
 Write-Host ""
 Write-Host "按任意键退出此窗口（服务将继续运行）..." -ForegroundColor Gray
 $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")

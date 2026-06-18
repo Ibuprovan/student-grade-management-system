@@ -125,18 +125,6 @@
           </el-menu-item>
         </el-sub-menu>
 
-        <!-- 管理员 - 班主任管理 -->
-        <el-menu-item v-if="authStore.isAdmin" index="/admin/class-teachers">
-          <el-icon><UserFilled /></el-icon>
-          <template #title>班主任管理</template>
-        </el-menu-item>
-
-        <!-- 管理员 - 学科组长管理 -->
-        <el-menu-item v-if="authStore.isAdmin" index="/admin/subject-leaders">
-          <el-icon><UserFilled /></el-icon>
-          <template #title>学科组长管理</template>
-        </el-menu-item>
-
         <!-- 管理员 - 账号管理 -->
         <el-sub-menu v-if="authStore.isAdmin" index="/admin/accounts">
           <template #title>
@@ -156,6 +144,18 @@
             <template #title>学科组长账号</template>
           </el-menu-item>
         </el-sub-menu>
+
+        <!-- 管理员 - 班主任管理 -->
+        <el-menu-item v-if="authStore.isAdmin" index="/admin/class-teachers">
+          <el-icon><UserFilled /></el-icon>
+          <template #title>班主任管理</template>
+        </el-menu-item>
+
+        <!-- 管理员 - 学科组长管理 -->
+        <el-menu-item v-if="authStore.isAdmin" index="/admin/subject-leaders">
+          <el-icon><UserFilled /></el-icon>
+          <template #title>学科组长管理</template>
+        </el-menu-item>
 
         <!-- 学科组长 - 仪表盘 -->
         <el-menu-item v-if="authStore.isSubjectLeader" index="/sl/dashboard">

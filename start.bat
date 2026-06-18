@@ -62,8 +62,6 @@ echo Frontend: http://localhost:5173
 echo.
 echo Default accounts:
 echo   admin / admin123
-echo   teacher / teacher123
-echo   student / student123
 echo.
 echo Press any key to exit this window...
 pause >nul

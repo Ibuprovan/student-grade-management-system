@@ -267,6 +267,8 @@ const avatarColor = computed(() => {
   const colorMap: Record<string, string> = {
     admin: '#E06469',
     teacher: '#2A9D8F',
+    class_teacher: '#E8A838',
+    subject_leader: '#7C3AED',
     student: '#52B788',
   }
   return colorMap[authStore.userRole || ''] || '#2A9D8F'
@@ -277,6 +279,8 @@ const roleTagType = computed(() => {
   const typeMap: Record<string, 'danger' | 'primary' | 'success' | 'info' | 'warning'> = {
     admin: 'danger',
     teacher: 'primary',
+    class_teacher: 'warning',
+    subject_leader: 'info',
     student: 'success',
   }
   return typeMap[authStore.userRole || ''] || 'info'
@@ -287,6 +291,8 @@ const roleLabel = computed(() => {
   const labelMap: Record<string, string> = {
     admin: '管理员',
     teacher: '教师',
+    class_teacher: '班主任',
+    subject_leader: '学科组长',
     student: '学生',
   }
   return labelMap[authStore.userRole || ''] || '未知角色'

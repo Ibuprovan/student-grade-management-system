@@ -9,6 +9,8 @@
 
 ⚠️ 安全提醒：生产环境部署后请立即修改默认密码！
 
+班主任、学科组长账号请在管理员端手动添加。
+
 使用方式：
     python -m src.scripts.init_users
 """
@@ -32,18 +34,6 @@ DEFAULT_USERS = [
         "username": "admin",
         "password": "admin123",
         "role": "admin",
-        "need_change_password": False,
-    },
-    {
-        "username": "teacher",
-        "password": "teacher123",
-        "role": "teacher",
-        "need_change_password": False,
-    },
-    {
-        "username": "student",
-        "password": "student123",
-        "role": "student",
         "need_change_password": False,
     },
 ]
@@ -100,10 +90,8 @@ def main():
     logger.info("")
     logger.info("默认账户信息：")
     logger.info("  管理员 - 用户名: admin, 密码: admin123")
-    logger.info("  教师   - 用户名: teacher, 密码: teacher123")
-    logger.info("  学生   - 用户名: student, 密码: student123")
     logger.info("")
-    logger.info("班主任账号请在管理员端手动添加")
+    logger.info("班主任、学科组长账号请在管理员端手动添加")
     logger.info("")
     logger.info("⚠️  安全提醒：生产环境部署后请立即修改默认密码！")
     logger.info("=" * 50)
