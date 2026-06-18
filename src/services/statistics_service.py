@@ -422,7 +422,9 @@ class StatisticsService:
         top_n: int = 10,
     ) -> Dict[str, Any]:
         """
-        获取总分统计报告（基于 StudentExamTotal 表）
+        获取总分统计报告
+
+        优先从 StudentExamTotal 表查询，若无数据则从各科成绩聚合计算
 
         Args:
             class_name: 班级名称（可选）
@@ -432,23 +434,12 @@ class StatisticsService:
         Returns:
             Dict[str, Any]: 总分统计报告
         """
-        # 查询总分数据
-        stmt = (
-            select(
-                StudentExamTotal.total_score,
-                StudentExamTotal.student_id,
-                Student.name.label("student_name"),
-            )
-            .join(Student, StudentExamTotal.student_id == Student.student_id)
-        )
+        # 优先从总分表查询
+        rows = self._query_total_from_exam_total(class_name, exam_type)
 
-        if exam_type:
-            stmt = stmt.where(StudentExamTotal.exam_type == exam_type)
-        if class_name:
-            stmt = stmt.where(Student.class_name == class_name)
-
-        result = self.db.execute(stmt)
-        rows = result.all()
+        # 若总分表无数据，从各科成绩聚合计算
+        if not rows:
+            rows = self._query_total_from_grades(class_name, exam_type)
 
         if not rows:
             return {
@@ -456,12 +447,13 @@ class StatisticsService:
                 "exam_type": exam_type,
                 "statistics": {
                     "count": 0,
+                    "student_count": 0,
                     "average": 0.0,
                     "max_score": 0.0,
                     "min_score": 0.0,
                     "pass_rate": 0.0,
                     "excellent_rate": 0.0,
-                    "score_distribution": self._calculate_score_distribution([]),
+                    "score_distribution": {"0-539": 0, "540-629": 0, "630-719": 0, "720-809": 0, "810-900": 0},
                 },
                 "top_students": [],
             }
@@ -472,25 +464,12 @@ class StatisticsService:
         max_score = max(scores)
         min_score = min(scores)
 
-        # 总分及格线和优秀线（按单科60/90 * 科目数估算，但这里用总分直接判断）
-        # 假设总分及格线为 60% * 科目数 * 100，优秀线为 90% * 科目数 * 100
-        # 但更简单的方式是按平均分判断：总分/科目数 >= 60 / 90
-        # 这里我们用总分直接判断：总分 >= 科目数 * 60 / 总分 >= 科目数 * 90
-        # 由于科目数不确定，我们用平均分来判断
-        avg_score = average / 9 if count > 0 else 0  # 假设9科
         passed_count = sum(1 for s in scores if (s / 9) >= PASS_SCORE)
         excellent_count = sum(1 for s in scores if (s / 9) >= EXCELLENT_SCORE)
         pass_rate = round((passed_count / count) * 100, 2)
         excellent_rate = round((excellent_count / count) * 100, 2)
 
-        # 分数分布（按总分段）
-        distribution = {
-            "0-539": 0,
-            "540-629": 0,
-            "630-719": 0,
-            "720-809": 0,
-            "810-900": 0,
-        }
+        distribution = {"0-539": 0, "540-629": 0, "630-719": 0, "720-809": 0, "810-900": 0}
         for s in scores:
             if s < 540:
                 distribution["0-539"] += 1
@@ -503,10 +482,9 @@ class StatisticsService:
             else:
                 distribution["810-900"] += 1
 
-        # 优秀学生
         sorted_rows = sorted(rows, key=lambda x: float(x[0]), reverse=True)
         top_students = [
-            {"student_id": row[1], "name": row[2], "score": float(row[0])}
+            {"student_id": row[1], "name": row[2], "score": round(float(row[0]), 1)}
             for row in sorted_rows[:top_n]
         ]
 
@@ -525,6 +503,43 @@ class StatisticsService:
             },
             "top_students": top_students,
         }
+
+    def _query_total_from_exam_total(
+        self, class_name: Optional[str], exam_type: Optional[str]
+    ) -> list:
+        """从 StudentExamTotal 表查询总分"""
+        stmt = (
+            select(
+                StudentExamTotal.total_score,
+                StudentExamTotal.student_id,
+                Student.name.label("student_name"),
+            )
+            .join(Student, StudentExamTotal.student_id == Student.student_id)
+        )
+        if exam_type:
+            stmt = stmt.where(StudentExamTotal.exam_type == exam_type)
+        if class_name:
+            stmt = stmt.where(Student.class_name == class_name)
+        return list(self.db.execute(stmt).all())
+
+    def _query_total_from_grades(
+        self, class_name: Optional[str], exam_type: Optional[str]
+    ) -> list:
+        """从各科成绩聚合计算总分"""
+        stmt = (
+            select(
+                func.sum(Grade.score).label("total_score"),
+                Grade.student_id,
+                Student.name.label("student_name"),
+            )
+            .join(Student, Grade.student_id == Student.student_id)
+            .group_by(Grade.student_id, Student.name)
+        )
+        if exam_type:
+            stmt = stmt.where(Grade.exam_type == exam_type)
+        if class_name:
+            stmt = stmt.where(Student.class_name == class_name)
+        return list(self.db.execute(stmt).all())
 
     def get_subject_ranking(
         self,
