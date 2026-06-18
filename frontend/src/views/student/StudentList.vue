@@ -21,6 +21,13 @@
           <el-icon><Delete /></el-icon>
           批量删除
         </el-button>
+        <el-button
+          type="danger"
+          @click="handleDeleteAll"
+        >
+          <el-icon><Delete /></el-icon>
+          删除全部
+        </el-button>
         <el-button @click="handleExport">
           <el-icon><Download /></el-icon>
           导出
@@ -407,6 +414,31 @@ function handleBatchDelete() {
   }
   isBatchDelete.value = true
   deleteDialogVisible.value = true
+}
+
+/** 删除全部 */
+async function handleDeleteAll() {
+  const className = searchForm.class_name || ''
+  const msg = className
+    ? `确定要删除班级"${className}"的所有学生及其成绩吗？此操作不可恢复！`
+    : '确定要删除所有学生及其成绩吗？此操作不可恢复！'
+  try {
+    await ElMessageBox.confirm(msg, '确认删除全部', {
+      confirmButtonText: '确定删除',
+      cancelButtonText: '取消',
+      type: 'error',
+    })
+  } catch { return }
+
+  try {
+    const { deleteAllStudents } = await import('@/api/student')
+    const res = await deleteAllStudents(className ? { class_name: className } : undefined)
+    const data = (res as any).data || res
+    ElMessage.success(`成功删除 ${data.deleted_count} 名学生`)
+    studentStore.fetchStudents()
+  } catch {
+    ElMessage.error('删除失败')
+  }
 }
 
 /** 确认删除 */

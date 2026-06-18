@@ -341,6 +341,42 @@ class GradeService:
         # 执行删除
         return self.grade_repo.delete(grade_id)
 
+    def delete_all_grades(
+        self,
+        class_name: Optional[str] = None,
+        subject: Optional[str] = None,
+        exam_type: Optional[str] = None,
+    ) -> int:
+        """
+        删除全部成绩（支持按条件筛选）
+
+        Args:
+            class_name: 按班级筛选（可选）
+            subject: 按科目筛选（可选）
+            exam_type: 按考试类型筛选（可选）
+
+        Returns:
+            int: 删除的记录数
+        """
+        filters = []
+        if class_name:
+            filters.append(Student.class_name == class_name)
+        if subject:
+            filters.append(Grade.subject == subject)
+        if exam_type:
+            filters.append(Grade.exam_type == exam_type)
+
+        query = self.db.query(Grade)
+        if filters:
+            query = query.join(Student, Grade.student_id == Student.student_id)
+            for f in filters:
+                query = query.filter(f)
+
+        count = query.count()
+        query.delete(synchronize_session=False)
+        self.db.commit()
+        return count
+
     def get_grades_by_student(
         self,
         student_id: str,

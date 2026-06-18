@@ -66,6 +66,30 @@ export function deleteGrade(gradeId: number) {
 }
 
 /**
+ * 批量删除成绩
+ * @param gradeIds 成绩ID列表
+ */
+export function batchDeleteGrades(gradeIds: number[]) {
+  return post<{ total: number; success_count: number; fail_count: number }>(
+    `${BASE_URL}/batch-delete`,
+    null,
+    { params: { grade_ids: gradeIds } }
+  )
+}
+
+/**
+ * 删除全部成绩
+ * @param params 筛选条件（可选）
+ */
+export function deleteAllGrades(params?: {
+  class_name?: string
+  subject?: string
+  exam_type?: string
+}) {
+  return del<{ deleted_count: number }>(`${BASE_URL}/delete-all`, { params })
+}
+
+/**
  * 导入成绩（CSV）
  * @param file 文件
  * @param examType 考试类型

@@ -16,6 +16,22 @@
           <el-icon><Download /></el-icon>
           <span class="btn-text">导出</span>
         </el-button>
+        <el-button
+          type="danger"
+          plain
+          :disabled="selectedGrades.length === 0"
+          @click="handleBatchDelete"
+        >
+          <el-icon><Delete /></el-icon>
+          <span class="btn-text">批量删除</span>
+        </el-button>
+        <el-button
+          type="danger"
+          @click="handleDeleteAll"
+        >
+          <el-icon><Delete /></el-icon>
+          <span class="btn-text">删除全部</span>
+        </el-button>
       </div>
     </div>
 
@@ -97,9 +113,11 @@
           :page-size="gradeStore.pagination.pageSize"
           :total="gradeStore.pagination.total"
           :show-index="false"
+          :show-selection="true"
           :actions-width="150"
           @update:current-page="handlePageChange"
           @update:page-size="handleSizeChange"
+          @selection-change="handleSelectionChange"
         >
       <el-table-column prop="student_id" label="学号" min-width="120" sortable="custom">
         <template #default="{ row }">
@@ -249,14 +267,68 @@ import { useRouter } from 'vue-router'
 import { useGradeStore } from '@/stores/grade'
 import { useGradeList } from '@/composables/useGrade'
 import { getTotalRanking } from '@/api/statistics'
+import { batchDeleteGrades, deleteAllGrades } from '@/api/grade'
 import DataTable from '@/components/common/DataTable.vue'
 import { formatScore, getScoreColor } from '@/utils/format'
 import type { TotalRankingItem } from '@/types/statistics'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const router = useRouter()
 
 const gradeStore = useGradeStore()
+
+// ===== 选中的成绩 =====
+const selectedGrades = ref<any[]>([])
+
+function handleSelectionChange(selection: any[]) {
+  selectedGrades.value = selection
+}
+
+// ===== 批量删除 =====
+async function handleBatchDelete() {
+  if (selectedGrades.value.length === 0) return
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除选中的 ${selectedGrades.value.length} 条成绩记录吗？此操作不可恢复。`,
+      '确认批量删除',
+      { confirmButtonText: '确定删除', cancelButtonText: '取消', type: 'warning' }
+    )
+  } catch { return }
+
+  const ids = selectedGrades.value.map((g: any) => g.grade_id)
+  try {
+    await batchDeleteGrades(ids)
+    ElMessage.success('批量删除成功')
+    selectedGrades.value = []
+    gradeStore.fetchGrades()
+  } catch {
+    ElMessage.error('批量删除失败')
+  }
+}
+
+// ===== 删除全部 =====
+async function handleDeleteAll() {
+  const className = searchForm.value.class_name || ''
+  const msg = className
+    ? `确定要删除班级"${className}"的所有成绩记录吗？此操作不可恢复！`
+    : '确定要删除所有成绩记录吗？此操作不可恢复！'
+  try {
+    await ElMessageBox.confirm(msg, '确认删除全部', {
+      confirmButtonText: '确定删除',
+      cancelButtonText: '取消',
+      type: 'error',
+    })
+  } catch { return }
+
+  try {
+    const res = await deleteAllGrades(className ? { class_name: className } : undefined)
+    const data = (res as any).data || res
+    ElMessage.success(`成功删除 ${data.deleted_count} 条成绩记录`)
+    gradeStore.fetchGrades()
+  } catch {
+    ElMessage.error('删除失败')
+  }
+}
 
 // ===== 总分排名 =====
 const activeTab = ref('detail')

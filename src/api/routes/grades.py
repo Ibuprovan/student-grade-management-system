@@ -14,7 +14,7 @@
 - DELETE /api/v1/grades/{grade_id}          删除成绩（需要管理员权限）
 """
 
-from typing import Optional, List
+from typing import Optional, List, List
 
 from fastapi import APIRouter, Depends, Query, Path, status
 from fastapi.responses import StreamingResponse
@@ -497,4 +497,76 @@ def delete_grade(
     service.delete_grade(grade_id)
     return SuccessResponse(
         message="成绩记录删除成功",
+    )
+
+
+@router.post(
+    "/batch-delete",
+    response_model=ApiResponse,
+    summary="批量删除成绩",
+    description="批量删除成绩记录（需要管理员权限）",
+    responses={
+        401: {"description": "未认证"},
+        403: {"description": "权限不足"},
+    },
+)
+def batch_delete_grades(
+    grade_ids: List[int] = Query(..., description="成绩ID列表"),
+    service: GradeService = Depends(get_grade_service),
+    current_user: User = Depends(require_admin),
+) -> ApiResponse:
+    """
+    批量删除成绩（需要管理员权限）
+
+    - **grade_ids**: 成绩ID列表
+    """
+    success_count = 0
+    fail_count = 0
+    for gid in grade_ids:
+        try:
+            service.delete_grade(gid)
+            success_count += 1
+        except Exception:
+            fail_count += 1
+
+    return ApiResponse(
+        success=True,
+        data={"total": len(grade_ids), "success_count": success_count, "fail_count": fail_count},
+        message=f"批量删除完成：成功 {success_count} 条，失败 {fail_count} 条",
+    )
+
+
+@router.delete(
+    "/delete-all",
+    response_model=ApiResponse,
+    summary="删除全部成绩",
+    description="删除所有成绩记录（需要管理员权限，可按条件筛选）",
+    responses={
+        401: {"description": "未认证"},
+        403: {"description": "权限不足"},
+    },
+)
+def delete_all_grades(
+    class_name: Optional[str] = Query(None, description="按班级筛选（可选）"),
+    subject: Optional[str] = Query(None, description="按科目筛选（可选）"),
+    exam_type: Optional[str] = Query(None, description="按考试类型筛选（可选）"),
+    service: GradeService = Depends(get_grade_service),
+    current_user: User = Depends(require_admin),
+) -> ApiResponse:
+    """
+    删除全部成绩（需要管理员权限）
+
+    - **class_name**: 按班级筛选（可选，不填则删除所有）
+    - **subject**: 按科目筛选（可选）
+    - **exam_type**: 按考试类型筛选（可选）
+    """
+    deleted = service.delete_all_grades(
+        class_name=class_name,
+        subject=subject,
+        exam_type=exam_type,
+    )
+    return ApiResponse(
+        success=True,
+        data={"deleted_count": deleted},
+        message=f"成功删除 {deleted} 条成绩记录",
     )

@@ -57,6 +57,25 @@ export function deleteStudent(studentId: string) {
 }
 
 /**
+ * 批量删除学生
+ * @param studentIds 学号列表
+ */
+export function batchDeleteStudents(studentIds: string[]) {
+  return post<{ total: number; success_count: number; fail_count: number }>(
+    `${BASE_URL}/batch-delete`,
+    { student_ids: studentIds }
+  )
+}
+
+/**
+ * 删除全部学生
+ * @param params 筛选条件（可选）
+ */
+export function deleteAllStudents(params?: { class_name?: string }) {
+  return del<{ deleted_count: number }>(`${BASE_URL}/delete-all`, { params })
+}
+
+/**
  * 获取班级列表
  * 返回系统中所有学生所属的去重班级名称列表
  */

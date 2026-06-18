@@ -249,6 +249,35 @@ def batch_delete_students(
     )
 
 
+@router.delete(
+    "/delete-all",
+    response_model=ApiResponse,
+    summary="删除全部学生",
+    description="删除所有学生记录及其成绩（需要管理员权限，可按班级筛选）",
+    responses={
+        401: {"description": "未认证"},
+        403: {"description": "权限不足"},
+    },
+)
+def delete_all_students(
+    class_name: Optional[str] = Query(None, description="按班级筛选（可选）"),
+    service: StudentService = Depends(get_student_service),
+    current_user: User = Depends(require_admin),
+) -> ApiResponse:
+    """
+    删除全部学生（需要管理员权限）
+
+    - **class_name**: 按班级筛选（可选，不填则删除所有）
+    - 删除学生会级联删除其所有成绩记录
+    """
+    deleted = service.delete_all_students(class_name=class_name)
+    return ApiResponse(
+        success=True,
+        data={"deleted_count": deleted},
+        message=f"成功删除 {deleted} 名学生",
+    )
+
+
 @router.get(
     "/{student_id}",
     response_model=ApiResponse,

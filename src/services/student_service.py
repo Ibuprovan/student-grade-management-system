@@ -361,3 +361,22 @@ class StudentService:
             "fail_count": fail_count,
             "results": results,
         }
+
+    def delete_all_students(self, class_name: Optional[str] = None) -> int:
+        """
+        删除全部学生（级联删除成绩）
+
+        Args:
+            class_name: 按班级筛选（可选，不填则删除所有）
+
+        Returns:
+            int: 删除的学生数
+        """
+        query = self.repo.db.query(Student)
+        if class_name:
+            query = query.filter(Student.class_name == class_name)
+
+        count = query.count()
+        query.delete(synchronize_session=False)
+        self.repo.db.commit()
+        return count
