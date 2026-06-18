@@ -753,13 +753,12 @@ class StatisticsService:
         Returns:
             Dict[str, Any]: 包含所有班级统计数据的字典
         """
-        # 第一步：查询每个学生的总分（按班级分组）
+        # 查询每个学生的总分（按班级分组）
         total_stmt = (
             select(
                 Student.class_name,
                 Grade.student_id,
                 func.sum(Grade.score).label("total_score"),
-                func.count(Grade.grade_id).label("subject_count"),
             )
             .join(Student, Grade.student_id == Student.student_id)
             .group_by(Student.class_name, Grade.student_id)
@@ -771,48 +770,22 @@ class StatisticsService:
         total_rows = total_result.all()
 
         # 按班级聚合
-        class_data: Dict[str, Dict] = {}
+        class_data: Dict[str, list] = {}
         for row in total_rows:
             class_name = row[0]
             total_score = float(row[2])
             if class_name not in class_data:
-                class_data[class_name] = {
-                    "scores": [],
-                    "total_scores": [],
-                }
-            class_data[class_name]["scores"].append(total_score)
-            class_data[class_name]["total_scores"].append(total_score)
+                class_data[class_name] = []
+            class_data[class_name].append(total_score)
 
-        # 第二步：查询每个班级的单科平均分、最高分、最低分
-        grade_stmt = (
-            select(
-                Student.class_name,
-                func.avg(Grade.score).label("average"),
-                func.max(Grade.score).label("max_score"),
-                func.min(Grade.score).label("min_score"),
-            )
-            .join(Student, Grade.student_id == Student.student_id)
-            .group_by(Student.class_name)
-        )
-        if exam_type:
-            grade_stmt = grade_stmt.where(Grade.exam_type == exam_type)
-
-        grade_result = self.db.execute(grade_stmt)
-        grade_rows = {row[0]: row for row in grade_result.all()}
-
-        # 构建结果
+        # 构建结果（所有指标基于总分）
         classes = []
-        for class_name, data in class_data.items():
-            total_scores = data["total_scores"]
+        for class_name, total_scores in class_data.items():
             student_count = len(total_scores)
+            average = round(sum(total_scores) / student_count, 2) if student_count > 0 else 0.0
+            max_score = round(max(total_scores), 1) if total_scores else 0.0
+            min_score = round(min(total_scores), 1) if total_scores else 0.0
 
-            # 单科统计
-            grade_row = grade_rows.get(class_name)
-            average = round(float(grade_row[1]), 2) if grade_row and grade_row[1] else 0.0
-            max_score = float(grade_row[2]) if grade_row and grade_row[2] else 0.0
-            min_score = float(grade_row[3]) if grade_row and grade_row[3] else 0.0
-
-            # 按总分计算及格率/优秀率（满分750）
             passed_count = sum(1 for s in total_scores if s >= TOTAL_PASS_SCORE)
             excellent_count = sum(1 for s in total_scores if s >= TOTAL_EXCELLENT_SCORE)
             pass_rate = round((passed_count / student_count) * 100, 2) if student_count > 0 else 0.0

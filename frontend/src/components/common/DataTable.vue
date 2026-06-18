@@ -177,7 +177,6 @@ function handleSizeChange(size: number) {
 .data-table {
   background: var(--surface-color);
   border-radius: var(--border-radius-lg);
-  overflow: hidden;
   width: 100%;
 
   :deep(.el-table) {
