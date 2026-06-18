@@ -2,7 +2,7 @@
   <div class="class-teacher-management page-container">
     <div class="page-header">
       <h1 class="page-title">班主任管理</h1>
-      <el-button type="primary" @click="openAddDialog">
+      <el-button type="primary" @click="openAddDialog" :loading="loadingClasses">
         <el-icon><Plus /></el-icon>
         添加班主任
       </el-button>
@@ -44,27 +44,26 @@
       v-model="showAddDialog"
       title="添加班主任"
       width="520px"
-      @close="resetForm"
+      @closed="resetForm"
     >
       <el-form
         ref="formRef"
         :model="form"
         :rules="rules"
         label-width="100px"
+        @submit.prevent
       >
         <el-form-item label="选择班级" prop="class_name">
           <el-select
             v-model="form.class_name"
             placeholder="请选择班级"
             style="width: 100%"
-            filterable
             @change="onClassChange"
-            :loading="loadingClasses"
           >
             <el-option
               v-for="cls in availableClasses"
               :key="cls.class_name"
-              :label="`${cls.class_name}（${cls.student_count}人）`"
+              :label="cls.class_name + '（' + cls.student_count + '人）'"
               :value="cls.class_name"
             />
           </el-select>
@@ -78,7 +77,7 @@
         </el-form-item>
         <el-alert
           v-if="form.class_name && form.enrollment_year && form.class_number"
-          :title="`账号将为：${form.enrollment_year}${String(form.class_number).padStart(3, '0')}`"
+          :title="'账号将为：' + form.enrollment_year + String(form.class_number).padStart(3, '0')"
           description="初始密码为 123456，首次登录需修改密码"
           type="info"
           show-icon
@@ -97,14 +96,14 @@
       </el-form>
       <template #footer>
         <el-button @click="showAddDialog = false">取消</el-button>
-        <el-button type="primary" :loading="submitting" :disabled="availableClasses.length === 0" @click="handleAdd">确定</el-button>
+        <el-button type="primary" :loading="submitting" :disabled="!form.class_name" @click="handleAdd">确定</el-button>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, nextTick, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { Plus } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
@@ -153,7 +152,7 @@ async function fetchTeachers() {
   try {
     const res = await getClassTeacherList()
     if (res?.data) {
-      teachers.value = res.data as unknown as ClassTeacherInfo[]
+      teachers.value = (res.data as any) as ClassTeacherInfo[]
     }
   } catch (e) {
     console.error('获取班主任列表失败:', e)
@@ -166,51 +165,48 @@ async function fetchAvailableClasses() {
   loadingClasses.value = true
   try {
     const res = await getAvailableClasses()
-    if (res?.data) {
-      availableClasses.value = res.data as unknown as AvailableClass[]
+    if (res) {
+      const rawData = res.data
+      if (Array.isArray(rawData)) {
+        availableClasses.value = rawData as AvailableClass[]
+      } else if (rawData && typeof rawData === 'object') {
+        availableClasses.value = (rawData as any) as AvailableClass[]
+      }
     }
   } catch (e) {
-    ElMessage.error('获取可分配班级失败，请刷新重试')
+    ElMessage.error('获取可分配班级失败')
     console.error('获取可分配班级失败:', e)
   } finally {
     loadingClasses.value = false
   }
 }
 
-/** 监听对话框打开，等 DOM 渲染后再加载班级数据 */
-watch(showAddDialog, async (opened) => {
-  if (opened) {
-    await nextTick()
-    await fetchAvailableClasses()
-  }
-})
-
 async function openAddDialog() {
-  resetForm()
-  showAddDialog.value = true
+  loadingClasses.value = true
+  try {
+    await fetchAvailableClasses()
+    showAddDialog.value = true
+  } catch (e) {
+    ElMessage.error('无法加载班级数据')
+  }
 }
 
 async function handleAdd() {
   if (!formRef.value) return
-  await formRef.value.validate(async (valid) => {
-    if (!valid) return
-    submitting.value = true
-    try {
-      const res = await createClassTeacher(form.value)
-      if (res?.message) {
-        ElMessage.success(res.message)
-      } else {
-        ElMessage.success('添加成功')
-      }
-      showAddDialog.value = false
-      await fetchTeachers()
-    } catch (e: unknown) {
-      const err = e as { response?: { data?: { detail?: string } } }
-      ElMessage.error(err?.response?.data?.detail || '添加失败')
-    } finally {
-      submitting.value = false
-    }
-  })
+  const valid = await formRef.value.validate().catch(() => false)
+  if (!valid) return
+
+  submitting.value = true
+  try {
+    const res = await createClassTeacher(form.value)
+    ElMessage.success(res?.message || '添加成功')
+    showAddDialog.value = false
+    await fetchTeachers()
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.detail || '添加失败')
+  } finally {
+    submitting.value = false
+  }
 }
 
 async function handleDelete(row: ClassTeacherInfo) {
@@ -218,15 +214,13 @@ async function handleDelete(row: ClassTeacherInfo) {
     await deleteClassTeacher(row.id)
     ElMessage.success('删除成功')
     await fetchTeachers()
-  } catch (e: unknown) {
-    const err = e as { response?: { data?: { detail?: string } } }
-    ElMessage.error(err?.response?.data?.detail || '删除失败')
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.detail || '删除失败')
   }
 }
 
 function resetForm() {
   form.value = { class_name: '', enrollment_year: 0, class_number: 0, teacher_name: '' }
-  availableClasses.value = []
 }
 
 onMounted(() => {
