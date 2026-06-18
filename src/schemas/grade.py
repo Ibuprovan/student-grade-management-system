@@ -188,7 +188,7 @@ class GradeBatchItem(BaseModel):
     score: float = Field(
         ...,
         ge=SCORE_MIN,
-        le=SCORE_MAX,
+        le=MAIN_SCORE_MAX,
         description="分数",
         examples=[95.5],
     )
@@ -268,8 +268,8 @@ class GradeUpdate(BaseModel):
     score: float = Field(
         ...,
         ge=SCORE_MIN,
-        le=SCORE_MAX,
-        description="分数（0-100，支持1位小数）",
+        le=MAIN_SCORE_MAX,
+        description="分数（0-150，支持1位小数）",
         examples=[92.0],
     )
 
