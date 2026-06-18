@@ -17,6 +17,8 @@ from src.api.routes.class_teacher_scoped import router as class_teacher_scoped_r
 from src.api.routes.subject_leaders import router as subject_leaders_router
 from src.api.routes.subject_leader_scoped import router as subject_leader_scoped_router
 from src.api.routes.accounts import router as accounts_router
+from src.api.routes.teacher_assignments import router as teacher_assignments_router
+from src.api.routes.teacher_scoped import router as teacher_scoped_router
 
 __all__ = [
     "students_router",
@@ -32,4 +34,6 @@ __all__ = [
     "subject_leaders_router",
     "subject_leader_scoped_router",
     "accounts_router",
+    "teacher_assignments_router",
+    "teacher_scoped_router",
 ]

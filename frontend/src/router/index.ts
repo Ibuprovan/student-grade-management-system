@@ -171,6 +171,12 @@ const protectedRoutes: RouteRecordRaw[] = [
     meta: { title: '学科组长管理', icon: 'UserFilled', requiresAuth: true, roles: ['admin'] },
   },
   {
+    path: '/admin/teacher-assignments',
+    name: 'TeacherAssignmentManagement',
+    component: () => import('@/views/admin/TeacherAssignmentManagement.vue'),
+    meta: { title: '教师任课管理', icon: 'Avatar', requiresAuth: true, roles: ['admin'] },
+  },
+  {
     path: '/admin/accounts',
     name: 'AccountManagement',
     redirect: '/admin/accounts/students',
@@ -194,7 +200,32 @@ const protectedRoutes: RouteRecordRaw[] = [
         component: () => import('@/views/admin/accounts/SubjectLeaderAccounts.vue'),
         meta: { title: '学科组长账号', icon: 'UserFilled', requiresAuth: true, roles: ['admin'] },
       },
+      {
+        path: 'teachers',
+        name: 'TeacherAccounts',
+        component: () => import('@/views/admin/accounts/TeacherAccounts.vue'),
+        meta: { title: '教师账号', icon: 'Avatar', requiresAuth: true, roles: ['admin'] },
+      },
     ],
+  },
+  // 教师专用路由
+  {
+    path: '/t/dashboard',
+    name: 'TDashboard',
+    component: () => import('@/views/teacher/TDashboard.vue'),
+    meta: { title: '教师仪表盘', icon: 'Odometer', requiresAuth: true, roles: ['teacher'] },
+  },
+  {
+    path: '/t/grades',
+    name: 'TGrades',
+    component: () => import('@/views/teacher/TGrades.vue'),
+    meta: { title: '成绩管理', icon: 'Document', requiresAuth: true, roles: ['teacher'] },
+  },
+  {
+    path: '/t/statistics',
+    name: 'TStatistics',
+    component: () => import('@/views/teacher/TStatistics.vue'),
+    meta: { title: '统计概览', icon: 'DataAnalysis', requiresAuth: true, roles: ['teacher'] },
   },
   // 班主任专用路由
   {

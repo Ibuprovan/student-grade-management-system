@@ -23,8 +23,8 @@
         router
         class="sidebar-menu"
       >
-        <!-- 仪表盘（仅管理员和教师可见） -->
-        <el-menu-item v-if="authStore.isAdmin || authStore.isTeacher" index="/dashboard">
+        <!-- 仪表盘（仅管理员可见） -->
+        <el-menu-item v-if="authStore.isAdmin" index="/dashboard">
           <el-icon><Odometer /></el-icon>
           <template #title>仪表盘</template>
         </el-menu-item>
@@ -41,8 +41,8 @@
           <template #title>我的成绩</template>
         </el-menu-item>
 
-        <!-- 学生管理（仅管理员和教师可见） -->
-        <el-sub-menu v-if="authStore.isAdmin || authStore.isTeacher" index="/student">
+        <!-- 学生管理（仅管理员可见） -->
+        <el-sub-menu v-if="authStore.isAdmin" index="/student">
           <template #title>
             <el-icon><User /></el-icon>
             <span>学生管理</span>
@@ -63,8 +63,14 @@
           <template #title>学生信息</template>
         </el-menu-item>
 
-        <!-- 成绩管理（仅管理员和教师可见） -->
-        <el-sub-menu v-if="authStore.isAdmin || authStore.isTeacher" index="/grade">
+        <!-- 教师 - 仪表盘 -->
+        <el-menu-item v-if="authStore.isTeacher" index="/t/dashboard">
+          <el-icon><Odometer /></el-icon>
+          <template #title>仪表盘</template>
+        </el-menu-item>
+
+        <!-- 成绩管理（仅管理员可见） -->
+        <el-sub-menu v-if="authStore.isAdmin" index="/grade">
           <template #title>
             <el-icon><Document /></el-icon>
             <span>成绩管理</span>
@@ -89,8 +95,8 @@
           <template #title>成绩信息</template>
         </el-menu-item>
 
-        <!-- 统计分析（仅管理员和教师可见） -->
-        <el-sub-menu v-if="authStore.isAdmin || authStore.isTeacher" index="/statistics">
+        <!-- 统计分析（仅管理员可见） -->
+        <el-sub-menu v-if="authStore.isAdmin" index="/statistics">
           <template #title>
             <el-icon><DataAnalysis /></el-icon>
             <span>统计分析</span>
@@ -125,6 +131,18 @@
           </el-menu-item>
         </el-sub-menu>
 
+        <!-- 教师 - 成绩管理 -->
+        <el-menu-item v-if="authStore.isTeacher" index="/t/grades">
+          <el-icon><Document /></el-icon>
+          <template #title>成绩管理</template>
+        </el-menu-item>
+
+        <!-- 教师 - 统计概览 -->
+        <el-menu-item v-if="authStore.isTeacher" index="/t/statistics">
+          <el-icon><DataAnalysis /></el-icon>
+          <template #title>统计概览</template>
+        </el-menu-item>
+
         <!-- 管理员 - 账号管理 -->
         <el-sub-menu v-if="authStore.isAdmin" index="/admin/accounts">
           <template #title>
@@ -143,6 +161,10 @@
             <el-icon><UserFilled /></el-icon>
             <template #title>学科组长账号</template>
           </el-menu-item>
+          <el-menu-item index="/admin/accounts/teachers">
+            <el-icon><Avatar /></el-icon>
+            <template #title>教师账号</template>
+          </el-menu-item>
         </el-sub-menu>
 
         <!-- 管理员 - 班主任管理 -->
@@ -155,6 +177,12 @@
         <el-menu-item v-if="authStore.isAdmin" index="/admin/subject-leaders">
           <el-icon><UserFilled /></el-icon>
           <template #title>学科组长管理</template>
+        </el-menu-item>
+
+        <!-- 管理员 - 教师任课管理 -->
+        <el-menu-item v-if="authStore.isAdmin" index="/admin/teacher-assignments">
+          <el-icon><Avatar /></el-icon>
+          <template #title>教师任课管理</template>
         </el-menu-item>
 
         <!-- 学科组长 - 仪表盘 -->

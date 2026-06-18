@@ -19,6 +19,7 @@ from src.core.security import hash_password
 from src.models.class_teacher import ClassTeacher
 from src.models.student import Student
 from src.models.subject_leader import SubjectLeader
+from src.models.teacher_assignment import TeacherAssignment
 from src.models.user import User
 from src.schemas.common import ApiResponse
 
@@ -67,6 +68,17 @@ def _build_account(user: User, db: Session) -> dict:
                 "subject": sl.subject,
                 "subject_en": sl.subject_en,
                 "leader_name": sl.leader_name,
+            }
+    elif user.role == "teacher":
+        ta = db.execute(
+            select(TeacherAssignment).where(TeacherAssignment.user_id == user.id)
+        ).scalar_one_or_none()
+        if ta:
+            account["detail"] = {
+                "subject": ta.subject,
+                "subject_en": ta.subject_en,
+                "class_name": ta.class_name,
+                "teacher_name": ta.teacher_name,
             }
 
     return account
@@ -120,6 +132,19 @@ def list_subject_leader_accounts(
 ) -> ApiResponse:
     users = list(
         db.execute(select(User).where(User.role == "subject_leader").order_by(User.username))
+        .scalars().all()
+    )
+    accounts = [_build_account(u, db) for u in users]
+    return ApiResponse(success=True, data=accounts)
+
+
+@router.get("/teachers")
+def list_teacher_accounts(
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(require_admin),
+) -> ApiResponse:
+    users = list(
+        db.execute(select(User).where(User.role == "teacher").order_by(User.username))
         .scalars().all()
     )
     accounts = [_build_account(u, db) for u in users]

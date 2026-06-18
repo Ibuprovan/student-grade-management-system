@@ -29,6 +29,10 @@ export function getSubjectLeaderAccounts() {
   return get<{ success: boolean; data: AccountInfo[] }>('/accounts/subject-leaders')
 }
 
+export function getTeacherAccounts() {
+  return get<{ success: boolean; data: AccountInfo[] }>('/accounts/teachers')
+}
+
 export function resetAccountPassword(userId: number) {
   return post<{ success: boolean; message: string; data: { username: string; new_password: string } }>(`/accounts/${userId}/reset-password`)
 }

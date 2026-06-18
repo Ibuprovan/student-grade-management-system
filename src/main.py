@@ -29,6 +29,8 @@ from src.api.routes import (
     subject_leaders_router,
     subject_leader_scoped_router,
     accounts_router,
+    teacher_assignments_router,
+    teacher_scoped_router,
 )
 from src.api.exception_handlers import (
     app_exception_handler,
@@ -158,6 +160,12 @@ def create_app() -> FastAPI:
 
     # 学科组长专用路由（学科组长或管理员权限）
     app.include_router(subject_leader_scoped_router)
+
+    # 教师任课管理路由（管理员权限）
+    app.include_router(teacher_assignments_router)
+
+    # 教师专用路由（教师或管理员权限）
+    app.include_router(teacher_scoped_router)
 
     # 健康检查端点（公开，用于监控）
     @app.get("/health", tags=["系统"])
