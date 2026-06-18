@@ -46,17 +46,14 @@ onMounted(() => {
 }
 
 .layout-main {
-  min-height: 100vh;
   transition: margin-left $transition-normal;
   display: flex;
   flex-direction: column;
 }
 
 .layout-content {
-  flex: 1;
   padding: $space-5;
   background: $bg-primary;
-  overflow-y: auto;
   overflow-x: hidden;
   width: 100%;
 }
