@@ -58,6 +58,7 @@
             v-model="form.class_name"
             placeholder="请选择班级"
             style="width: 100%"
+            clearable
             @change="onClassChange"
           >
             <el-option
@@ -105,6 +106,7 @@ import { ref, onMounted } from 'vue'
 import { Plus } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
+import { useAuthStore } from '@/stores/auth'
 import {
   getClassTeacherList,
   createClassTeacher,
@@ -121,6 +123,7 @@ const teachers = ref<ClassTeacherInfo[]>([])
 const availableClasses = ref<AvailableClass[]>([])
 const showAddDialog = ref(false)
 const formRef = ref<FormInstance>()
+const authStore = useAuthStore()
 
 const form = ref({
   class_name: '',
@@ -145,7 +148,23 @@ function onClassChange(className: string) {
   }
 }
 
+async function ensureAdminSession(): Promise<boolean> {
+  try {
+    await authStore.checkAuth()
+    if (!authStore.isAuthenticated || !authStore.isAdmin) {
+      ElMessage.error('登录状态已失效，请重新登录管理员账号')
+      return false
+    }
+    return true
+  } catch (e) {
+    console.error('管理员登录状态校验失败:', e)
+    ElMessage.error('登录状态已失效，请重新登录管理员账号')
+    return false
+  }
+}
+
 async function fetchTeachers() {
+  if (!(await ensureAdminSession())) return
   loading.value = true
   try {
     const res = await getClassTeacherList()
@@ -162,6 +181,7 @@ async function fetchTeachers() {
 
 /** 先加载可用班级数据，成功后再打开对话框 */
 async function handleOpenAdd() {
+  if (!(await ensureAdminSession())) return
   loadingClasses.value = true
   try {
     const res = await getAvailableClasses()
@@ -175,6 +195,12 @@ async function handleOpenAdd() {
     }
     // 重置表单
     form.value = { class_name: '', enrollment_year: 0, class_number: 0, teacher_name: '' }
+    if (availableClasses.value.length > 0) {
+      const first = availableClasses.value[0]
+      form.value.class_name = first.class_name
+      form.value.enrollment_year = first.enrollment_year
+      form.value.class_number = first.class_number
+    }
     // 数据加载成功后打开对话框
     showAddDialog.value = availableClasses.value.length > 0
     if (availableClasses.value.length === 0) {
