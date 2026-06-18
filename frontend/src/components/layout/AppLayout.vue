@@ -41,7 +41,6 @@ onMounted(() => {
 @use '@/assets/styles/variables.scss' as *;
 
 .app-layout {
-  min-height: 100vh;
   background: $bg-primary;
 }
 
