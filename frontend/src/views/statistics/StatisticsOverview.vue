@@ -308,13 +308,14 @@ const statCards = computed(() => {
   ]
 })
 
-/** 分数分布数据 */
+/** 分数分布数据（动态区间） */
 const scoreDistributionData = computed(() => {
   const dist = reportData.value?.statistics?.score_distribution
-  if (!dist) return { xData: [] as string[], yData: [] as number[] }
+  if (!dist || Object.keys(dist).length === 0) return { xData: [] as string[], yData: [] as number[] }
+  const keys = Object.keys(dist)
   return {
-    xData: ['0-59', '60-69', '70-79', '80-89', '90-100'],
-    yData: [dist['0-59'] || 0, dist['60-69'] || 0, dist['70-79'] || 0, dist['80-89'] || 0, dist['90-100'] || 0],
+    xData: keys,
+    yData: keys.map((k) => dist[k] || 0),
   }
 })
 

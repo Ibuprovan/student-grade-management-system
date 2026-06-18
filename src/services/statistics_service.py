@@ -453,39 +453,70 @@ class StatisticsService:
                     "min_score": 0.0,
                     "pass_rate": 0.0,
                     "excellent_rate": 0.0,
-                    "score_distribution": {"0-539": 0, "540-629": 0, "630-719": 0, "720-809": 0, "810-900": 0},
+                    "score_distribution": {},
                 },
                 "top_students": [],
             }
 
-        scores = [float(row[0]) for row in rows]
+        # 解析数据：每行 = (total_score, student_id, student_name, subject_count)
+        # StudentExamTotal 查询没有 subject_count，补默认值
+        score_list = []
+        for row in rows:
+            total = float(row[0])
+            sid = row[1]
+            name = row[2]
+            subj_count = int(row[3]) if len(row) > 3 and row[3] else 0
+            score_list.append((total, sid, name, subj_count))
+
+        scores = [s[0] for s in score_list]
         count = len(scores)
         average = round(sum(scores) / count, 2)
         max_score = max(scores)
         min_score = min(scores)
 
-        passed_count = sum(1 for s in scores if (s / 9) >= PASS_SCORE)
-        excellent_count = sum(1 for s in scores if (s / 9) >= EXCELLENT_SCORE)
+        # 及格率/优秀率：按平均分判断（总分 / 科目数 >= 60 / 90）
+        # 如果没有科目数信息，则按总分的 60% / 90% 判断
+        passed_count = 0
+        excellent_count = 0
+        for total, sid, name, subj_count in score_list:
+            if subj_count > 0:
+                avg = total / subj_count
+            else:
+                # 无科目数信息，按总分 60% 及格、90% 优秀判断
+                avg = total / (total / 60) if total > 0 else 0
+            if avg >= PASS_SCORE:
+                passed_count += 1
+            if avg >= EXCELLENT_SCORE:
+                excellent_count += 1
+
         pass_rate = round((passed_count / count) * 100, 2)
         excellent_rate = round((excellent_count / count) * 100, 2)
 
-        distribution = {"0-539": 0, "540-629": 0, "630-719": 0, "720-809": 0, "810-900": 0}
-        for s in scores:
-            if s < 540:
-                distribution["0-539"] += 1
-            elif s < 630:
-                distribution["540-629"] += 1
-            elif s < 720:
-                distribution["630-719"] += 1
-            elif s < 810:
-                distribution["720-809"] += 1
-            else:
-                distribution["810-900"] += 1
+        # 动态分数分布：按实际数据范围分 5 段
+        if max_score == min_score:
+            distribution = {f"{round(min_score)}": count}
+        else:
+            step = (max_score - min_score) / 5
+            distribution = {}
+            for i in range(5):
+                low = round(min_score + step * i, 1)
+                high = round(min_score + step * (i + 1), 1)
+                if i == 4:
+                    label = f"{round(low)}-{round(max_score)}"
+                else:
+                    label = f"{round(low)}-{round(high)}"
+                distribution[label] = 0
 
-        sorted_rows = sorted(rows, key=lambda x: float(x[0]), reverse=True)
+            for s in scores:
+                idx = min(int((s - min_score) / step), 4)
+                keys = list(distribution.keys())
+                distribution[keys[idx]] += 1
+
+        # 优秀学生
+        sorted_list = sorted(score_list, key=lambda x: x[0], reverse=True)
         top_students = [
-            {"student_id": row[1], "name": row[2], "score": round(float(row[0]), 1)}
-            for row in sorted_rows[:top_n]
+            {"student_id": item[1], "name": item[2], "score": round(item[0], 1)}
+            for item in sorted_list[:top_n]
         ]
 
         return {
@@ -525,12 +556,13 @@ class StatisticsService:
     def _query_total_from_grades(
         self, class_name: Optional[str], exam_type: Optional[str]
     ) -> list:
-        """从各科成绩聚合计算总分"""
+        """从各科成绩聚合计算总分，同时返回科目数"""
         stmt = (
             select(
                 func.sum(Grade.score).label("total_score"),
                 Grade.student_id,
                 Student.name.label("student_name"),
+                func.count(Grade.grade_id).label("subject_count"),
             )
             .join(Student, Grade.student_id == Student.student_id)
             .group_by(Grade.student_id, Student.name)
