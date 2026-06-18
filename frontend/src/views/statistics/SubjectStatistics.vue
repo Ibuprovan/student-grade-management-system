@@ -207,7 +207,7 @@
       </div>
 
       <!-- 图表区域 -->
-      <el-row :gutter="16" align="stretch">
+      <el-row :gutter="16" class="chart-row">
         <!-- 科目平均分对比 -->
         <el-col :xs="24" :md="12">
           <div class="page-card chart-card-wrapper">
@@ -263,7 +263,7 @@
         </el-col>
       </el-row>
 
-      <el-row :gutter="16" align="stretch">
+      <el-row :gutter="16" class="chart-row">
         <!-- 分数分布 -->
         <el-col :xs="24" :md="12">
           <div class="page-card chart-card-wrapper">
@@ -426,7 +426,7 @@ function handleRowClick(row: SubjectStatistics) {
     flex: 1;
   }
 
-  :deep(.el-row[align="stretch"]) {
+  :deep(.chart-row) {
     display: flex;
     flex-wrap: wrap;
 

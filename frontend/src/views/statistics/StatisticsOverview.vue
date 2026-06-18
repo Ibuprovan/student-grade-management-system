@@ -131,7 +131,7 @@
       </el-row>
 
       <!-- 图表区域 -->
-      <el-row :gutter="16" class="chart-section" align="stretch">
+      <el-row :gutter="16" class="chart-section chart-row">
         <!-- 分数分布柱状图 -->
         <el-col :xs="24" :md="12">
           <div class="page-card chart-card-wrapper">
@@ -183,7 +183,7 @@
         </el-col>
       </el-row>
 
-      <el-row :gutter="16" class="chart-section" align="stretch">
+      <el-row :gutter="16" class="chart-section chart-row">
         <!-- 科目占比饼图 -->
         <el-col :xs="24" :md="12">
           <div class="page-card chart-card-wrapper">

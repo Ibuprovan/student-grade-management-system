@@ -543,8 +543,8 @@ class StatisticsService:
                     "total_score": 0.0,
                     "subject_scores": {},
                 }
-            student_scores[student_id]["total_score"] += row[3]
-            student_scores[student_id]["subject_scores"][row[2]] = row[3]
+            student_scores[student_id]["total_score"] += float(row[3])
+            student_scores[student_id]["subject_scores"][row[2]] = float(row[3])
 
         # 转换为列表并排序
         ranking_list = list(student_scores.values())
