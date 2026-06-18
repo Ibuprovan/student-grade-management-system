@@ -133,6 +133,9 @@ class ClassTeacherService:
             "teacher_name": teacher_name,
         })
 
+        # 自动为该班级生成 student_exam_totals 数据
+        self._ensure_exam_totals(class_name)
+
         return {
             "id": class_teacher.id,
             "class_name": class_name,
@@ -142,6 +145,66 @@ class ClassTeacherService:
             "username": username,
             "user_id": user.id,
         }
+
+    def _ensure_exam_totals(self, class_name: str) -> None:
+        """
+        确保指定班级的 student_exam_totals 数据存在
+
+        从 Grade 表按学生+考试类型+考试日期聚合计算总分，
+        写入 StudentExamTotal 表（已存在的跳过）。
+        """
+        from sqlalchemy import select, func
+        from src.models.grade import Grade
+        from src.models.student import Student
+        from src.models.exam_total import StudentExamTotal
+
+        # 查询该班级所有成绩，按学生+考试类型+考试日期分组
+        stmt = (
+            select(
+                Grade.student_id,
+                Grade.exam_type,
+                Grade.exam_date,
+                func.sum(Grade.score).label("total_score"),
+            )
+            .join(Student, Grade.student_id == Student.student_id)
+            .where(Student.class_name == class_name)
+            .group_by(Grade.student_id, Grade.exam_type, Grade.exam_date)
+        )
+        rows = self.db.execute(stmt).all()
+
+        if not rows:
+            return
+
+        # 查询已存在的记录
+        existing_stmt = (
+            select(
+                StudentExamTotal.student_id,
+                StudentExamTotal.exam_type,
+                StudentExamTotal.exam_date,
+            )
+            .join(Student, StudentExamTotal.student_id == Student.student_id)
+            .where(Student.class_name == class_name)
+        )
+        existing_set = {
+            (r[0], r[1], r[2]) for r in self.db.execute(existing_stmt).all()
+        }
+
+        created = 0
+        for student_id, exam_type, exam_date, total_score in rows:
+            key = (student_id, exam_type, exam_date)
+            if key in existing_set:
+                continue
+            record = StudentExamTotal(
+                student_id=student_id,
+                exam_type=exam_type,
+                exam_date=exam_date,
+                total_score=round(float(total_score), 1),
+            )
+            self.db.add(record)
+            created += 1
+
+        if created > 0:
+            self.db.commit()
 
     def delete_class_teacher(self, class_teacher_id: int) -> bool:
         """删除班主任并同时删除其用户账号"""
