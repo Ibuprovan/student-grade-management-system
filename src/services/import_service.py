@@ -58,8 +58,12 @@ class ImportService:
             errors = []
             
             for row_num, row in enumerate(reader, start=2):  # 从第2行开始（第1行是表头）
-                # 清理字段名和值的空白字符
-                cleaned_row = {k.strip(): v for k, v in row.items() if k is not None}
+                # 清理字段名和值的空白字符，同时去除可能的 BOM
+                cleaned_row = {}
+                for k, v in row.items():
+                    if k is not None:
+                        key = k.strip().replace('\ufeff', '').replace('\ufffe', '')
+                        cleaned_row[key] = v
                 result = self._validate_row(cleaned_row, row_num)
                 if result['data']:
                     students.append(result['data'])
@@ -587,8 +591,12 @@ class ImportService:
             errors = []
             
             for row_num, row in enumerate(reader, start=2):
-                # 清理字段名和值的空白字符
-                cleaned_row = {k.strip(): v for k, v in row.items() if k is not None}
+                # 清理字段名和值的空白字符，同时去除可能的 BOM
+                cleaned_row = {}
+                for k, v in row.items():
+                    if k is not None:
+                        key = k.strip().replace('\ufeff', '').replace('\ufffe', '')
+                        cleaned_row[key] = v
                 result = self._validate_grade_row(cleaned_row, row_num, exam_type, exam_date)
                 if result['data']:
                     grades.append(result['data'])
