@@ -553,7 +553,7 @@ export function useSubjectStatistics() {
     return { xData: [], yData: [] }
   })
 
-  /** 能力雷达图数据 */
+  /** 能力雷达图数据 - 平均分、及格率、优秀率三维对比 */
   const radarData = computed(() => {
     return {
       indicators: subjectStats.value.map((s) => ({
@@ -570,6 +570,11 @@ export function useSubjectStatistics() {
           name: '及格率',
           data: subjectStats.value.map((s) => s.pass_rate),
           color: '#67C23A',
+        },
+        {
+          name: '优秀率',
+          data: subjectStats.value.map((s) => s.excellent_rate),
+          color: '#E6A23C',
         },
       ],
     }

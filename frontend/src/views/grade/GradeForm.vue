@@ -20,77 +20,93 @@
           label-position="right"
           :disabled="submitting"
         >
-          <el-form-item label="学生" prop="student_id">
-            <el-select
-              v-model="form.student_id"
-              filterable
-              remote
-              reserve-keyword
-              placeholder="输入学号或姓名搜索学生"
-              :remote-method="searchStudents"
-              :loading="studentSearching"
-              style="width: 100%"
-              @change="handleStudentChange"
-            >
-              <el-option
-                v-for="student in studentOptions"
-                :key="student.student_id"
-                :label="`${student.student_id} - ${student.name}`"
-                :value="student.student_id"
+          <!-- 考试信息 -->
+          <div class="form-section">
+            <h3 class="form-section-title">考试信息</h3>
+            <el-row :gutter="16">
+              <el-col :span="12">
+                <el-form-item label="考试类型" prop="exam_type">
+                  <el-select v-model="form.exam_type" placeholder="请选择考试类型" style="width: 100%">
+                    <el-option v-for="et in examTypeOptions" :key="et" :label="et" :value="et" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="考试日期" prop="exam_date">
+                  <el-date-picker
+                    v-model="form.exam_date"
+                    type="date"
+                    placeholder="选择考试日期"
+                    value-format="YYYY-MM-DD"
+                    style="width: 100%"
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
+
+          <!-- 学生信息 -->
+          <div class="form-section">
+            <h3 class="form-section-title">学生信息</h3>
+            <el-form-item label="选择学生" prop="student_id">
+              <el-select
+                v-model="form.student_id"
+                filterable
+                remote
+                reserve-keyword
+                placeholder="输入学号或姓名搜索学生"
+                :remote-method="searchStudents"
+                :loading="studentSearching"
+                style="width: 100%"
+                @change="handleStudentChange"
               >
-                <div class="student-option">
-                  <span class="student-id">{{ student.student_id }}</span>
-                  <span class="student-name">{{ student.name }}</span>
-                  <el-tag size="small" type="info">{{ student.class_name }}</el-tag>
-                </div>
-              </el-option>
-            </el-select>
-          </el-form-item>
+                <el-option
+                  v-for="student in studentOptions"
+                  :key="student.student_id"
+                  :label="`${student.student_id} - ${student.name}`"
+                  :value="student.student_id"
+                >
+                  <div class="student-option">
+                    <span class="student-id">{{ student.student_id }}</span>
+                    <span class="student-name">{{ student.name }}</span>
+                    <el-tag size="small" type="info">{{ student.class_name }}</el-tag>
+                  </div>
+                </el-option>
+              </el-select>
+            </el-form-item>
+            <div v-if="selectedStudent" class="student-info-bar">
+              <el-tag type="info" size="small">{{ selectedStudent.student_id }}</el-tag>
+              <el-tag size="small">{{ selectedStudent.name }}</el-tag>
+              <el-tag type="warning" size="small">{{ selectedStudent.class_name }}</el-tag>
+            </div>
+          </div>
 
-          <el-form-item label="科目" prop="subject">
-            <el-select v-model="form.subject" placeholder="请选择科目" style="width: 100%">
-              <el-option
-                v-for="sub in subjectOptions"
-                :key="sub"
-                :label="sub"
-                :value="sub"
-              />
-            </el-select>
-          </el-form-item>
+          <!-- 各科成绩 -->
+          <div class="form-section">
+            <h3 class="form-section-title">
+              各科成绩
+              <span class="total-score-display" v-if="computedTotalScore > 0">
+                总分：<strong>{{ computedTotalScore }}</strong>
+              </span>
+            </h3>
+            <div class="subject-grid">
+              <div v-for="sub in subjectOptions" :key="sub" class="subject-item">
+                <label class="subject-label">{{ sub }}</label>
+                <el-input-number
+                  v-model="form.scores[sub]"
+                  :min="0"
+                  :max="100"
+                  :precision="1"
+                  :step="0.5"
+                  controls-position="right"
+                  placeholder="0"
+                  size="default"
+                />
+              </div>
+            </div>
+          </div>
 
-          <el-form-item label="考试类型" prop="exam_type">
-            <el-select v-model="form.exam_type" placeholder="请选择考试类型" style="width: 100%">
-              <el-option
-                v-for="et in examTypeOptions"
-                :key="et"
-                :label="et"
-                :value="et"
-              />
-            </el-select>
-          </el-form-item>
-
-          <el-form-item label="分数" prop="score">
-            <el-input-number
-              v-model="form.score"
-              :min="0"
-              :max="100"
-              :precision="1"
-              :step="0.5"
-              controls-position="right"
-              style="width: 100%"
-            />
-          </el-form-item>
-
-          <el-form-item label="考试日期" prop="exam_date">
-            <el-date-picker
-              v-model="form.exam_date"
-              type="date"
-              placeholder="选择考试日期"
-              value-format="YYYY-MM-DD"
-              style="width: 100%"
-            />
-          </el-form-item>
-
+          <!-- 操作按钮 -->
           <el-form-item>
             <div class="form-actions">
               <el-button type="primary" :loading="submitting" @click="handleSubmit(false)">
@@ -118,28 +134,19 @@
       <!-- 最近录入记录 -->
       <div v-if="!isEdit && recentRecords.length > 0" class="recent-card page-card">
         <div class="recent-header">
-          <h3>最近录入记录</h3>
+          <h3>最近录入</h3>
         </div>
-        <el-table :data="recentRecords" size="small" stripe>
-          <el-table-column prop="student_id" label="学号" width="100" />
-          <el-table-column prop="student_name" label="姓名" width="80" />
-          <el-table-column prop="subject" label="科目" width="80" />
-          <el-table-column prop="score" label="分数" width="80" align="center">
-            <template #default="{ row }">
-              <span :style="{ color: getScoreColor(row.score) }">
-                {{ formatScore(row.score) }}
-              </span>
-            </template>
-          </el-table-column>
-          <el-table-column prop="time" label="时间" width="80" />
-          <el-table-column label="状态" width="80" align="center">
-            <template #default="{ row }">
-              <el-tag :type="row.status === 'success' ? 'success' : 'danger'" size="small">
-                {{ row.status === 'success' ? '成功' : '失败' }}
-              </el-tag>
-            </template>
-          </el-table-column>
-        </el-table>
+        <div class="recent-list">
+          <div v-for="(record, idx) in recentRecords" :key="idx" class="recent-item">
+            <div class="recent-info">
+              <span class="recent-name">{{ record.student_name }}</span>
+              <span class="recent-score">总分 {{ record.total_score }}</span>
+            </div>
+            <el-tag :type="record.status === 'success' ? 'success' : 'danger'" size="small">
+              {{ record.status === 'success' ? '成功' : '失败' }}
+            </el-tag>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -148,28 +155,22 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { useGradeForm } from '@/composables/useGrade'
-import { getScoreColor, formatScore } from '@/utils/format'
+import { batchCreateGrades } from '@/api/grade'
+import { getStudentList } from '@/api/student'
+import { getScoreColor } from '@/utils/format'
 import type { FormRules } from 'element-plus'
 import type { Subject, ExamType } from '@/types/grade'
-import { ElMessage, ElMessageBox, ElForm } from 'element-plus'
+import { SUBJECTS, EXAM_TYPES } from '@/types/grade'
+import { ElMessage } from 'element-plus'
+import { ElForm } from 'element-plus'
 
 const route = useRoute()
 
-const {
-  subjectOptions,
-  examTypeOptions,
-  recentRecords,
-  studentSearching,
-  studentOptions,
-  searchStudents,
-  loadGradeForEdit,
-  checkDuplicate,
-  addRecentRecord,
-  goBack,
-  createGrade,
-  updateGrade,
-} = useGradeForm()
+/** 科目选项 */
+const subjectOptions = SUBJECTS
+
+/** 考试类型选项 */
+const examTypeOptions = EXAM_TYPES
 
 /** 是否编辑模式 */
 const isEdit = computed(() => !!route.query.id)
@@ -180,13 +181,44 @@ const submitting = ref(false)
 /** 表单引用 */
 const formRef = ref<InstanceType<typeof ElForm>>()
 
+/** 学生搜索状态 */
+const studentSearching = ref(false)
+
+/** 学生选项 */
+const studentOptions = ref<Array<{ student_id: string; name: string; class_name: string }>>([])
+
+/** 选中的学生 */
+const selectedStudent = ref<{ student_id: string; name: string; class_name: string } | null>(null)
+
+/** 最近录入记录 */
+const recentRecords = ref<Array<{ student_name: string; total_score: number; status: string }>>([])
+
 /** 表单数据 */
 const form = reactive({
   student_id: '',
-  subject: '' as Subject | '',
   exam_type: '' as ExamType | '',
-  score: 80,
   exam_date: new Date().toISOString().split('T')[0],
+  scores: {} as Record<string, number | undefined>,
+})
+
+/** 计算总分 */
+const computedTotalScore = computed(() => {
+  let total = 0
+  for (const sub of subjectOptions) {
+    const score = form.scores[sub]
+    if (score !== undefined && score !== null) {
+      total += score
+    }
+  }
+  return Math.round(total * 10) / 10
+})
+
+/** 已填写科目数 */
+const filledSubjectCount = computed(() => {
+  return subjectOptions.filter((sub) => {
+    const score = form.scores[sub]
+    return score !== undefined && score !== null && score > 0
+  }).length
 })
 
 /** 表单验证规则 */
@@ -194,63 +226,39 @@ const rules: FormRules = {
   student_id: [
     { required: true, message: '请选择学生', trigger: 'change' },
   ],
-  subject: [
-    { required: true, message: '请选择科目', trigger: 'change' },
-  ],
   exam_type: [
     { required: true, message: '请选择考试类型', trigger: 'change' },
-  ],
-  score: [
-    { required: true, message: '请输入分数', trigger: 'blur' },
-    {
-      validator: (_rule: unknown, value: number, callback: (error?: Error) => void) => {
-        if (value < 0 || value > 100) {
-          callback(new Error('分数必须在 0-100 之间'))
-        } else {
-          callback()
-        }
-      },
-      trigger: 'blur',
-    },
   ],
   exam_date: [
     { required: true, message: '请选择考试日期', trigger: 'change' },
   ],
 }
 
-/** 学生选择变化 */
-function handleStudentChange(studentId: string) {
-  const student = studentOptions.value.find((s) => s.student_id === studentId)
-  if (student) {
-    // 可以在此处做额外处理
+/** 搜索学生 */
+async function searchStudents(query: string) {
+  if (!query || query.length < 1) {
+    studentOptions.value = []
+    return
+  }
+  studentSearching.value = true
+  try {
+    const res = await getStudentList({ keyword: query, page_size: 20 } as any)
+    const data = (res as any).data || res
+    studentOptions.value = (data.items || []).map((s: any) => ({
+      student_id: s.student_id,
+      name: s.name,
+      class_name: s.class_name,
+    }))
+  } catch {
+    studentOptions.value = []
+  } finally {
+    studentSearching.value = false
   }
 }
 
-/** 重复检测 */
-async function handleDuplicateCheck() {
-  if (!form.student_id || !form.subject || !form.exam_type) return false
-
-  const exists = await checkDuplicate(
-    form.student_id,
-    form.subject as string,
-    form.exam_type as string,
-  )
-
-  if (exists) {
-    const confirmed = await ElMessageBox.confirm(
-      '该学生该科目的此考试类型成绩已存在，是否继续录入将覆盖原有成绩？',
-      '重复成绩提示',
-      {
-        confirmButtonText: '继续录入',
-        cancelButtonText: '取消',
-        type: 'warning',
-      },
-    ).catch(() => false)
-
-    return confirmed
-  }
-
-  return true
+/** 学生选择变化 */
+function handleStudentChange(studentId: string) {
+  selectedStudent.value = studentOptions.value.find((s) => s.student_id === studentId) || null
 }
 
 /** 提交表单 */
@@ -263,57 +271,68 @@ async function handleSubmit(continueAfter: boolean) {
     return
   }
 
-  // 重复检测（编辑模式跳过）
-  if (!isEdit.value) {
-    const canProceed = await handleDuplicateCheck()
-    if (!canProceed) return
+  if (!form.student_id) {
+    ElMessage.warning('请选择学生')
+    return
+  }
+  if (!form.exam_type) {
+    ElMessage.warning('请选择考试类型')
+    return
+  }
+  if (filledSubjectCount.value === 0) {
+    ElMessage.warning('请至少填写一个科目的成绩')
+    return
   }
 
   submitting.value = true
   try {
-    const data = {
-      student_id: form.student_id,
-      subject: form.subject as Subject,
-      score: form.score,
-      exam_type: form.exam_type as ExamType,
-      exam_date: form.exam_date,
+    // 构建批量成绩数据
+    const grades = []
+    for (const sub of subjectOptions) {
+      const score = form.scores[sub]
+      if (score !== undefined && score !== null && score > 0) {
+        grades.push({
+          student_id: form.student_id,
+          subject: sub,
+          score: score,
+          exam_type: form.exam_type as ExamType,
+          exam_date: form.exam_date,
+        })
+      }
     }
 
-    if (isEdit.value) {
-      await updateGrade(Number(route.query.id), data)
-    } else {
-      await createGrade(data)
+    await batchCreateGrades({
+      subject: grades[0].subject, // 会被后端忽略，因为每条记录有自己的subject
+      exam_type: form.exam_type as ExamType,
+      exam_date: form.exam_date,
+      grades: grades.map(g => ({ student_id: g.student_id, score: g.score })),
+    })
 
-      // 添加到最近记录
-      const student = studentOptions.value.find((s) => s.student_id === form.student_id)
-      addRecentRecord({
-        student_id: form.student_id,
-        student_name: student?.name || '-',
-        subject: form.subject as string,
-        score: form.score,
-        status: 'success',
-      })
+    // 添加到最近记录
+    recentRecords.value.unshift({
+      student_name: selectedStudent.value?.name || form.student_id,
+      total_score: computedTotalScore.value,
+      status: 'success',
+    })
+    if (recentRecords.value.length > 10) {
+      recentRecords.value = recentRecords.value.slice(0, 10)
     }
 
     if (continueAfter) {
-      // 提交并继续：重置表单但保留部分字段
       handleReset()
       ElMessage.success('录入成功，请继续')
     } else {
+      ElMessage.success('录入成功')
       goBack()
     }
-  } catch (error) {
-    ElMessage.error('提交失败，请稍后重试')
-    if (continueAfter) {
-      // 添加失败记录
-      addRecentRecord({
-        student_id: form.student_id,
-        student_name: '-',
-        subject: form.subject as string,
-        score: form.score,
-        status: 'error',
-      })
-    }
+  } catch (error: any) {
+    const msg = error?.response?.data?.message || error?.message || '提交失败'
+    ElMessage.error(msg)
+    recentRecords.value.unshift({
+      student_name: selectedStudent.value?.name || form.student_id,
+      total_score: computedTotalScore.value,
+      status: 'error',
+    })
   } finally {
     submitting.value = false
   }
@@ -322,32 +341,22 @@ async function handleSubmit(continueAfter: boolean) {
 /** 重置表单 */
 function handleReset() {
   formRef.value?.resetFields()
-  form.score = 80
+  form.scores = {}
   form.exam_date = new Date().toISOString().split('T')[0]
+  selectedStudent.value = null
+  studentOptions.value = []
 }
 
-/** 加载编辑数据 */
-async function loadEditData() {
-  if (!route.query.id) return
-
-  try {
-    const { grade } = await loadGradeForEdit(Number(route.query.id))
-    form.student_id = grade.student_id
-    form.subject = grade.subject
-    form.exam_type = grade.exam_type
-    form.score = grade.score
-    form.exam_date = grade.exam_date
-  } catch (error) {
-    console.error('加载成绩详情失败:', error)
-    ElMessage.error('加载成绩详情失败')
-    goBack()
-  }
+/** 返回列表 */
+function goBack() {
+  window.history.back()
 }
 
 /** 初始化 */
 onMounted(() => {
-  if (isEdit.value) {
-    loadEditData()
+  // 初始化所有科目分数为 undefined
+  for (const sub of subjectOptions) {
+    form.scores[sub] = undefined
   }
 })
 </script>
@@ -364,11 +373,11 @@ onMounted(() => {
 
   .form-card {
     flex: 1;
-    max-width: 640px;
+    max-width: 800px;
   }
 
   .recent-card {
-    width: 400px;
+    width: 320px;
     flex-shrink: 0;
 
     .recent-header {
@@ -379,6 +388,102 @@ onMounted(() => {
         font-weight: 600;
         color: var(--text-color);
       }
+    }
+
+    .recent-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .recent-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      background: var(--bg-color);
+      border-radius: var(--border-radius-md);
+
+      .recent-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+
+        .recent-name {
+          font-size: 14px;
+          font-weight: 500;
+          color: var(--text-color);
+        }
+
+        .recent-score {
+          font-size: 12px;
+          color: var(--text-color-secondary);
+        }
+      }
+    }
+  }
+
+  .form-section {
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-color-light);
+
+    &:last-of-type {
+      border-bottom: none;
+    }
+  }
+
+  .form-section-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    .total-score-display {
+      margin-left: auto;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--primary-color);
+
+      strong {
+        font-size: 20px;
+      }
+    }
+  }
+
+  .student-info-bar {
+    display: flex;
+    gap: 8px;
+    margin-top: -8px;
+    margin-bottom: 16px;
+  }
+
+  .subject-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  .subject-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--bg-color);
+    border-radius: var(--border-radius-md);
+
+    .subject-label {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-color);
+      min-width: 36px;
+    }
+
+    :deep(.el-input-number) {
+      flex: 1;
     }
   }
 
@@ -403,19 +508,6 @@ onMounted(() => {
       font-weight: 500;
     }
   }
-
-  :deep(.el-input__wrapper) {
-    border-radius: var(--border-radius-md);
-  }
-
-  :deep(.el-select .el-input__wrapper) {
-    border-radius: var(--border-radius-md);
-  }
-
-  :deep(.el-form-item__label) {
-    font-weight: 500;
-    color: var(--text-color);
-  }
 }
 
 /* 响应式布局 */
@@ -432,6 +524,10 @@ onMounted(() => {
     .recent-card {
       width: 100%;
     }
+
+    .subject-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
   }
 }
 
@@ -443,8 +539,8 @@ onMounted(() => {
       gap: 12px;
     }
 
-    .form-card {
-      padding: 20px;
+    .subject-grid {
+      grid-template-columns: 1fr;
     }
   }
 }

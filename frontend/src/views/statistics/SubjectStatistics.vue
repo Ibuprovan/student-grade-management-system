@@ -294,7 +294,7 @@
           <div class="page-card chart-card-wrapper">
             <div class="chart-header">
               <h4 class="chart-title">科目能力雷达图</h4>
-              <p class="desc-text">各科目平均分对比</p>
+              <p class="desc-text">平均分、及格率、优秀率三维对比</p>
             </div>
             <RadarChart
               v-if="radarData.indicators.length > 0"
