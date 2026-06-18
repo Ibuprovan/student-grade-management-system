@@ -536,7 +536,7 @@ def batch_delete_grades(
     )
 
 
-@router.delete(
+@router.post(
     "/delete-all",
     response_model=ApiResponse,
     summary="删除全部成绩",

@@ -72,7 +72,7 @@ export function batchDeleteStudents(studentIds: string[]) {
  * @param params 筛选条件（可选）
  */
 export function deleteAllStudents(params?: { class_name?: string }) {
-  return del<{ deleted_count: number }>(`${BASE_URL}/delete-all`, { params })
+  return post<{ deleted_count: number }>(`${BASE_URL}/delete-all`, null, { params })
 }
 
 /**

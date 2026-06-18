@@ -249,7 +249,7 @@ def batch_delete_students(
     )
 
 
-@router.delete(
+@router.post(
     "/delete-all",
     response_model=ApiResponse,
     summary="删除全部学生",

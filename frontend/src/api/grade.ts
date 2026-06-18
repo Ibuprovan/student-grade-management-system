@@ -86,7 +86,7 @@ export function deleteAllGrades(params?: {
   subject?: string
   exam_type?: string
 }) {
-  return del<{ deleted_count: number }>(`${BASE_URL}/delete-all`, { params })
+  return post<{ deleted_count: number }>(`${BASE_URL}/delete-all`, null, { params })
 }
 
 /**
