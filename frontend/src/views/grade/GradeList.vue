@@ -451,6 +451,14 @@ onMounted(() => {
     :deep(.el-tabs__header) {
       margin-bottom: 16px;
     }
+
+    :deep(.el-tabs__content) {
+      overflow: visible;
+    }
+
+    :deep(.el-tab-pane) {
+      overflow: visible;
+    }
   }
 
   .ranking-section {
