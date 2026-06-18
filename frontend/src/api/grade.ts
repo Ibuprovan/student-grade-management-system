@@ -107,3 +107,20 @@ export function checkGradeDuplicate(
     params: { student_id: studentId, subject, exam_type: examType },
   })
 }
+
+/**
+ * 保存学生考试总分
+ * @param params 学号、考试类型、考试日期、总分
+ */
+export function saveExamTotal(params: {
+  student_id: string
+  exam_type: string
+  exam_date: string
+  total_score: number
+}) {
+  return post<{ id: number; student_id: string; total_score: number }>(
+    `${BASE_URL}/exam-total`,
+    null,
+    { params }
+  )
+}

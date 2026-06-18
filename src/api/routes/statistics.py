@@ -247,6 +247,40 @@ def get_report(
 
 
 @router.get(
+    "/report/total",
+    response_model=ApiResponse,
+    summary="总分统计报告",
+    description="获取基于学生总分的统计报告（需要认证）",
+    responses={
+        401: {"description": "未认证"},
+    },
+)
+def get_total_score_report(
+    class_name: Optional[str] = Query(None, description="班级名称（可选）"),
+    exam_type: Optional[str] = Query(None, description="考试类型（可选）"),
+    top_n: int = Query(10, ge=1, le=50, description="优秀学生数量"),
+    service: StatisticsService = Depends(get_statistics_service),
+    current_user: User = Depends(get_current_user),
+) -> ApiResponse:
+    """
+    总分统计报告（需要认证）
+
+    - **class_name**: 班级名称（可选）
+    - **exam_type**: 考试类型（可选）
+    - **top_n**: 优秀学生数量（默认10）
+    """
+    result = service.get_total_score_report(
+        class_name=class_name,
+        exam_type=exam_type,
+        top_n=top_n,
+    )
+    return ApiResponse(
+        success=True,
+        data=result,
+    )
+
+
+@router.get(
     "/ranking/subject",
     response_model=ApiResponse,
     summary="单科排名",

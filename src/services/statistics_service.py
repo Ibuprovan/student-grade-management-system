@@ -18,6 +18,7 @@ from sqlalchemy.orm import Session
 from src.core.constants import PASS_SCORE, EXCELLENT_SCORE
 from src.models.grade import Grade
 from src.models.student import Student
+from src.models.exam_total import StudentExamTotal
 from src.repositories.grade_repo import GradeRepository
 from src.repositories.student_repo import StudentRepository
 
@@ -410,6 +411,117 @@ class StatisticsService:
                 "pass_rate": pass_rate,
                 "excellent_rate": excellent_rate,
                 "score_distribution": score_distribution,
+            },
+            "top_students": top_students,
+        }
+
+    def get_total_score_report(
+        self,
+        class_name: Optional[str] = None,
+        exam_type: Optional[str] = None,
+        top_n: int = 10,
+    ) -> Dict[str, Any]:
+        """
+        获取总分统计报告（基于 StudentExamTotal 表）
+
+        Args:
+            class_name: 班级名称（可选）
+            exam_type: 考试类型（可选）
+            top_n: 优秀学生数量（默认10）
+
+        Returns:
+            Dict[str, Any]: 总分统计报告
+        """
+        # 查询总分数据
+        stmt = (
+            select(
+                StudentExamTotal.total_score,
+                StudentExamTotal.student_id,
+                Student.name.label("student_name"),
+            )
+            .join(Student, StudentExamTotal.student_id == Student.student_id)
+        )
+
+        if exam_type:
+            stmt = stmt.where(StudentExamTotal.exam_type == exam_type)
+        if class_name:
+            stmt = stmt.where(Student.class_name == class_name)
+
+        result = self.db.execute(stmt)
+        rows = result.all()
+
+        if not rows:
+            return {
+                "class_name": class_name,
+                "exam_type": exam_type,
+                "statistics": {
+                    "count": 0,
+                    "average": 0.0,
+                    "max_score": 0.0,
+                    "min_score": 0.0,
+                    "pass_rate": 0.0,
+                    "excellent_rate": 0.0,
+                    "score_distribution": self._calculate_score_distribution([]),
+                },
+                "top_students": [],
+            }
+
+        scores = [float(row[0]) for row in rows]
+        count = len(scores)
+        average = round(sum(scores) / count, 2)
+        max_score = max(scores)
+        min_score = min(scores)
+
+        # 总分及格线和优秀线（按单科60/90 * 科目数估算，但这里用总分直接判断）
+        # 假设总分及格线为 60% * 科目数 * 100，优秀线为 90% * 科目数 * 100
+        # 但更简单的方式是按平均分判断：总分/科目数 >= 60 / 90
+        # 这里我们用总分直接判断：总分 >= 科目数 * 60 / 总分 >= 科目数 * 90
+        # 由于科目数不确定，我们用平均分来判断
+        avg_score = average / 9 if count > 0 else 0  # 假设9科
+        passed_count = sum(1 for s in scores if (s / 9) >= PASS_SCORE)
+        excellent_count = sum(1 for s in scores if (s / 9) >= EXCELLENT_SCORE)
+        pass_rate = round((passed_count / count) * 100, 2)
+        excellent_rate = round((excellent_count / count) * 100, 2)
+
+        # 分数分布（按总分段）
+        distribution = {
+            "0-539": 0,
+            "540-629": 0,
+            "630-719": 0,
+            "720-809": 0,
+            "810-900": 0,
+        }
+        for s in scores:
+            if s < 540:
+                distribution["0-539"] += 1
+            elif s < 630:
+                distribution["540-629"] += 1
+            elif s < 720:
+                distribution["630-719"] += 1
+            elif s < 810:
+                distribution["720-809"] += 1
+            else:
+                distribution["810-900"] += 1
+
+        # 优秀学生
+        sorted_rows = sorted(rows, key=lambda x: float(x[0]), reverse=True)
+        top_students = [
+            {"student_id": row[1], "name": row[2], "score": float(row[0])}
+            for row in sorted_rows[:top_n]
+        ]
+
+        return {
+            "class_name": class_name,
+            "exam_type": exam_type,
+            "statistics": {
+                "count": count,
+                "student_count": count,
+                "average": average,
+                "max_score": max_score,
+                "min_score": min_score,
+                "pass_rate": pass_rate,
+                "excellent_rate": excellent_rate,
+                "score_distribution": distribution,
             },
             "top_students": top_students,
         }

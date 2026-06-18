@@ -13,6 +13,7 @@ from typing import Optional
 from sqlalchemy.orm import Session
 
 from src.models.student import Student
+from src.models.exam_total import StudentExamTotal
 from src.repositories.student_repo import StudentRepository
 from src.core.exceptions import ValidationException
 
@@ -709,6 +710,17 @@ class ImportService:
             except (ValueError, TypeError):
                 errors.append(f"分数格式错误，应为数字，当前值: {score}")
 
+        # 验证总分（可选）
+        total_score = None
+        total_score_val = row.get('总分')
+        if total_score_val is not None and str(total_score_val).strip() != '':
+            try:
+                total_score = float(total_score_val)
+                if total_score < 0:
+                    errors.append(f"总分不能为负数，当前值: {total_score}")
+            except (ValueError, TypeError):
+                errors.append(f"总分格式错误，应为数字，当前值: {total_score_val}")
+
         # 验证考试类型（如果文件中有则使用文件中的，否则使用参数）
         row_exam_type = str(row.get('考试类型', '')).strip()
         if row_exam_type:
@@ -733,14 +745,18 @@ class ImportService:
                 'errors': errors
             }
 
+        data = {
+            'student_id': student_id,
+            'subject': subject,
+            'score': float(score),
+            'exam_type': exam_type,
+            'exam_date': exam_date_obj,
+        }
+        if total_score is not None:
+            data['total_score'] = total_score
+
         return {
-            'data': {
-                'student_id': student_id,
-                'subject': subject,
-                'score': float(score),
-                'exam_type': exam_type,
-                'exam_date': exam_date_obj
-            },
+            'data': data,
             'errors': []
         }
 
@@ -902,6 +918,9 @@ class ImportService:
             self.db.rollback()
             raise ValidationException(f"数据库提交失败: {str(e)}")
 
+        # 保存总分（从成绩数据中提取每个学生的总分）
+        self._save_exam_totals(grades_data)
+
         return {
             'total_rows': total_rows,
             'success_count': success_count,
@@ -910,6 +929,58 @@ class ImportService:
             'success_items': success_items,
             'failed_items': failed_items
         }
+
+    def _save_exam_totals(self, grades_data: list[dict]) -> None:
+        """
+        保存学生考试总分
+
+        Args:
+            grades_data: 成绩数据列表
+        """
+        # 按学生+考试类型+考试日期分组，提取总分
+        total_map: dict[str, dict] = {}
+        for grade_data in grades_data:
+            student_id = grade_data['student_id']
+            exam_type = grade_data['exam_type']
+            exam_date = grade_data['exam_date']
+            total_score = grade_data.get('total_score')
+
+            if total_score is not None:
+                key = f"{student_id}_{exam_type}_{exam_date}"
+                if key not in total_map:
+                    total_map[key] = {
+                        'student_id': student_id,
+                        'exam_type': exam_type,
+                        'exam_date': exam_date,
+                        'total_score': total_score,
+                    }
+
+        # 保存总分记录
+        for key, data in total_map.items():
+            try:
+                existing = self.db.query(StudentExamTotal).filter(
+                    StudentExamTotal.student_id == data['student_id'],
+                    StudentExamTotal.exam_type == data['exam_type'],
+                    StudentExamTotal.exam_date == data['exam_date'],
+                ).first()
+
+                if existing:
+                    existing.total_score = data['total_score']
+                else:
+                    total_record = StudentExamTotal(
+                        student_id=data['student_id'],
+                        exam_type=data['exam_type'],
+                        exam_date=data['exam_date'],
+                        total_score=data['total_score'],
+                    )
+                    self.db.add(total_record)
+            except Exception:
+                pass  # 总分保存失败不影响主流程
+
+        try:
+            self.db.commit()
+        except Exception:
+            self.db.rollback()
 
     def generate_grade_template(self, format: str = 'xlsx') -> bytes:
         """

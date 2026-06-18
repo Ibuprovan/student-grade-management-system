@@ -14,6 +14,7 @@ from src.core.database import Base
 
 if TYPE_CHECKING:
     from src.models.grade import Grade
+    from src.models.exam_total import StudentExamTotal
 
 
 class Student(Base):
@@ -94,6 +95,14 @@ class Student(Base):
     # 一个学生有多条成绩记录（一对多关系）
     grades: Mapped[List["Grade"]] = relationship(
         "Grade",
+        back_populates="student",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+
+    # 一个学生有多条总分记录（一对多关系）
+    exam_totals: Mapped[List["StudentExamTotal"]] = relationship(
+        "StudentExamTotal",
         back_populates="student",
         cascade="all, delete-orphan",
         lazy="selectin",

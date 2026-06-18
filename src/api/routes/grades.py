@@ -137,6 +137,52 @@ def batch_create_grades(
     )
 
 
+@router.post(
+    "/exam-total",
+    response_model=ApiResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="保存学生考试总分",
+    description="保存学生某次考试的总分（需要教师权限）",
+    responses={
+        401: {"description": "未认证"},
+        403: {"description": "权限不足"},
+    },
+)
+def save_exam_total(
+    student_id: str = Query(..., description="学号"),
+    exam_type: str = Query(..., description="考试类型"),
+    exam_date: str = Query(..., description="考试日期（YYYY-MM-DD）"),
+    total_score: float = Query(..., description="总分"),
+    service: GradeService = Depends(get_grade_service),
+    current_user: User = Depends(require_teacher_or_admin),
+) -> ApiResponse:
+    """
+    保存学生考试总分（需要教师权限）
+
+    - **student_id**: 学号
+    - **exam_type**: 考试类型
+    - **exam_date**: 考试日期
+    - **total_score**: 总分
+    """
+    from datetime import datetime
+    try:
+        exam_date_obj = datetime.strptime(exam_date, '%Y-%m-%d').date()
+    except ValueError:
+        return ApiResponse(success=False, message="日期格式错误，应为 YYYY-MM-DD")
+
+    result = service.save_exam_total(
+        student_id=student_id,
+        exam_type=exam_type,
+        exam_date=exam_date_obj,
+        total_score=total_score,
+    )
+    return ApiResponse(
+        success=True,
+        data={"id": result.id, "student_id": result.student_id, "total_score": result.total_score},
+        message="总分保存成功",
+    )
+
+
 @router.get(
     "/search",
     response_model=PaginatedResponse,

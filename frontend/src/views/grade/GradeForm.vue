@@ -24,20 +24,34 @@
           <div class="form-section">
             <h3 class="form-section-title">考试信息</h3>
             <el-row :gutter="16">
-              <el-col :span="12">
+              <el-col :span="8">
                 <el-form-item label="考试类型" prop="exam_type">
                   <el-select v-model="form.exam_type" placeholder="请选择考试类型" style="width: 100%">
                     <el-option v-for="et in examTypeOptions" :key="et" :label="et" :value="et" />
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
+              <el-col :span="8">
                 <el-form-item label="考试日期" prop="exam_date">
                   <el-date-picker
                     v-model="form.exam_date"
                     type="date"
                     placeholder="选择考试日期"
                     value-format="YYYY-MM-DD"
+                    style="width: 100%"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :span="8">
+                <el-form-item label="总分" prop="total_score">
+                  <el-input-number
+                    v-model="form.total_score"
+                    :min="0"
+                    :max="900"
+                    :precision="1"
+                    :step="1"
+                    controls-position="right"
+                    placeholder="请输入总分"
                     style="width: 100%"
                   />
                 </el-form-item>
@@ -155,7 +169,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { batchCreateGrades } from '@/api/grade'
+import { batchCreateGrades, saveExamTotal } from '@/api/grade'
 import { getStudentList } from '@/api/student'
 import { getScoreColor } from '@/utils/format'
 import type { FormRules } from 'element-plus'
@@ -198,6 +212,7 @@ const form = reactive({
   student_id: '',
   exam_type: '' as ExamType | '',
   exam_date: new Date().toISOString().split('T')[0],
+  total_score: undefined as number | undefined,
   scores: {} as Record<string, number | undefined>,
 })
 
@@ -231,6 +246,9 @@ const rules: FormRules = {
   ],
   exam_date: [
     { required: true, message: '请选择考试日期', trigger: 'change' },
+  ],
+  total_score: [
+    { required: true, message: '请输入总分', trigger: 'blur' },
   ],
 }
 
@@ -279,6 +297,10 @@ async function handleSubmit(continueAfter: boolean) {
     ElMessage.warning('请选择考试类型')
     return
   }
+  if (form.total_score === undefined || form.total_score === null) {
+    ElMessage.warning('请输入总分')
+    return
+  }
   if (filledSubjectCount.value === 0) {
     ElMessage.warning('请至少填写一个科目的成绩')
     return
@@ -306,6 +328,14 @@ async function handleSubmit(continueAfter: boolean) {
       exam_type: form.exam_type as ExamType,
       exam_date: form.exam_date,
       grades: grades.map(g => ({ student_id: g.student_id, score: g.score })),
+    })
+
+    // 保存总分
+    await saveExamTotal({
+      student_id: form.student_id,
+      exam_type: form.exam_type as ExamType,
+      exam_date: form.exam_date,
+      total_score: form.total_score!,
     })
 
     // 添加到最近记录

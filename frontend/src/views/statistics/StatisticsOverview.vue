@@ -240,7 +240,7 @@ import { useRouter } from 'vue-router'
 import { Download, Search, RefreshRight, Trophy, CircleCloseFilled } from '@element-plus/icons-vue'
 import { useStatisticsStore } from '@/stores/statistics'
 import { useStudentStore } from '@/stores/student'
-import { getTotalRanking, getRanking, getBatchSubjectStatistics, getReport } from '@/api/statistics'
+import { getTotalRanking, getRanking, getBatchSubjectStatistics, getTotalScoreReport } from '@/api/statistics'
 import { formatScore, formatPercent } from '@/utils/format'
 import { SUBJECTS, EXAM_TYPES } from '@/types/grade'
 import type { ExamType } from '@/types/grade'
@@ -367,7 +367,7 @@ async function handleSearch() {
 
     // 并行获取数据
     const [reportRes, subjectStatsRes, totalRankRes] = await Promise.allSettled([
-      getReport({ exam_type: examType, class_name: className, top_n: 10 }),
+      getTotalScoreReport({ exam_type: examType, class_name: className, top_n: 10 }),
       getBatchSubjectStatistics({ exam_type: examType as ExamType, class_name: className }),
       getTotalRanking({ exam_type: examType, class_name: className, limit: 10 }),
     ])

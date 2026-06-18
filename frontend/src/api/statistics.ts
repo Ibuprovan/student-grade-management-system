@@ -90,6 +90,32 @@ export function getReport(params?: {
 }
 
 /**
+ * 获取总分统计报告
+ * @param params 查询参数（class_name、exam_type、top_n）
+ */
+export function getTotalScoreReport(params?: {
+  class_name?: string
+  exam_type?: string
+  top_n?: number
+}) {
+  return get<{
+    class_name?: string
+    exam_type?: string
+    statistics: {
+      count: number
+      student_count: number
+      average: number
+      max_score: number
+      min_score: number
+      pass_rate: number
+      excellent_rate: number
+      score_distribution: Record<string, number>
+    }
+    top_students: Array<{ student_id: string; name: string; score: number }>
+  }>(`${BASE_URL}/report/total`, { params })
+}
+
+/**
  * 批量获取所有班级统计数据（避免 N+1 查询）
  * @param params 查询参数（exam_type）
  */

@@ -25,8 +25,10 @@ from src.core.exceptions import (
 )
 from src.models.grade import Grade
 from src.models.student import Student
+from src.models.exam_total import StudentExamTotal
 from src.repositories.grade_repo import GradeRepository
 from src.repositories.student_repo import StudentRepository
+from src.repositories.exam_total_repo import ExamTotalRepository
 from src.schemas.grade import (
     GradeCreate,
     GradeUpdate,
@@ -58,6 +60,7 @@ class GradeService:
         """
         self.grade_repo = GradeRepository(db)
         self.student_repo = StudentRepository(db)
+        self.exam_total_repo = ExamTotalRepository(db)
         self.db = db
 
     def create_grade(self, data: GradeCreate) -> Grade:
@@ -99,6 +102,32 @@ class GradeService:
         grade_data = data.model_dump()
         grade = self.grade_repo.create(grade_data)
         return grade
+
+    def save_exam_total(
+        self,
+        student_id: str,
+        exam_type: str,
+        exam_date: date,
+        total_score: float,
+    ) -> StudentExamTotal:
+        """
+        保存学生考试总分
+
+        Args:
+            student_id: 学号
+            exam_type: 考试类型
+            exam_date: 考试日期
+            total_score: 总分
+
+        Returns:
+            StudentExamTotal: 保存的总分记录
+        """
+        return self.exam_total_repo.upsert(
+            student_id=student_id,
+            exam_type=exam_type,
+            exam_date=exam_date,
+            total_score=total_score,
+        )
 
     def batch_create_grades(self, data: GradeBatchCreate) -> Dict[str, Any]:
         """

@@ -33,6 +33,7 @@
           <ul>
             <li><strong>学号：</strong>8位数字，如 20260001（必须在系统中已存在）</li>
             <li><strong>姓名：</strong>学生姓名（用于校验，非必填但建议填写）</li>
+            <li><strong>总分：</strong>该学生本次考试的总分（必填）</li>
             <li><strong>各科成绩：</strong>语文、数学、英语、物理、化学、生物、历史、地理、政治（0-100，留空表示未考试）</li>
             <li><strong>考试类型：</strong>期中、期末、月考、单元测试</li>
             <li><strong>考试日期：</strong>YYYY-MM-DD 格式，如 2026-04-15</li>
@@ -44,6 +45,7 @@
           <el-table :data="templatePreviewData" size="small" border stripe>
             <el-table-column prop="student_id" label="学号" width="100" />
             <el-table-column prop="name" label="姓名" width="80" />
+            <el-table-column prop="总分" label="总分" width="80" align="center" />
             <el-table-column prop="语文" label="语文" width="70" align="center" />
             <el-table-column prop="数学" label="数学" width="70" align="center" />
             <el-table-column prop="英语" label="英语" width="70" align="center" />
@@ -309,8 +311,8 @@ const formRules: FormRules = {
 
 /** 模板预览数据 */
 const templatePreviewData = [
-  { student_id: '20260001', name: '张三', 语文: 88, 数学: 95, 英语: 82, 物理: 90, 化学: 85, 生物: 78, 历史: 92, 地理: 80, 政治: 86, exam_type: '期中', exam_date: '2026-04-15' },
-  { student_id: '20260002', name: '李四', 语文: 76, 数学: 88, 英语: 90, 物理: 72, 化学: 80, 生物: 85, 历史: 78, 地理: 88, 政治: 92, exam_type: '期中', exam_date: '2026-04-15' },
+  { student_id: '20260001', name: '张三', 总分: 756, 语文: 88, 数学: 95, 英语: 82, 物理: 90, 化学: 85, 生物: 78, 历史: 92, 地理: 80, 政治: 86, exam_type: '期中', exam_date: '2026-04-15' },
+  { student_id: '20260002', name: '李四', 总分: 698, 语文: 76, 数学: 88, 英语: 90, 物理: 72, 化学: 80, 生物: 85, 历史: 78, 地理: 88, 政治: 92, exam_type: '期中', exam_date: '2026-04-15' },
 ]
 
 /** 有效数据数量 */
@@ -371,6 +373,14 @@ async function handleParseFile() {
         errors.push('学号格式错误')
       }
 
+      // 解析总分
+      const totalScore = parseFloat(row['总分'])
+      if (isNaN(totalScore) || totalScore < 0) {
+        errors.push('总分无效')
+      } else {
+        row['总分'] = totalScore
+      }
+
       // 解析各科成绩
       let hasScore = false
       for (const sub of SUBJECTS) {
@@ -429,6 +439,7 @@ async function handleStartImport() {
     const validRows = previewData.value.filter((r) => r.valid)
 
     for (const row of validRows) {
+      const totalScore = row['总分']
       for (const sub of SUBJECTS) {
         const score = row[sub]
         if (score !== undefined && score !== null && !isNaN(score)) {
@@ -436,6 +447,7 @@ async function handleStartImport() {
             student_id: row.student_id,
             subject: sub,
             score: score,
+            total_score: totalScore,
             exam_type: row.exam_type,
             exam_date: row.exam_date,
           })
@@ -492,7 +504,7 @@ async function handleStartImport() {
 
 /** 下载模板 */
 function downloadTemplate() {
-  const headers = ['学号', '姓名', ...SUBJECTS, '考试类型', '考试日期']
+  const headers = ['学号', '姓名', '总分', ...SUBJECTS, '考试类型', '考试日期']
   const rows = templatePreviewData.map((row) =>
     headers.map((h) => (row as any)[h] ?? '').join(',')
   )
