@@ -170,6 +170,32 @@ const protectedRoutes: RouteRecordRaw[] = [
     component: () => import('@/views/admin/SubjectLeaderManagement.vue'),
     meta: { title: '学科组长管理', icon: 'UserFilled', requiresAuth: true, roles: ['admin'] },
   },
+  {
+    path: '/admin/accounts',
+    name: 'AccountManagement',
+    redirect: '/admin/accounts/students',
+    meta: { title: '账号管理', icon: 'Lock', requiresAuth: true, roles: ['admin'] },
+    children: [
+      {
+        path: 'students',
+        name: 'StudentAccounts',
+        component: () => import('@/views/admin/accounts/StudentAccounts.vue'),
+        meta: { title: '学生账号', icon: 'User', requiresAuth: true, roles: ['admin'] },
+      },
+      {
+        path: 'class-teachers',
+        name: 'ClassTeacherAccounts',
+        component: () => import('@/views/admin/accounts/ClassTeacherAccounts.vue'),
+        meta: { title: '班主任账号', icon: 'UserFilled', requiresAuth: true, roles: ['admin'] },
+      },
+      {
+        path: 'subject-leaders',
+        name: 'SubjectLeaderAccounts',
+        component: () => import('@/views/admin/accounts/SubjectLeaderAccounts.vue'),
+        meta: { title: '学科组长账号', icon: 'UserFilled', requiresAuth: true, roles: ['admin'] },
+      },
+    ],
+  },
   // 班主任专用路由
   {
     path: '/ct/dashboard',

@@ -28,6 +28,7 @@ from src.api.routes import (
     class_teacher_scoped_router,
     subject_leaders_router,
     subject_leader_scoped_router,
+    accounts_router,
 )
 from src.api.exception_handlers import (
     app_exception_handler,
@@ -150,6 +151,7 @@ def create_app() -> FastAPI:
     app.include_router(audit_logs_router)
     app.include_router(class_teachers_router)
     app.include_router(subject_leaders_router)
+    app.include_router(accounts_router)
 
     # 班主任专用路由（班主任或管理员权限）
     app.include_router(class_teacher_scoped_router)

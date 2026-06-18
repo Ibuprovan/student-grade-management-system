@@ -137,6 +137,26 @@
           <template #title>学科组长管理</template>
         </el-menu-item>
 
+        <!-- 管理员 - 账号管理 -->
+        <el-sub-menu v-if="authStore.isAdmin" index="/admin/accounts">
+          <template #title>
+            <el-icon><Lock /></el-icon>
+            <span>账号管理</span>
+          </template>
+          <el-menu-item index="/admin/accounts/students">
+            <el-icon><User /></el-icon>
+            <template #title>学生账号</template>
+          </el-menu-item>
+          <el-menu-item index="/admin/accounts/class-teachers">
+            <el-icon><UserFilled /></el-icon>
+            <template #title>班主任账号</template>
+          </el-menu-item>
+          <el-menu-item index="/admin/accounts/subject-leaders">
+            <el-icon><UserFilled /></el-icon>
+            <template #title>学科组长账号</template>
+          </el-menu-item>
+        </el-sub-menu>
+
         <!-- 学科组长 - 仪表盘 -->
         <el-menu-item v-if="authStore.isSubjectLeader" index="/sl/dashboard">
           <el-icon><Odometer /></el-icon>
