@@ -15,7 +15,7 @@ from typing import Optional, List, Dict, Any, Tuple
 from sqlalchemy import func, and_, select, case
 from sqlalchemy.orm import Session
 
-from src.core.constants import PASS_SCORE, EXCELLENT_SCORE, TOTAL_PASS_SCORE, TOTAL_EXCELLENT_SCORE, MAIN_SUBJECTS, MAIN_SUBJECT_PASS, MAIN_SUBJECT_EXCELLENT
+from src.core.constants import PASS_SCORE, EXCELLENT_SCORE, TOTAL_PASS_SCORE, TOTAL_EXCELLENT_SCORE, SUBJECTS, MAIN_SUBJECTS, MAIN_SUBJECT_PASS, MAIN_SUBJECT_EXCELLENT
 from src.models.grade import Grade
 from src.models.student import Student
 from src.models.exam_total import StudentExamTotal
@@ -849,7 +849,8 @@ class StatisticsService:
             subject_data[subject]["scores"].append(score)
 
         subjects = []
-        for subject, data in sorted(subject_data.items()):
+        subject_order_map = {s: i for i, s in enumerate(SUBJECTS)}
+        for subject, data in sorted(subject_data.items(), key=lambda x: subject_order_map.get(x[0], 999)):
             scores = data["scores"]
             total_count = len(scores)
             average = round(sum(scores) / total_count, 2) if total_count > 0 else 0.0

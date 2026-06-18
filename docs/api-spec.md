@@ -352,7 +352,7 @@ DELETE /api/v1/students/20260001
 | 字段 | 类型 | 必填 | 说明 | 校验规则 |
 |------|------|------|------|---------|
 | student_id | string | 是 | 学号 | 必须存在 |
-| subject | string | 是 | 科目 | 语文/数学/英语/物理/化学/生物/历史/地理/政治 |
+| subject | string | 是 | 科目 | 语文/数学/英语/物理/化学/生物/政治/历史/地理 |
 | score | number | 是 | 分数 | 0-100，支持1位小数 |
 | exam_type | string | 是 | 考试类型 | 期中/期末/月考/单元测试 |
 | exam_date | string | 是 | 考试日期 | 格式：YYYY-MM-DD |
@@ -1187,7 +1187,7 @@ class GradeBase(BaseModel):
     @field_validator('subject')
     @classmethod
     def validate_subject(cls, v):
-        valid_subjects = ["语文", "数学", "英语", "物理", "化学", "生物", "历史", "地理", "政治"]
+        valid_subjects = ["语文", "数学", "英语", "物理", "化学", "生物", "政治", "历史", "地理"]
         if v not in valid_subjects:
             raise ValueError(f"科目必须是以下之一：{', '.join(valid_subjects)}")
         return v

@@ -300,10 +300,10 @@ def get_class_grades_total(
         if subject not in subjects_set:
             subjects_set.append(subject)
 
-    # 排序科目：语文、数学、英语在前，其他按字母
-    main = ["语文", "数学", "英语"]
-    other = sorted([s for s in subjects_set if s not in main])
-    ordered_subjects = [s for s in main if s in subjects_set] + other
+    # 按标准科目顺序排序
+    from src.core.constants import SUBJECTS as SUBJECT_ORDER
+    subject_order_map = {s: i for i, s in enumerate(SUBJECT_ORDER)}
+    ordered_subjects = sorted(subjects_set, key=lambda s: subject_order_map.get(s, 999))
 
     # 构建分页
     all_items = list(groups.values())

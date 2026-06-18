@@ -415,7 +415,9 @@ def total_ranking(
         all_subjects = set()
         for item in result["rankings"]:
             all_subjects.update(item["subject_scores"].keys())
-        subjects = sorted(all_subjects)
+        from src.core.constants import SUBJECTS as SUBJECT_ORDER
+        subject_order_map = {s: i for i, s in enumerate(SUBJECT_ORDER)}
+        subjects = sorted(all_subjects, key=lambda s: subject_order_map.get(s, 999))
 
         # 创建排名表格
         table = Table(title=title, show_header=True, header_style="bold cyan")

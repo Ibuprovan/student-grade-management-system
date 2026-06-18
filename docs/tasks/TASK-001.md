@@ -122,7 +122,7 @@ CREATE INDEX idx_grades_student_id ON grades(student_id);
 
 ```python
 # 科目列表
-SUBJECTS = ["语文", "数学", "英语", "物理", "化学", "生物", "历史", "地理", "政治"]
+SUBJECTS = ["语文", "数学", "英语", "物理", "化学", "生物", "政治", "历史", "地理"]
 
 # 考试类型
 EXAM_TYPES = ["期中", "期末", "月考", "单元测试"]

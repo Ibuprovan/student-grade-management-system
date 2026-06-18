@@ -34,7 +34,7 @@
             <li><strong>学号：</strong>8位数字，如 20260001（必须在系统中已存在）</li>
             <li><strong>姓名：</strong>学生姓名（用于校验，非必填但建议填写）</li>
             <li><strong>总分：</strong>该学生本次考试的总分（必填）</li>
-            <li><strong>各科成绩：</strong>语文、数学、英语、物理、化学、生物、历史、地理、政治（0-100，留空表示未考试）</li>
+            <li><strong>各科成绩：</strong>语文、数学、英语、物理、化学、生物、政治、历史、地理（0-100，留空表示未考试）</li>
             <li><strong>考试类型：</strong>期中、期末、月考、单元测试</li>
             <li><strong>考试日期：</strong>YYYY-MM-DD 格式，如 2026-04-15</li>
           </ul>
@@ -52,9 +52,9 @@
             <el-table-column prop="物理" label="物理" width="70" align="center" />
             <el-table-column prop="化学" label="化学" width="70" align="center" />
             <el-table-column prop="生物" label="生物" width="70" align="center" />
+            <el-table-column prop="政治" label="政治" width="70" align="center" />
             <el-table-column prop="历史" label="历史" width="70" align="center" />
             <el-table-column prop="地理" label="地理" width="70" align="center" />
-            <el-table-column prop="政治" label="政治" width="70" align="center" />
             <el-table-column prop="exam_type" label="考试类型" width="90" />
             <el-table-column prop="exam_date" label="考试日期" width="110" />
           </el-table>
@@ -314,8 +314,8 @@ const formRules: FormRules = {
 
 /** 模板预览数据 */
 const templatePreviewData = [
-  { student_id: '20260001', name: '张三', 总分: 756, 语文: 88, 数学: 95, 英语: 82, 物理: 90, 化学: 85, 生物: 78, 历史: 92, 地理: 80, 政治: 86, exam_type: '期中', exam_date: '2026-04-15' },
-  { student_id: '20260002', name: '李四', 总分: 698, 语文: 76, 数学: 88, 英语: 90, 物理: 72, 化学: 80, 生物: 85, 历史: 78, 地理: 88, 政治: 92, exam_type: '期中', exam_date: '2026-04-15' },
+  { student_id: '20260001', name: '张三', 总分: 756, 语文: 88, 数学: 95, 英语: 82, 物理: 90, 化学: 85, 生物: 78, 政治: 86, 历史: 92, 地理: 80, exam_type: '期中', exam_date: '2026-04-15' },
+  { student_id: '20260002', name: '李四', 总分: 698, 语文: 76, 数学: 88, 英语: 90, 物理: 72, 化学: 80, 生物: 85, 政治: 92, 历史: 78, 地理: 88, exam_type: '期中', exam_date: '2026-04-15' },
 ]
 
 /** 有效数据数量 */
