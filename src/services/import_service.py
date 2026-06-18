@@ -707,14 +707,16 @@ class ImportService:
             errors.append(f"科目'{subject}'不在允许范围内，有效科目: {', '.join(SUBJECTS)}")
 
         # 验证分数
+        from src.core.constants import MAIN_SUBJECTS, MAIN_SCORE_MAX, SCORE_MAX
         score = row.get('分数')
         if score is None or str(score).strip() == '':
             errors.append("分数不能为空")
         else:
             try:
                 score = float(score)
-                if score < 0 or score > 100:
-                    errors.append(f"分数应在0-100之间，当前值: {score}")
+                max_score = MAIN_SCORE_MAX if subject in MAIN_SUBJECTS else SCORE_MAX
+                if score < 0 or score > max_score:
+                    errors.append(f"科目'{subject}'分数应在0-{max_score}之间，当前值: {score}")
             except (ValueError, TypeError):
                 errors.append(f"分数格式错误，应为数字，当前值: {score}")
 
