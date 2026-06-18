@@ -42,6 +42,23 @@ export interface RankingResponse {
   rankings: RankingItem[]
 }
 
+/** 总分排名项 */
+export interface TotalRankingItem {
+  rank: number
+  student_id: string
+  student_name: string
+  total_score: number
+  subject_scores: Record<string, number>
+}
+
+/** 总分排名响应 */
+export interface TotalRankingResponse {
+  exam_type?: string
+  class_name?: string
+  total_count: number
+  rankings: TotalRankingItem[]
+}
+
 /** 学生科目统计 */
 export interface StudentSubjectStats {
   subject: string

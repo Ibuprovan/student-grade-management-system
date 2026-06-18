@@ -9,7 +9,7 @@ import { useStudentStore } from '@/stores/student'
 import { ElMessage } from 'element-plus'
 import type { Subject, ExamType } from '@/types/grade'
 import { SUBJECTS, EXAM_TYPES } from '@/types/grade'
-import type { StatisticsQuery, RankingItem } from '@/types/statistics'
+import type { StatisticsQuery, RankingItem, TotalRankingItem } from '@/types/statistics'
 import { formatScore, formatPercent } from '@/utils/format'
 import * as statisticsApi from '@/api/statistics'
 
@@ -47,6 +47,9 @@ export function useStatisticsOverview() {
 
   /** 排名数据 */
   const rankings = computed(() => statisticsStore.rankings)
+
+  /** 总分排名数据 */
+  const totalRankings = ref<TotalRankingItem[]>([])
 
   /** 加载状态 */
   const loading = computed(() => statisticsStore.loading)
@@ -256,16 +259,28 @@ export function useStatisticsOverview() {
 
     try {
       error.value = null
+      const examType = params.exam_type || '期中'
       await Promise.all([
         statisticsStore.fetchStatistics(params),
         statisticsStore.fetchRankings({
           subject: params.subject || '数学',
-          exam_type: params.exam_type || '期中',
+          exam_type: examType,
           class_name: params.class_name,
           scope: 'grade',
           limit: 10,
         }),
         loadChartData(),
+        // 获取总分排名
+        statisticsApi.getTotalRanking({
+          exam_type: examType,
+          class_name: params.class_name || undefined,
+          limit: 10,
+        }).then((res) => {
+          const data = (res as any).data || res
+          totalRankings.value = data.rankings || []
+        }).catch(() => {
+          totalRankings.value = []
+        }),
       ])
       queried.value = true
     } catch (err) {
@@ -307,6 +322,7 @@ export function useStatisticsOverview() {
     classOptions,
     statistics,
     rankings,
+    totalRankings,
     loading,
     queried,
     error,

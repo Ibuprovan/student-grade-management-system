@@ -62,6 +62,34 @@
           </div>
         </div>
 
+        <!-- 成绩汇总卡片 -->
+        <div class="info-card" v-if="grades.length > 0">
+          <div class="card-title">
+            <el-icon><TrendCharts /></el-icon>
+            <span>成绩汇总</span>
+          </div>
+          <div class="card-body">
+            <div class="summary-grid">
+              <div class="summary-item summary-item--primary">
+                <div class="summary-value">{{ totalScore }}</div>
+                <div class="summary-label">总分</div>
+              </div>
+              <div class="summary-item summary-item--success">
+                <div class="summary-value">{{ averageScore }}</div>
+                <div class="summary-label">平均分</div>
+              </div>
+              <div class="summary-item summary-item--info">
+                <div class="summary-value">{{ subjectCount }}</div>
+                <div class="summary-label">科目数</div>
+              </div>
+              <div class="summary-item summary-item--warning">
+                <div class="summary-value">{{ grades.filter(g => g.score >= 90).length }}</div>
+                <div class="summary-label">优秀科目</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- 成绩信息卡片 -->
         <div class="info-card">
           <div class="card-title">
@@ -136,7 +164,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useStudentStore } from '@/stores/student'
 import { getGradeList } from '@/api/grade'
@@ -156,6 +184,20 @@ const student = ref<Student | null>(null)
 
 /** 成绩列表 */
 const grades = ref<Grade[]>([])
+
+/** 总分 */
+const totalScore = computed(() => {
+  return grades.value.reduce((sum, g) => sum + g.score, 0)
+})
+
+/** 平均分 */
+const averageScore = computed(() => {
+  if (grades.value.length === 0) return 0
+  return Math.round((totalScore.value / grades.value.length) * 10) / 10
+})
+
+/** 科目数 */
+const subjectCount = computed(() => grades.value.length)
 
 /** 初始化 */
 onMounted(async () => {
@@ -284,6 +326,37 @@ function getScoreTagType(score: number): '' | 'success' | 'warning' | 'danger' |
     }
   }
 
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+
+    .summary-item {
+      text-align: center;
+      padding: 16px;
+      background: var(--bg-color);
+      border-radius: var(--border-radius-md);
+
+      .summary-value {
+        font-size: 28px;
+        font-weight: 700;
+        line-height: 1.2;
+      }
+
+      .summary-label {
+        font-size: 13px;
+        color: var(--text-color-secondary);
+        margin-top: 6px;
+        font-weight: 500;
+      }
+
+      &--primary .summary-value { color: #2A9D8F; }
+      &--success .summary-value { color: #52B788; }
+      &--info .summary-value { color: #409EFF; }
+      &--warning .summary-value { color: #E9A23B; }
+    }
+  }
+
   // 分数样式
   .score-excellent {
     color: var(--success-color);
@@ -382,6 +455,14 @@ function getScoreTagType(score: number): '' | 'success' | 'warning' | 'danger' |
 
     .info-grid {
       grid-template-columns: 1fr;
+    }
+
+    .summary-grid {
+      grid-template-columns: repeat(2, 1fr);
+
+      .summary-item .summary-value {
+        font-size: 22px;
+      }
     }
   }
 

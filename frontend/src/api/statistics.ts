@@ -7,6 +7,7 @@ import type {
   StatisticsQuery,
   StatisticsResponse,
   RankingResponse,
+  TotalRankingResponse,
   StudentStatisticsResponse,
   ClassStatistics,
   SubjectStatistics,
@@ -37,6 +38,19 @@ export function getRanking(params: {
   // 后端实际路径为 /ranking/subject（单科排名）
   const { scope, ...rest } = params
   return get<RankingResponse>(`${BASE_URL}/ranking/subject`, { params: rest })
+}
+
+/**
+ * 获取总分排名数据
+ * @param params 查询参数（exam_type必填、class_name、order、limit）
+ */
+export function getTotalRanking(params: {
+  exam_type: string
+  class_name?: string
+  order?: 'asc' | 'desc'
+  limit?: number
+}) {
+  return get<TotalRankingResponse>(`${BASE_URL}/ranking/total`, { params })
 }
 
 /**

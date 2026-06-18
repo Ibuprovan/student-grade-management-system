@@ -235,10 +235,76 @@
         </el-col>
       </el-row>
 
-      <!-- 排名表格 -->
+      <!-- 总分排名表格 -->
       <div class="page-card">
         <div class="card-header">
-          <h3 class="section-title">成绩排名（前10名）</h3>
+          <h3 class="section-title">总分排名（前10名）</h3>
+          <el-tag type="info" size="small" v-if="filterForm.exam_type">{{ filterForm.exam_type }}</el-tag>
+        </div>
+        <el-table
+          v-if="totalRankings.length > 0"
+          :data="totalRankings"
+          border
+          stripe
+          style="width: 100%"
+          :header-cell-style="{ background: 'var(--bg-color)', color: 'var(--text-color)' }"
+        >
+          <el-table-column type="index" label="排名" width="70" align="center">
+            <template #default="{ $index }">
+              <div class="rank-cell">
+                <span
+                  v-if="$index < 3"
+                  class="rank-badge"
+                  :class="`rank-${$index + 1}`"
+                >
+                  {{ $index + 1 }}
+                </span>
+                <span v-else>{{ $index + 1 }}</span>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column prop="student_id" label="学号" min-width="100" align="center" />
+          <el-table-column prop="student_name" label="姓名" min-width="100" align="center" />
+          <el-table-column prop="total_score" label="总分" min-width="100" align="center" sortable="custom">
+            <template #default="{ row }">
+              <span style="font-weight: 700; color: var(--primary-color); font-size: 16px;">
+                {{ formatScore(row.total_score) }}
+              </span>
+            </template>
+          </el-table-column>
+          <el-table-column label="各科成绩" min-width="300">
+            <template #default="{ row }">
+              <div class="subject-scores-row">
+                <el-tag
+                  v-for="(score, sub) in row.subject_scores"
+                  :key="sub"
+                  size="small"
+                  effect="plain"
+                  class="subject-score-tag"
+                >
+                  {{ sub }}: {{ score }}
+                </el-tag>
+              </div>
+            </template>
+          </el-table-column>
+        </el-table>
+        <EmptyState
+          v-else
+          size="small"
+          :icon="Trophy"
+          title="暂无总分排名数据"
+          description="选择考试类型后查询，即可查看总分排名"
+        />
+      </div>
+
+      <!-- 单科排名表格 -->
+      <div class="page-card">
+        <div class="card-header">
+          <h3 class="section-title">单科排名（前10名）</h3>
+          <div class="rank-filter">
+            <el-tag type="info" size="small" v-if="filterForm.subject">{{ filterForm.subject }}</el-tag>
+            <el-tag type="info" size="small" v-if="filterForm.exam_type">{{ filterForm.exam_type }}</el-tag>
+          </div>
         </div>
         <el-table
           v-if="top10Rankings.length > 0"
@@ -304,6 +370,7 @@ const {
   examTypeOptions,
   classOptions,
   rankings,
+  totalRankings,
   loading,
   queried,
   error,
@@ -461,6 +528,21 @@ const top10Rankings = computed(() => rankings.value.slice(0, 10))
       background: linear-gradient(135deg, #cd7f32, #daa520);
       color: #8b4513;
     }
+  }
+
+  .rank-filter {
+    display: flex;
+    gap: 6px;
+  }
+
+  .subject-scores-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .subject-score-tag {
+    font-size: 12px;
   }
 }
 

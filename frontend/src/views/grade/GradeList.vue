@@ -86,18 +86,21 @@
       </div>
     </div>
 
-    <!-- 数据表格 -->
-    <DataTable
-      :data="gradeStore.grades || []"
-      :loading="gradeStore.loading"
-      :current-page="gradeStore.pagination.page"
-      :page-size="gradeStore.pagination.pageSize"
-      :total="gradeStore.pagination.total"
-      :show-index="false"
-      :actions-width="150"
-      @update:current-page="handlePageChange"
-      @update:page-size="handleSizeChange"
-    >
+    <!-- 视图切换 -->
+    <el-tabs v-model="activeTab" class="view-tabs">
+      <el-tab-pane label="成绩明细" name="detail">
+        <!-- 数据表格 -->
+        <DataTable
+          :data="gradeStore.grades || []"
+          :loading="gradeStore.loading"
+          :current-page="gradeStore.pagination.page"
+          :page-size="gradeStore.pagination.pageSize"
+          :total="gradeStore.pagination.total"
+          :show-index="false"
+          :actions-width="150"
+          @update:current-page="handlePageChange"
+          @update:page-size="handleSizeChange"
+        >
       <el-table-column prop="student_id" label="学号" min-width="120" sortable="custom">
         <template #default="{ row }">
           <span class="student-id-link" @click="goToStudentDetail(row.student_id)">{{ row.student_id }}</span>
@@ -151,20 +154,138 @@
         </div>
       </template>
     </DataTable>
+      </el-tab-pane>
+
+      <el-tab-pane label="总分排名" name="ranking">
+        <div class="ranking-section">
+          <div class="ranking-filter">
+            <el-select
+              v-model="rankingExamType"
+              placeholder="选择考试类型"
+              clearable
+              style="width: 160px"
+              @change="fetchTotalRanking"
+            >
+              <el-option
+                v-for="et in examTypeOptions"
+                :key="et"
+                :label="et"
+                :value="et"
+              />
+            </el-select>
+            <el-select
+              v-model="rankingClassName"
+              placeholder="选择班级"
+              clearable
+              style="width: 160px"
+              @change="fetchTotalRanking"
+            >
+              <el-option
+                v-for="cls in classOptions"
+                :key="cls"
+                :label="cls"
+                :value="cls"
+              />
+            </el-select>
+            <el-button type="primary" @click="fetchTotalRanking" :loading="rankingLoading">
+              <el-icon><Search /></el-icon>
+              查询排名
+            </el-button>
+          </div>
+          <el-table
+            v-if="totalRankings.length > 0"
+            :data="totalRankings"
+            border
+            stripe
+            style="width: 100%"
+            :header-cell-style="{ background: 'var(--bg-color)', color: 'var(--text-color)' }"
+            v-loading="rankingLoading"
+          >
+            <el-table-column type="index" label="排名" width="70" align="center">
+              <template #default="{ row }">
+                <div class="rank-cell">
+                  <span v-if="row.rank <= 3" class="rank-badge" :class="`rank-${row.rank}`">
+                    {{ row.rank }}
+                  </span>
+                  <span v-else>{{ row.rank }}</span>
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column prop="student_id" label="学号" min-width="100" align="center" />
+            <el-table-column prop="student_name" label="姓名" min-width="100" align="center" />
+            <el-table-column prop="total_score" label="总分" min-width="100" align="center" sortable="custom">
+              <template #default="{ row }">
+                <span style="font-weight: 700; color: var(--primary-color); font-size: 16px;">
+                  {{ formatScore(row.total_score) }}
+                </span>
+              </template>
+            </el-table-column>
+            <el-table-column label="各科成绩" min-width="300">
+              <template #default="{ row }">
+                <div class="subject-scores-row">
+                  <el-tag
+                    v-for="(score, sub) in row.subject_scores"
+                    :key="sub"
+                    size="small"
+                    effect="plain"
+                    class="subject-score-tag"
+                  >
+                    {{ sub }}: {{ score }}
+                  </el-tag>
+                </div>
+              </template>
+            </el-table-column>
+          </el-table>
+          <el-empty v-else-if="!rankingLoading" description="请选择考试类型后查询总分排名" />
+        </div>
+      </el-tab-pane>
+    </el-tabs>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, watch } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useGradeStore } from '@/stores/grade'
 import { useGradeList } from '@/composables/useGrade'
+import { getTotalRanking } from '@/api/statistics'
 import DataTable from '@/components/common/DataTable.vue'
 import { formatScore, getScoreColor } from '@/utils/format'
+import type { TotalRankingItem } from '@/types/statistics'
+import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 
 const gradeStore = useGradeStore()
+
+// ===== 总分排名 =====
+const activeTab = ref('detail')
+const rankingExamType = ref('')
+const rankingClassName = ref('')
+const rankingLoading = ref(false)
+const totalRankings = ref<TotalRankingItem[]>([])
+
+async function fetchTotalRanking() {
+  if (!rankingExamType.value) {
+    ElMessage.warning('请先选择考试类型')
+    return
+  }
+  rankingLoading.value = true
+  try {
+    const res = await getTotalRanking({
+      exam_type: rankingExamType.value,
+      class_name: rankingClassName.value || undefined,
+      limit: 50,
+    })
+    const data = (res as any).data || res
+    totalRankings.value = data.rankings || []
+  } catch {
+    ElMessage.error('获取总分排名失败')
+    totalRankings.value = []
+  } finally {
+    rankingLoading.value = false
+  }
+}
 
 const {
   searchForm,
@@ -252,6 +373,65 @@ onMounted(() => {
     &:hover {
       text-decoration: underline;
     }
+  }
+
+  // ===== 总分排名 =====
+  .view-tabs {
+    :deep(.el-tabs__header) {
+      margin-bottom: 16px;
+    }
+  }
+
+  .ranking-section {
+    .ranking-filter {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+  }
+
+  .rank-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .rank-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+
+    &.rank-1 {
+      background: linear-gradient(135deg, #ffd700, #ffed4e);
+      color: #b8860b;
+    }
+
+    &.rank-2 {
+      background: linear-gradient(135deg, #c0c0c0, #e8e8e8);
+      color: #696969;
+    }
+
+    &.rank-3 {
+      background: linear-gradient(135deg, #cd7f32, #daa520);
+      color: #8b4513;
+    }
+  }
+
+  .subject-scores-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .subject-score-tag {
+    font-size: 12px;
   }
 }
 
