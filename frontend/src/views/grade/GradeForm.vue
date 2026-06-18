@@ -109,7 +109,7 @@
                 <el-input-number
                   v-model="form.scores[sub]"
                   :min="0"
-                  :max="100"
+                  :max="getSubjectMax(sub)"
                   :precision="1"
                   :step="0.5"
                   controls-position="right"
@@ -182,6 +182,14 @@ const route = useRoute()
 
 /** 科目选项 */
 const subjectOptions = SUBJECTS
+
+/** 主科列表（满分150） */
+const MAIN_SUBJECTS = ['语文', '数学', '英语']
+
+/** 获取科目满分 */
+function getSubjectMax(subject: string): number {
+  return MAIN_SUBJECTS.includes(subject) ? 150 : 100
+}
 
 /** 考试类型选项 */
 const examTypeOptions = EXAM_TYPES

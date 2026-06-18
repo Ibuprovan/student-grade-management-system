@@ -41,6 +41,9 @@ GENDERS: List[str] = [
 SCORE_MIN: float = 0.0
 SCORE_MAX: float = 100.0
 
+# 主科分数范围（语文/数学/英语，满分150）
+MAIN_SCORE_MAX: float = 150.0
+
 # 及格分数线（单科 0-100）
 PASS_SCORE: float = 60.0
 

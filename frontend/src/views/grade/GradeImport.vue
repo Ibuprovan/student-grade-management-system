@@ -267,6 +267,9 @@ import { ElForm, ElMessage } from 'element-plus'
 /** 科目列表 */
 const subjectColumns = SUBJECTS
 
+/** 主科列表（满分150） */
+const MAIN_SUBJECTS = ['语文', '数学', '英语']
+
 /** 考试类型选项 */
 const examTypeOptions = EXAM_TYPES
 
@@ -387,8 +390,9 @@ async function handleParseFile() {
         const val = row[sub]
         if (val && val !== '') {
           const score = parseFloat(val)
-          if (isNaN(score) || score < 0 || score > 100) {
-            errors.push(`${sub}分数无效`)
+          const maxScore = MAIN_SUBJECTS.includes(sub) ? 150 : 100
+          if (isNaN(score) || score < 0 || score > maxScore) {
+            errors.push(`${sub}分数无效（满分${maxScore}）`)
           } else {
             row[sub] = score
             hasScore = true

@@ -7,13 +7,15 @@
 from datetime import date, datetime
 from typing import Optional, List
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from src.core.constants import (
     SUBJECTS,
     EXAM_TYPES,
     SCORE_MIN,
     SCORE_MAX,
+    MAIN_SCORE_MAX,
+    MAIN_SUBJECTS,
 )
 
 
@@ -141,6 +143,23 @@ class GradeBase(BaseModel):
             ValueError: 分数小数位数超过1位
         """
         return _validate_score_precision(v)
+
+    @model_validator(mode='after')
+    def validate_score_range(self) -> 'GradeBase':
+        """
+        验证分数范围（根据科目判断满分）
+
+        语数英满分150，其他科目满分100
+        """
+        if self.subject in MAIN_SUBJECTS:
+            max_score = MAIN_SCORE_MAX
+        else:
+            max_score = SCORE_MAX
+
+        if self.score < SCORE_MIN or self.score > max_score:
+            raise ValueError(f"科目'{self.subject}'分数必须在{SCORE_MIN}-{max_score}之间")
+
+        return self
 
 
 class GradeCreate(GradeBase):
