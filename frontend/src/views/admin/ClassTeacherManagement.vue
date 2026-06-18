@@ -2,7 +2,7 @@
   <div class="class-teacher-management page-container">
     <div class="page-header">
       <h1 class="page-title">班主任管理</h1>
-      <el-button type="primary" @click="openAddDialog" :loading="loadingClasses">
+      <el-button type="primary" :loading="loadingClasses" @click="handleOpenAdd">
         <el-icon><Plus /></el-icon>
         添加班主任
       </el-button>
@@ -39,19 +39,19 @@
       </el-table>
     </div>
 
-    <!-- 添加班主任对话框 -->
+    <!-- 添加班主任对话框 - 仅当已加载数据时才渲染 -->
     <el-dialog
+      v-if="showAddDialog"
       v-model="showAddDialog"
       title="添加班主任"
       width="520px"
-      @closed="resetForm"
+      destroy-on-close
     >
       <el-form
         ref="formRef"
         :model="form"
         :rules="rules"
         label-width="100px"
-        @submit.prevent
       >
         <el-form-item label="选择班级" prop="class_name">
           <el-select
@@ -77,26 +77,24 @@
         </el-form-item>
         <el-alert
           v-if="form.class_name && form.enrollment_year && form.class_number"
-          :title="'账号将为：' + form.enrollment_year + String(form.class_number).padStart(3, '0')"
+          :title="'账号：' + form.enrollment_year + String(form.class_number).padStart(3, '0')"
           description="初始密码为 123456，首次登录需修改密码"
           type="info"
           show-icon
           :closable="false"
-          style="margin-bottom: 16px"
         />
         <el-alert
-          v-if="availableClasses.length === 0 && !loadingClasses"
+          v-if="availableClasses.length === 0"
           title="暂无可分配的班级"
           description="所有有学生的班级均已分配班主任，或数据库中暂无学生数据"
           type="warning"
           show-icon
           :closable="false"
-          style="margin-bottom: 16px"
         />
       </el-form>
       <template #footer>
         <el-button @click="showAddDialog = false">取消</el-button>
-        <el-button type="primary" :loading="submitting" :disabled="!form.class_name" @click="handleAdd">确定</el-button>
+        <el-button type="primary" :loading="submitting" :disabled="!form.class_name || availableClasses.length === 0" @click="handleAdd">确定</el-button>
       </template>
     </el-dialog>
   </div>
@@ -152,42 +150,41 @@ async function fetchTeachers() {
   try {
     const res = await getClassTeacherList()
     if (res?.data) {
-      teachers.value = (res.data as any) as ClassTeacherInfo[]
+      teachers.value = res.data as unknown as ClassTeacherInfo[]
     }
   } catch (e) {
     console.error('获取班主任列表失败:', e)
+    ElMessage.error('获取班主任列表失败')
   } finally {
     loading.value = false
   }
 }
 
-async function fetchAvailableClasses() {
+/** 先加载可用班级数据，成功后再打开对话框 */
+async function handleOpenAdd() {
   loadingClasses.value = true
   try {
     const res = await getAvailableClasses()
-    if (res) {
-      const rawData = res.data
-      if (Array.isArray(rawData)) {
-        availableClasses.value = rawData as AvailableClass[]
-      } else if (rawData && typeof rawData === 'object') {
-        availableClasses.value = (rawData as any) as AvailableClass[]
-      }
+    const rawData = res?.data
+    if (rawData && Array.isArray(rawData)) {
+      availableClasses.value = rawData
+    } else if (rawData) {
+      availableClasses.value = [rawData as AvailableClass]
+    } else {
+      availableClasses.value = []
+    }
+    // 重置表单
+    form.value = { class_name: '', enrollment_year: 0, class_number: 0, teacher_name: '' }
+    // 数据加载成功后打开对话框
+    showAddDialog.value = availableClasses.value.length > 0
+    if (availableClasses.value.length === 0) {
+      ElMessage.warning('暂无可分配的班级')
     }
   } catch (e) {
-    ElMessage.error('获取可分配班级失败')
     console.error('获取可分配班级失败:', e)
+    ElMessage.error('获取可分配班级失败')
   } finally {
     loadingClasses.value = false
-  }
-}
-
-async function openAddDialog() {
-  loadingClasses.value = true
-  try {
-    await fetchAvailableClasses()
-    showAddDialog.value = true
-  } catch (e) {
-    ElMessage.error('无法加载班级数据')
   }
 }
 
@@ -202,8 +199,9 @@ async function handleAdd() {
     ElMessage.success(res?.message || '添加成功')
     showAddDialog.value = false
     await fetchTeachers()
-  } catch (e: any) {
-    ElMessage.error(e?.response?.data?.detail || '添加失败')
+  } catch (e: unknown) {
+    const err = e as { response?: { data?: { detail?: string } } }
+    ElMessage.error(err?.response?.data?.detail || '添加失败')
   } finally {
     submitting.value = false
   }
@@ -214,13 +212,10 @@ async function handleDelete(row: ClassTeacherInfo) {
     await deleteClassTeacher(row.id)
     ElMessage.success('删除成功')
     await fetchTeachers()
-  } catch (e: any) {
-    ElMessage.error(e?.response?.data?.detail || '删除失败')
+  } catch (e: unknown) {
+    const err = e as { response?: { data?: { detail?: string } } }
+    ElMessage.error(err?.response?.data?.detail || '删除失败')
   }
-}
-
-function resetForm() {
-  form.value = { class_name: '', enrollment_year: 0, class_number: 0, teacher_name: '' }
 }
 
 onMounted(() => {
