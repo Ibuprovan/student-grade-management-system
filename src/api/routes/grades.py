@@ -49,27 +49,34 @@ def _build_grade_response(grade: Grade) -> GradeResponse:
     Returns:
         GradeResponse: 包含学生姓名和班级的成绩响应
     """
-    try:
-        grade_data = GradeResponse.model_validate(grade)
-    except Exception:
-        # 如果序列化失败（如 exam_date 格式异常），手动构建
-        exam_date = grade.exam_date
-        if isinstance(exam_date, str):
-            try:
-                exam_date = datetime.strptime(exam_date, '%Y-%m-%d').date()
-            except ValueError:
-                exam_date = date_type.today()
+    # 处理 exam_date 可能为 None 或字符串的情况
+    exam_date = grade.exam_date
+    if exam_date is None:
+        exam_date = date_type.today()
+    elif isinstance(exam_date, str):
+        try:
+            exam_date = datetime.strptime(exam_date, '%Y-%m-%d').date()
+        except ValueError:
+            exam_date = date_type.today()
 
-        grade_data = GradeResponse(
-            grade_id=grade.grade_id,
-            student_id=grade.student_id,
-            subject=grade.subject,
-            score=float(grade.score),
-            exam_type=grade.exam_type,
-            exam_date=exam_date,
-            created_at=grade.created_at or datetime.now(),
-            updated_at=grade.updated_at,
-        )
+    # 处理 score 可能为 Decimal 的情况
+    score = float(grade.score) if grade.score is not None else 0.0
+
+    # 处理 created_at 可能为 None 的情况
+    created_at = grade.created_at
+    if created_at is None:
+        created_at = datetime.now()
+
+    grade_data = GradeResponse(
+        grade_id=grade.grade_id,
+        student_id=str(grade.student_id),
+        subject=str(grade.subject),
+        score=score,
+        exam_type=str(grade.exam_type),
+        exam_date=exam_date,
+        created_at=created_at,
+        updated_at=grade.updated_at,
+    )
 
     if hasattr(grade, 'student') and grade.student:
         grade_data.student_name = grade.student.name
@@ -232,26 +239,39 @@ def search_grades(
     - **page**: 页码（默认 1）
     - **page_size**: 每页数量（默认 20，最大 100）
     """
-    # 限制每页最大数量
-    page_size = min(page_size, settings.MAX_PAGE_SIZE)
+    try:
+        # 限制每页最大数量
+        page_size = min(page_size, settings.MAX_PAGE_SIZE)
 
-    grades, total = service.search_grades(
-        class_name=class_name,
-        subject=subject,
-        exam_type=exam_type,
-        page=page,
-        page_size=page_size,
-    )
+        grades, total = service.search_grades(
+            class_name=class_name,
+            subject=subject,
+            exam_type=exam_type,
+            page=page,
+            page_size=page_size,
+        )
 
-    # 构建包含学生信息的响应
-    grade_responses = _build_grade_responses(grades)
+        # 构建包含学生信息的响应
+        grade_responses = []
+        for g in grades:
+            try:
+                grade_responses.append(_build_grade_response(g))
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).warning(f"跳过无法序列化的成绩记录 grade_id={g.grade_id}: {e}")
+                continue
 
-    return build_paginated_response(
-        items=grade_responses,
-        total=total,
-        page=page,
-        page_size=page_size,
-    )
+        return build_paginated_response(
+            items=grade_responses,
+            total=total,
+            page=page,
+            page_size=page_size,
+        )
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"查询成绩列表失败: {e}", exc_info=True)
+        from fastapi import HTTPException
+        raise HTTPException(status_code=500, detail=f"查询成绩列表失败: {str(e)}")
 
 
 @router.get(
