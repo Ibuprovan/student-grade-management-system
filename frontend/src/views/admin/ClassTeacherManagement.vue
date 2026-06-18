@@ -57,6 +57,7 @@
             v-model="form.class_name"
             placeholder="请选择班级"
             style="width: 100%"
+            filterable
             @change="onClassChange"
             :loading="loadingClasses"
           >
@@ -176,8 +177,8 @@ async function fetchAvailableClasses() {
 }
 
 async function openAddDialog() {
-  showAddDialog.value = true
   await fetchAvailableClasses()
+  showAddDialog.value = true
 }
 
 async function handleAdd() {
