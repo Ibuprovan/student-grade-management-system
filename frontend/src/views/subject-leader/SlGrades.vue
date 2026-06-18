@@ -48,6 +48,7 @@
 import { ref, onMounted } from 'vue'
 import { Search } from '@element-plus/icons-vue'
 import { getSlGrades } from '@/api/subjectLeader'
+import { get } from '@/utils/request'
 import { EXAM_TYPES } from '@/types/grade'
 
 interface GradeItem {
@@ -78,6 +79,15 @@ function getExamTypeTag(t: string): 'primary' | 'success' | 'warning' | 'info' {
   return map[t] || 'info'
 }
 
+async function loadClasses() {
+  try {
+    const res = await get<{ success: boolean; data: string[] }>('/students/classes')
+    if (res?.data && Array.isArray(res.data)) {
+      classOptions.value = (res.data as string[]).sort()
+    }
+  } catch (e) { console.error('获取班级列表失败:', e) }
+}
+
 async function fetchGrades() {
   loading.value = true
   try {
@@ -93,14 +103,14 @@ async function fetchGrades() {
       grades.value = d.items || []
       total.value = d.total || 0
       if (grades.value.length > 0) currentSubject.value = grades.value[0].subject || ''
-      // 提取班级选项
-      const classes = new Set(grades.value.map((g) => g.class_name))
-      classOptions.value = [...classes].sort()
     }
   } catch (e) { console.error('获取成绩列表失败:', e) } finally { loading.value = false }
 }
 
-onMounted(() => { fetchGrades() })
+onMounted(() => {
+  loadClasses()
+  fetchGrades()
+})
 </script>
 
 <style lang="scss" scoped>

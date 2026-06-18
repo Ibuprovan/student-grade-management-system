@@ -67,8 +67,15 @@
       </el-col>
       <el-col :xs="24" :md="12">
         <div class="page-card chart-card-wrapper">
-          <h4 class="chart-title">各班级平均分/最高分/最低分对比</h4>
-          <BarChart v-if="classAvgData.xData.length > 0" title="" :xData="classAvgData.xData" :yData="classAvgData.yData" xLabel="班级" yLabel="分数" color="#409EFF" :showValue="true" :height="340" />
+          <div class="chart-title-row">
+            <h4 class="chart-title">各班级分数对比</h4>
+            <el-checkbox-group v-model="scoreMetrics" size="small">
+              <el-checkbox label="average">平均分</el-checkbox>
+              <el-checkbox label="max_score">最高分</el-checkbox>
+              <el-checkbox label="min_score">最低分</el-checkbox>
+            </el-checkbox-group>
+          </div>
+          <LineChart v-if="classScoreData.xData.length > 0 && classScoreData.series.length > 0" title="" :xData="classScoreData.xData" :series="classScoreData.series" xLabel="班级" yLabel="分数" :smooth="true" :showLegend="true" :height="340" />
           <div v-else class="chart-empty">暂无数据</div>
         </div>
       </el-col>
@@ -112,6 +119,7 @@ const filterExamType = ref('')
 const classOptions = ref<string[]>([])
 const data = ref<Record<string, unknown>>({})
 const top10 = ref<Array<{ rank: number; student_name: string; class_name: string; score: number }>>([])
+const scoreMetrics = ref(['average'])
 
 function formatNum(v: unknown) { return v == null ? '-' : Number(v).toFixed(1) }
 function formatPercent(v: unknown) { return v == null ? '-' : Number(v).toFixed(1) + '%' }
@@ -127,10 +135,23 @@ const distData = computed(() => {
   return { xData: Object.keys(dist), yData: Object.values(dist) }
 })
 
-const classAvgData = computed(() => {
-  const cc = data.value.class_comparison as Array<{ class_name: string; average: number }> | undefined
-  if (!cc || cc.length === 0) return { xData: [] as string[], yData: [] as number[] }
-  return { xData: cc.map((c) => c.class_name), yData: cc.map((c) => c.average) }
+const classScoreData = computed(() => {
+  const cc = data.value.class_comparison as Array<{ class_name: string; average: number; max_score: number; min_score: number }> | undefined
+  if (!cc || cc.length === 0) return { xData: [] as string[], series: [] as Array<{ name: string; data: number[]; color: string }> }
+  const metricMap: Record<string, { name: string; key: string; color: string }> = {
+    average: { name: '平均分', key: 'average', color: '#409EFF' },
+    max_score: { name: '最高分', key: 'max_score', color: '#67C23A' },
+    min_score: { name: '最低分', key: 'min_score', color: '#E6A23C' },
+  }
+  const series = scoreMetrics.value
+    .map((m) => metricMap[m])
+    .filter(Boolean)
+    .map((m) => ({
+      name: m.name,
+      data: cc.map((c) => (c as Record<string, unknown>)[m.key] as number),
+      color: m.color,
+    }))
+  return { xData: cc.map((c) => c.class_name), series }
 })
 
 const rateData = computed(() => {
@@ -191,6 +212,10 @@ onMounted(() => { fetchData() })
   .chart-row { margin-bottom: 16px; }
   .chart-card-wrapper { overflow: hidden; display: flex; flex-direction: column; flex: 1; }
   .chart-title { font-size: 16px; font-weight: 600; color: var(--text-color); margin: 0 0 16px; }
+  .chart-title-row {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;
+    .chart-title { margin: 0; }
+  }
   .chart-empty { height: 340px; display: flex; align-items: center; justify-content: center; color: var(--text-color-secondary); }
   :deep(.chart-row) { .el-col { display: flex; flex-direction: column; > .page-card { flex: 1; display: flex; flex-direction: column; } } }
 }
