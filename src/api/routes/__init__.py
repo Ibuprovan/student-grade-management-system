@@ -14,6 +14,8 @@ from src.api.routes.audit_logs import router as audit_logs_router
 from src.api.routes.imports import router as imports_router
 from src.api.routes.class_teachers import router as class_teachers_router
 from src.api.routes.class_teacher_scoped import router as class_teacher_scoped_router
+from src.api.routes.subject_leaders import router as subject_leaders_router
+from src.api.routes.subject_leader_scoped import router as subject_leader_scoped_router
 
 __all__ = [
     "students_router",
@@ -26,4 +28,6 @@ __all__ = [
     "imports_router",
     "class_teachers_router",
     "class_teacher_scoped_router",
+    "subject_leaders_router",
+    "subject_leader_scoped_router",
 ]

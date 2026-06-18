@@ -7,7 +7,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 
 /** 用户角色类型 */
-type UserRole = 'admin' | 'teacher' | 'class_teacher' | 'student'
+type UserRole = 'admin' | 'teacher' | 'class_teacher' | 'subject_leader' | 'student'
 
 /** 路由元信息接口扩展 */
 declare module 'vue-router' {
@@ -164,6 +164,12 @@ const protectedRoutes: RouteRecordRaw[] = [
     component: () => import('@/views/admin/ClassTeacherManagement.vue'),
     meta: { title: '班主任管理', icon: 'UserFilled', requiresAuth: true, roles: ['admin'] },
   },
+  {
+    path: '/admin/subject-leaders',
+    name: 'SubjectLeaderManagement',
+    component: () => import('@/views/admin/SubjectLeaderManagement.vue'),
+    meta: { title: '学科组长管理', icon: 'UserFilled', requiresAuth: true, roles: ['admin'] },
+  },
   // 班主任专用路由
   {
     path: '/ct/dashboard',
@@ -202,6 +208,25 @@ const protectedRoutes: RouteRecordRaw[] = [
         meta: { title: '科目统计', icon: 'Collection', requiresAuth: true, roles: ['class_teacher'] },
       },
     ],
+  },
+  // 学科组长专用路由
+  {
+    path: '/sl/dashboard',
+    name: 'SlDashboard',
+    component: () => import('@/views/subject-leader/SlDashboard.vue'),
+    meta: { title: '学科仪表盘', icon: 'Odometer', requiresAuth: true, roles: ['subject_leader'] },
+  },
+  {
+    path: '/sl/grades',
+    name: 'SlGrades',
+    component: () => import('@/views/subject-leader/SlGrades.vue'),
+    meta: { title: '成绩管理', icon: 'Document', requiresAuth: true, roles: ['subject_leader'] },
+  },
+  {
+    path: '/sl/statistics',
+    name: 'SlStatistics',
+    component: () => import('@/views/subject-leader/SlStatistics.vue'),
+    meta: { title: '统计概览', icon: 'DataAnalysis', requiresAuth: true, roles: ['subject_leader'] },
   },
   // 404 页面 - 放在最后
   {
@@ -249,6 +274,8 @@ router.beforeEach(async (to, _from, next) => {
         next('/my-grades')
       } else if (authStore.userRole === 'class_teacher') {
         next('/ct/dashboard')
+      } else if (authStore.userRole === 'subject_leader') {
+        next('/sl/dashboard')
       } else {
         next('/dashboard')
       }
@@ -304,6 +331,12 @@ router.beforeEach(async (to, _from, next) => {
   // 班主任访问根路径或管理员仪表盘时，重定向到班级仪表盘
   if (authStore.userRole === 'class_teacher' && (to.path === '/' || to.path === '/dashboard')) {
     next('/ct/dashboard')
+    return
+  }
+
+  // 学科组长访问根路径或管理员仪表盘时，重定向到学科仪表盘
+  if (authStore.userRole === 'subject_leader' && (to.path === '/' || to.path === '/dashboard')) {
+    next('/sl/dashboard')
     return
   }
 

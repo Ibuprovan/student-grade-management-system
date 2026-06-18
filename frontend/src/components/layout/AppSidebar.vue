@@ -130,6 +130,30 @@
           <el-icon><UserFilled /></el-icon>
           <template #title>班主任管理</template>
         </el-menu-item>
+
+        <!-- 管理员 - 学科组长管理 -->
+        <el-menu-item v-if="authStore.isAdmin" index="/admin/subject-leaders">
+          <el-icon><UserFilled /></el-icon>
+          <template #title>学科组长管理</template>
+        </el-menu-item>
+
+        <!-- 学科组长 - 仪表盘 -->
+        <el-menu-item v-if="authStore.isSubjectLeader" index="/sl/dashboard">
+          <el-icon><Odometer /></el-icon>
+          <template #title>学科仪表盘</template>
+        </el-menu-item>
+
+        <!-- 学科组长 - 成绩管理 -->
+        <el-menu-item v-if="authStore.isSubjectLeader" index="/sl/grades">
+          <el-icon><Document /></el-icon>
+          <template #title>成绩管理</template>
+        </el-menu-item>
+
+        <!-- 学科组长 - 统计概览 -->
+        <el-menu-item v-if="authStore.isSubjectLeader" index="/sl/statistics">
+          <el-icon><DataAnalysis /></el-icon>
+          <template #title>统计概览</template>
+        </el-menu-item>
       </el-menu>
     </el-scrollbar>
 

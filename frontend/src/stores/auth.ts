@@ -54,6 +54,9 @@ export const useAuthStore = defineStore('auth', () => {
   /** 是否是班主任 */
   const isClassTeacher = computed(() => user.value?.role === 'class_teacher')
 
+  /** 是否是学科组长 */
+  const isSubjectLeader = computed(() => user.value?.role === 'subject_leader')
+
   /** 是否是学生 */
   const isStudent = computed(() => user.value?.role === 'student')
 
@@ -328,6 +331,7 @@ export const useAuthStore = defineStore('auth', () => {
     isAdmin,
     isTeacher,
     isClassTeacher,
+    isSubjectLeader,
     isStudent,
 
     // 操作

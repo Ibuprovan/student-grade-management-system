@@ -27,7 +27,7 @@ export interface RefreshRequest {
 export interface UserInfo {
   id: number
   username: string
-  role: 'admin' | 'teacher' | 'class_teacher' | 'student'
+  role: 'admin' | 'teacher' | 'class_teacher' | 'subject_leader' | 'student'
   is_active: boolean
   need_change_password: boolean
 }

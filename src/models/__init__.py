@@ -10,5 +10,6 @@ from src.models.exam_total import StudentExamTotal
 from src.models.user import User
 from src.models.audit_log import AuditLog
 from src.models.class_teacher import ClassTeacher
+from src.models.subject_leader import SubjectLeader
 
-__all__ = ["Student", "Grade", "StudentExamTotal", "User", "AuditLog", "ClassTeacher"]
+__all__ = ["Student", "Grade", "StudentExamTotal", "User", "AuditLog", "ClassTeacher", "SubjectLeader"]

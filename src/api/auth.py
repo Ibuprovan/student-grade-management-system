@@ -172,3 +172,18 @@ async def require_class_teacher_or_admin(
             detail="权限不足：需要班主任或管理员权限",
         )
     return current_user
+
+
+async def require_subject_leader_or_admin(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    if current_user.role not in ("admin", "subject_leader"):
+        logger.warning(
+            f"权限不足: user_id={current_user.id}, "
+            f"role={current_user.role}, required=admin|subject_leader"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="权限不足：需要学科组长或管理员权限",
+        )
+    return current_user

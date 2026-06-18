@@ -21,6 +21,19 @@ SUBJECTS: List[str] = [
     "地理",
 ]
 
+# 科目英文名映射
+SUBJECT_EN_MAP: dict[str, str] = {
+    "语文": "Chinese",
+    "数学": "Math",
+    "英语": "English",
+    "物理": "Physics",
+    "化学": "Chemistry",
+    "生物": "Biology",
+    "政治": "Politics",
+    "历史": "History",
+    "地理": "Geography",
+}
+
 # 考试类型
 EXAM_TYPES: List[str] = [
     "期中",
