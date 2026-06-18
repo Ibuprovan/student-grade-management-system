@@ -47,6 +47,18 @@ PASS_SCORE: float = 60.0
 # 优秀分数线（单科 0-100）
 EXCELLENT_SCORE: float = 90.0
 
+# 主科满分（语文/数学/英语）
+MAIN_SUBJECT_MAX: float = 150.0
+
+# 主科及格线（150 * 60%）
+MAIN_SUBJECT_PASS: float = MAIN_SUBJECT_MAX * 0.6  # 90
+
+# 主科优秀线（150 * 90%）
+MAIN_SUBJECT_EXCELLENT: float = MAIN_SUBJECT_MAX * 0.9  # 135
+
+# 主科列表
+MAIN_SUBJECTS: List[str] = ["语文", "数学", "英语"]
+
 # 总分满分（语文150 + 数学150 + 英语150 + 3门选修各100）
 TOTAL_SCORE_MAX: float = 750.0
 

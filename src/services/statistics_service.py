@@ -15,7 +15,7 @@ from typing import Optional, List, Dict, Any, Tuple
 from sqlalchemy import func, and_, select, case
 from sqlalchemy.orm import Session
 
-from src.core.constants import PASS_SCORE, EXCELLENT_SCORE, TOTAL_PASS_SCORE, TOTAL_EXCELLENT_SCORE
+from src.core.constants import PASS_SCORE, EXCELLENT_SCORE, TOTAL_PASS_SCORE, TOTAL_EXCELLENT_SCORE, MAIN_SUBJECTS, MAIN_SUBJECT_PASS, MAIN_SUBJECT_EXCELLENT
 from src.models.grade import Grade
 from src.models.student import Student
 from src.models.exam_total import StudentExamTotal
@@ -838,9 +838,9 @@ class StatisticsService:
         """
         批量获取所有科目的统计数据
 
-        及格率/优秀率按学生单科成绩计算（满分100）：
-        - 及格：单科成绩 >= 60
-        - 优秀：单科成绩 >= 90
+        及格率/优秀率按科目满分计算：
+        - 语文/数学/英语：满分150，及格>=90，优秀>=135
+        - 其他科目：满分100，及格>=60，优秀>=90
 
         Args:
             class_name: 班级名称（可选）
@@ -849,7 +849,7 @@ class StatisticsService:
         Returns:
             Dict[str, Any]: 包含所有科目统计数据的字典
         """
-        # 查询每个科目每个学生的成绩（避免重复计算同一学生）
+        # 查询每个科目每个学生的成绩
         student_stmt = (
             select(
                 Grade.subject,
@@ -872,9 +872,8 @@ class StatisticsService:
             subject = row[0]
             score = float(row[2])
             if subject not in subject_data:
-                subject_data[subject] = {"scores": [], "student_count": 0}
+                subject_data[subject] = {"scores": []}
             subject_data[subject]["scores"].append(score)
-            subject_data[subject]["student_count"] += 1
 
         subjects = []
         for subject, data in sorted(subject_data.items()):
@@ -884,25 +883,33 @@ class StatisticsService:
             max_score = max(scores) if scores else 0.0
             min_score = min(scores) if scores else 0.0
 
-            # 按单科成绩计算及格率/优秀率
-            passed_count = sum(1 for s in scores if s >= PASS_SCORE)
-            excellent_count = sum(1 for s in scores if s >= EXCELLENT_SCORE)
+            # 根据科目确定及格/优秀线
+            if subject in MAIN_SUBJECTS:
+                pass_threshold = MAIN_SUBJECT_PASS    # 90
+                excellent_threshold = MAIN_SUBJECT_EXCELLENT  # 135
+            else:
+                pass_threshold = PASS_SCORE           # 60
+                excellent_threshold = EXCELLENT_SCORE  # 90
+
+            passed_count = sum(1 for s in scores if s >= pass_threshold)
+            excellent_count = sum(1 for s in scores if s >= excellent_threshold)
             pass_rate = round((passed_count / total_count) * 100, 2) if total_count > 0 else 0.0
             excellent_rate = round((excellent_count / total_count) * 100, 2) if total_count > 0 else 0.0
 
-            # 分数分布
-            distribution = {"0-59": 0, "60-69": 0, "70-79": 0, "80-89": 0, "90-100": 0}
+            # 分数分布（按科目满分分5段）
+            if subject in MAIN_SUBJECTS:
+                dist_keys = ["0-89", "90-104", "105-119", "120-134", "135-150"]
+                thresholds = [90, 105, 120, 135, 151]
+            else:
+                dist_keys = ["0-59", "60-69", "70-79", "80-89", "90-100"]
+                thresholds = [60, 70, 80, 90, 101]
+
+            distribution = {k: 0 for k in dist_keys}
             for s in scores:
-                if s < 60:
-                    distribution["0-59"] += 1
-                elif s < 70:
-                    distribution["60-69"] += 1
-                elif s < 80:
-                    distribution["70-79"] += 1
-                elif s < 90:
-                    distribution["80-89"] += 1
-                else:
-                    distribution["90-100"] += 1
+                for i, t in enumerate(thresholds):
+                    if s < t:
+                        distribution[dist_keys[i]] += 1
+                        break
 
             subjects.append({
                 "subject": subject,
