@@ -26,10 +26,10 @@
       </el-table>
     </div>
 
-    <el-dialog v-if="dialogVisible" v-model="dialogVisible" title="添加教师" width="460px" :close-on-click-modal="false" destroy-on-close>
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="80px">
+    <el-dialog v-model="dialogVisible" title="添加教师" width="520px" :close-on-click-modal="false" destroy-on-close append-to-body>
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="90px">
         <el-form-item label="科目+班级" prop="combo_key">
-          <el-select v-model="form.combo_key" placeholder="选择科目+班级" filterable style="width: 100%" @change="onComboChange">
+          <el-select v-model="form.combo_key" placeholder="选择科目+班级" filterable style="width: 100%" :teleported="false" @change="onComboChange">
             <el-option v-for="c in combos" :key="c.key" :label="c.label" :value="c.key" />
           </el-select>
         </el-form-item>
@@ -114,7 +114,7 @@ async function fetchCombos() {
       availableCombos.value = res.data as unknown as AvailableCombination[]
       combos.value = availableCombos.value.map(c => ({
         key: `${c.subject}|${c.class_name}`,
-        label: `${c.subject}（${c.class_name}）`,
+        label: `${c.subject} · ${c.class_name}`,
         subject: c.subject,
         class_name: c.class_name,
       }))
@@ -178,5 +178,10 @@ onMounted(() => {
   }
   .page-title { margin: 0; font-size: 22px; font-weight: 700; }
   .page-count { font-size: 14px; color: var(--text-color-secondary); flex: 1; }
+}
+
+:deep(.el-dialog) {
+  .el-select { width: 100%; }
+  .el-select-dropdown__item { white-space: nowrap; }
 }
 </style>
