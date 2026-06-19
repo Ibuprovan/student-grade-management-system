@@ -4,14 +4,12 @@
       <h1 class="page-title">教师仪表盘</h1>
     </div>
 
-    <el-row :gutter="16" class="overview-cards">
-      <el-col :xs="12" :sm="8" :md="4" v-for="(card, idx) in cards" :key="idx">
-        <div class="overview-card" :class="card.cls">
-          <div class="overview-value">{{ card.value }}</div>
-          <div class="overview-label">{{ card.label }}</div>
-        </div>
-      </el-col>
-    </el-row>
+    <div class="overview-cards">
+      <div v-for="(card, idx) in cards" :key="idx" class="overview-card" :class="card.cls">
+        <div class="overview-value">{{ card.value }}</div>
+        <div class="overview-label">{{ card.label }}</div>
+      </div>
+    </div>
 
     <div class="page-card" v-if="items.length > 0">
       <h4 class="section-title">任课详情</h4>
@@ -87,10 +85,10 @@ onMounted(() => { fetchData() })
   .page-header { margin-bottom: 20px; }
   .page-title { margin: 0; font-size: 22px; font-weight: 700; }
   .section-title { font-size: 16px; font-weight: 600; color: var(--text-color); margin: 0 0 16px; }
-  .overview-cards { margin-bottom: 16px; }
+  .overview-cards { margin-bottom: 16px; display: flex; gap: 16px; }
   .overview-card {
-    padding: 20px 24px; background: var(--surface-color); border-radius: var(--border-radius-lg);
-    border: 1px solid var(--border-color-light); box-shadow: var(--shadow-xs); margin-bottom: 16px;
+    flex: 1; padding: 20px 16px; background: var(--surface-color); border-radius: var(--border-radius-lg);
+    border: 1px solid var(--border-color-light); box-shadow: var(--shadow-xs);
     text-align: center; transition: all var(--transition-duration);
     &:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); }
     .overview-value { font-size: 28px; font-weight: 700; line-height: 1.2; min-height: 34px; }

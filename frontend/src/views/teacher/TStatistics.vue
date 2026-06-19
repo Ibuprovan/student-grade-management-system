@@ -16,50 +16,36 @@
       <h3 class="section-title">{{ stat.subject }} — {{ stat.class_name }}</h3>
 
       <!-- 概览卡片 -->
-      <el-row :gutter="16" class="overview-cards">
-        <el-col :xs="12" :sm="8" :md="4">
-          <div class="overview-card overview-card--primary">
-            <div class="overview-value">{{ stat.student_count }}</div>
-            <div class="overview-label">学生总数</div>
-          </div>
-        </el-col>
-        <el-col :xs="12" :sm="8" :md="4">
-          <div class="overview-card overview-card--info">
-            <div class="overview-value">{{ stat.reference_count }}</div>
-            <div class="overview-label">参考人数</div>
-          </div>
-        </el-col>
-        <el-col :xs="12" :sm="8" :md="4">
-          <div class="overview-card overview-card--success">
-            <div class="overview-value">{{ formatNum(stat.average_score) }}</div>
-            <div class="overview-label">平均分</div>
-          </div>
-        </el-col>
-        <el-col :xs="12" :sm="8" :md="4">
-          <div class="overview-card overview-card--info">
-            <div class="overview-value">{{ formatNum(stat.max_score) }}</div>
-            <div class="overview-label">最高分</div>
-          </div>
-        </el-col>
-        <el-col :xs="12" :sm="8" :md="4">
-          <div class="overview-card overview-card--warning">
-            <div class="overview-value">{{ formatNum(stat.min_score) }}</div>
-            <div class="overview-label">最低分</div>
-          </div>
-        </el-col>
-        <el-col :xs="12" :sm="8" :md="4">
-          <div class="overview-card overview-card--primary">
-            <div class="overview-value">{{ formatPercent(stat.pass_rate) }}</div>
-            <div class="overview-label">及格率</div>
-          </div>
-        </el-col>
-        <el-col :xs="12" :sm="8" :md="4">
-          <div class="overview-card overview-card--accent">
-            <div class="overview-value">{{ formatPercent(stat.excellent_rate) }}</div>
-            <div class="overview-label">优秀率</div>
-          </div>
-        </el-col>
-      </el-row>
+      <div class="overview-cards">
+        <div class="overview-card overview-card--primary">
+          <div class="overview-value">{{ stat.student_count }}</div>
+          <div class="overview-label">学生总数</div>
+        </div>
+        <div class="overview-card overview-card--info">
+          <div class="overview-value">{{ stat.reference_count }}</div>
+          <div class="overview-label">参考人数</div>
+        </div>
+        <div class="overview-card overview-card--success">
+          <div class="overview-value">{{ formatNum(stat.average_score) }}</div>
+          <div class="overview-label">平均分</div>
+        </div>
+        <div class="overview-card overview-card--info">
+          <div class="overview-value">{{ formatNum(stat.max_score) }}</div>
+          <div class="overview-label">最高分</div>
+        </div>
+        <div class="overview-card overview-card--warning">
+          <div class="overview-value">{{ formatNum(stat.min_score) }}</div>
+          <div class="overview-label">最低分</div>
+        </div>
+        <div class="overview-card overview-card--primary">
+          <div class="overview-value">{{ formatPercent(stat.pass_rate) }}</div>
+          <div class="overview-label">及格率</div>
+        </div>
+        <div class="overview-card overview-card--accent">
+          <div class="overview-value">{{ formatPercent(stat.excellent_rate) }}</div>
+          <div class="overview-label">优秀率</div>
+        </div>
+      </div>
 
       <!-- 图表 -->
       <el-row :gutter="16" class="chart-row">
@@ -154,14 +140,14 @@ onMounted(() => { fetchData() })
     &:last-child { margin-bottom: 0; }
   }
   .section-title { font-size: 18px; font-weight: 600; color: var(--text-color); margin: 0 0 16px; }
-  .overview-cards { margin-bottom: 16px; }
+  .overview-cards { margin-bottom: 16px; display: flex; gap: 12px; flex-wrap: wrap; }
   .overview-card {
-    padding: 18px 20px; background: var(--surface-color); border-radius: var(--border-radius-lg);
-    border: 1px solid var(--border-color-light); box-shadow: var(--shadow-xs); margin-bottom: 16px;
+    flex: 1; min-width: 100px; padding: 16px 12px; background: var(--surface-color); border-radius: var(--border-radius-lg);
+    border: 1px solid var(--border-color-light); box-shadow: var(--shadow-xs);
     text-align: center; transition: all var(--transition-duration);
     &:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); }
-    .overview-value { font-size: 22px; font-weight: 700; line-height: 1.2; min-height: 28px; }
-    .overview-label { font-size: 13px; color: var(--text-color-secondary); margin-top: 4px; font-weight: 500; }
+    .overview-value { font-size: 20px; font-weight: 700; line-height: 1.2; min-height: 26px; }
+    .overview-label { font-size: 12px; color: var(--text-color-secondary); margin-top: 4px; font-weight: 500; }
     &--primary .overview-value { color: #409EFF; }
     &--info .overview-value { color: #909399; }
     &--success .overview-value { color: #67C23A; }
