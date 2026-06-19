@@ -125,8 +125,17 @@ async function handleLogin() {
     const success = await authStore.login(loginForm.username, loginForm.password)
 
     if (success) {
-      // 登录成功，跳转到目标页面或默认首页
-      const redirect = (route.query.redirect as string) || '/dashboard'
+      // 登录成功，跳转到目标页面或按角色跳转默认首页
+      const roleDefaultMap: Record<string, string> = {
+        student: '/my-grades',
+        class_teacher: '/ct/dashboard',
+        subject_leader: '/sl/dashboard',
+        teacher: '/t/dashboard',
+        admin: '/dashboard',
+      }
+      const redirect = (route.query.redirect as string)
+        || roleDefaultMap[authStore.userRole || '']
+        || '/dashboard'
       await router.push(redirect)
     }
   } catch {

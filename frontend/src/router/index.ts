@@ -333,6 +333,8 @@ router.beforeEach(async (to, _from, next) => {
         next('/ct/dashboard')
       } else if (authStore.userRole === 'subject_leader') {
         next('/sl/dashboard')
+      } else if (authStore.userRole === 'teacher') {
+        next('/t/dashboard')
       } else {
         next('/dashboard')
       }
