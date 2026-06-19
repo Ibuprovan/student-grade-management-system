@@ -63,10 +63,11 @@
         </div>
 
         <!-- 成绩汇总卡片 -->
-        <div class="info-card" v-if="grades.length > 0">
+        <div class="info-card" v-if="summaryGrades.length > 0">
           <div class="card-title">
             <el-icon><TrendCharts /></el-icon>
             <span>成绩汇总</span>
+            <el-tag type="info" size="small" v-if="filterExamType">{{ filterExamType }}</el-tag>
           </div>
           <div class="card-body">
             <div class="summary-grid">
@@ -83,7 +84,7 @@
                 <div class="summary-label">科目数</div>
               </div>
               <div class="summary-item summary-item--warning">
-                <div class="summary-value">{{ grades.filter(g => g.score >= 90).length }}</div>
+                <div class="summary-value">{{ summaryGrades.filter(g => g.score >= 90).length }}</div>
                 <div class="summary-label">优秀科目</div>
               </div>
             </div>
@@ -95,61 +96,47 @@
           <div class="card-title">
             <el-icon><Document /></el-icon>
             <span>成绩记录</span>
-            <el-tag type="info" size="small" class="grade-count">
-              共 {{ grades.length }} 条
-            </el-tag>
+            <div class="card-title-right">
+              <el-select v-model="filterExamType" placeholder="考试类型" clearable size="small" style="width: 120px" @change="handleExamTypeChange">
+                <el-option v-for="t in examTypes" :key="t" :label="t" :value="t" />
+              </el-select>
+              <el-tag type="info" size="small">共 {{ gradeTotal }} 条</el-tag>
+            </div>
           </div>
           <div class="card-body">
-            <!-- 桌面端表格 -->
-            <div class="grade-table desktop-only">
-              <el-table :data="grades" border stripe empty-text="暂无成绩数据">
-                <el-table-column prop="subject" label="科目" width="120" align="center" />
-                <el-table-column prop="exam_type" label="考试类型" width="120" align="center">
-                  <template #default="{ row }">
-                    <el-tag size="small">{{ row.exam_type }}</el-tag>
-                  </template>
-                </el-table-column>
-                <el-table-column prop="score" label="分数" width="120" align="center">
-                  <template #default="{ row }">
-                    <span :class="getScoreClass(row.score)">{{ row.score }}</span>
-                  </template>
-                </el-table-column>
-                <el-table-column prop="exam_date" label="考试日期" width="150" align="center">
-                  <template #default="{ row }">
-                    {{ formatDate(row.exam_date) }}
-                  </template>
-                </el-table-column>
-                <el-table-column label="等级" width="100" align="center">
-                  <template #default="{ row }">
-                    <el-tag :type="getScoreTagType(row.score)" size="small">
-                      {{ getScoreLevel(row.score) }}
-                    </el-tag>
-                  </template>
-                </el-table-column>
-              </el-table>
-            </div>
-
-            <!-- 移动端卡片 -->
-            <div class="grade-cards mobile-only">
-              <el-empty v-if="grades.length === 0" description="暂无成绩数据" />
-              <div v-for="grade in grades" :key="grade.grade_id" class="grade-card">
-                <div class="grade-header">
-                  <span class="subject">{{ grade.subject }}</span>
-                  <el-tag size="small">{{ grade.exam_type }}</el-tag>
-                </div>
-                <div class="grade-body">
-                  <div class="score" :class="getScoreClass(grade.score)">
-                    {{ grade.score }}
-                    <span class="unit">分</span>
-                  </div>
-                  <el-tag :type="getScoreTagType(grade.score)" size="small">
-                    {{ getScoreLevel(grade.score) }}
+            <el-table :data="grades" border stripe empty-text="暂无成绩数据" style="width: 100%">
+              <el-table-column prop="subject" label="科目" min-width="120" align="center" />
+              <el-table-column prop="exam_type" label="考试类型" min-width="100" align="center">
+                <template #default="{ row }">
+                  <el-tag size="small">{{ row.exam_type }}</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="score" label="分数" min-width="100" align="center">
+                <template #default="{ row }">
+                  <span :class="getScoreClass(row.score)">{{ row.score }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column prop="exam_date" label="考试日期" min-width="120" align="center">
+                <template #default="{ row }">
+                  {{ formatDate(row.exam_date) }}
+                </template>
+              </el-table-column>
+              <el-table-column label="等级" min-width="100" align="center">
+                <template #default="{ row }">
+                  <el-tag :type="getScoreTagType(row.score)" size="small">
+                    {{ getScoreLevel(row.score) }}
                   </el-tag>
-                </div>
-                <div class="grade-footer">
-                  考试日期：{{ formatDate(grade.exam_date) }}
-                </div>
-              </div>
+                </template>
+              </el-table-column>
+            </el-table>
+            <div class="pagination-wrapper" v-if="gradeTotal > pageSize">
+              <el-pagination
+                v-model:current-page="currentPage"
+                :page-size="pageSize"
+                :total="gradeTotal"
+                layout="total, prev, pager, next"
+                @current-change="fetchGrades"
+              />
             </div>
           </div>
         </div>
@@ -168,7 +155,8 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useStudentStore } from '@/stores/student'
 import { getGradeList } from '@/api/grade'
-import { formatDateTime, formatDate, getScoreLevel, getScoreColor } from '@/utils/format'
+import { formatDateTime, formatDate, getScoreLevel } from '@/utils/format'
+import { EXAM_TYPES } from '@/types/grade'
 import type { Student } from '@/types/student'
 import type { Grade } from '@/types/grade'
 
@@ -176,45 +164,63 @@ const route = useRoute()
 const router = useRouter()
 const studentStore = useStudentStore()
 
-/** 加载状态 */
+const examTypes = EXAM_TYPES
 const loading = ref(false)
-
-/** 学生信息 */
 const student = ref<Student | null>(null)
-
-/** 成绩列表 */
 const grades = ref<Grade[]>([])
+const summaryGrades = ref<Grade[]>([])
+const filterExamType = ref('')
+const currentPage = ref(1)
+const pageSize = 20
+const gradeTotal = ref(0)
 
-/** 总分 */
-const totalScore = computed(() => {
-  return grades.value.reduce((sum, g) => sum + g.score, 0)
-})
-
-/** 平均分 */
+const totalScore = computed(() => summaryGrades.value.reduce((sum, g) => sum + g.score, 0))
 const averageScore = computed(() => {
-  if (grades.value.length === 0) return 0
-  return Math.round((totalScore.value / grades.value.length) * 10) / 10
+  if (summaryGrades.value.length === 0) return 0
+  return Math.round((totalScore.value / summaryGrades.value.length) * 10) / 10
 })
+const subjectCount = computed(() => summaryGrades.value.length)
 
-/** 科目数 */
-const subjectCount = computed(() => grades.value.length)
+async function fetchGrades(page?: number) {
+  if (page) currentPage.value = page
+  const studentId = route.params.id as string
+  const params: Record<string, unknown> = {
+    student_id: studentId,
+    page: currentPage.value,
+    page_size: pageSize,
+  }
+  if (filterExamType.value) params.exam_type = filterExamType.value
+  const res = await getGradeList(params as any)
+  grades.value = res.data?.items || []
+  gradeTotal.value = res.data?.total || 0
+}
 
-/** 初始化 */
+async function fetchSummary() {
+  const studentId = route.params.id as string
+  const params: Record<string, unknown> = {
+    student_id: studentId,
+    page: 1,
+    page_size: 500,
+  }
+  if (filterExamType.value) params.exam_type = filterExamType.value
+  const res = await getGradeList(params as any)
+  summaryGrades.value = res.data?.items || []
+}
+
+function handleExamTypeChange() {
+  currentPage.value = 1
+  fetchGrades()
+  fetchSummary()
+}
+
 onMounted(async () => {
   const studentId = route.params.id as string
   loading.value = true
   try {
-    // 获取学生详情
     await studentStore.fetchStudentDetail(studentId)
     student.value = studentStore.currentStudent
-
-    // 获取该学生的成绩列表
-    const gradeResponse = await getGradeList({
-      student_id: studentId,
-      page: 1,
-      page_size: 100,
-    })
-    grades.value = gradeResponse.data?.items || []
+    await fetchGrades()
+    await fetchSummary()
   } catch (error) {
     console.error('获取学生详情失败:', error)
   } finally {
@@ -222,12 +228,10 @@ onMounted(async () => {
   }
 })
 
-/** 编辑 */
 function handleEdit() {
   router.push(`/student/edit/${route.params.id}`)
 }
 
-/** 获取分数样式类 */
 function getScoreClass(score: number): string {
   if (score >= 90) return 'score-excellent'
   if (score >= 80) return 'score-good'
@@ -236,7 +240,6 @@ function getScoreClass(score: number): string {
   return 'score-fail'
 }
 
-/** 获取分数标签类型 */
 function getScoreTagType(score: number): '' | 'success' | 'warning' | 'danger' | 'info' {
   if (score >= 90) return 'success'
   if (score >= 80) return ''
@@ -292,8 +295,11 @@ function getScoreTagType(score: number): '' | 'success' | 'warning' | 'danger' |
       font-weight: 600;
       color: var(--text-color);
 
-      .grade-count {
+      .card-title-right {
         margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 12px;
       }
     }
 
@@ -357,88 +363,17 @@ function getScoreTagType(score: number): '' | 'success' | 'warning' | 'danger' |
     }
   }
 
-  // 分数样式
-  .score-excellent {
-    color: var(--success-color);
-    font-weight: 600;
+  .pagination-wrapper {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 16px;
   }
 
-  .score-good {
-    color: var(--primary-color);
-    font-weight: 600;
-  }
-
-  .score-medium {
-    color: var(--warning-color);
-    font-weight: 600;
-  }
-
-  .score-pass {
-    color: var(--danger-color);
-    font-weight: 600;
-  }
-
-  .score-fail {
-    color: var(--info-color);
-    font-weight: 600;
-  }
-
-  // 移动端成绩卡片
-  .grade-cards {
-    display: grid;
-    gap: 12px;
-
-    .grade-card {
-      background: var(--bg-color);
-      border-radius: var(--border-radius-md);
-      padding: 16px;
-
-      .grade-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 12px;
-
-        .subject {
-          font-size: 15px;
-          font-weight: 600;
-          color: var(--text-color);
-        }
-      }
-
-      .grade-body {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 12px;
-
-        .score {
-          font-size: 28px;
-          font-weight: 700;
-
-          .unit {
-            font-size: 14px;
-            font-weight: 400;
-            color: var(--text-color-secondary);
-          }
-        }
-      }
-
-      .grade-footer {
-        font-size: 13px;
-        color: var(--text-color-secondary);
-      }
-    }
-  }
-}
-
-// 响应式显示控制
-.desktop-only {
-  display: block;
-}
-
-.mobile-only {
-  display: none;
+  .score-excellent { color: var(--success-color); font-weight: 600; }
+  .score-good { color: var(--primary-color); font-weight: 600; }
+  .score-medium { color: var(--warning-color); font-weight: 600; }
+  .score-pass { color: var(--danger-color); font-weight: 600; }
+  .score-fail { color: var(--info-color); font-weight: 600; }
 }
 
 @media (max-width: 768px) {
@@ -464,14 +399,6 @@ function getScoreTagType(score: number): '' | 'success' | 'warning' | 'danger' |
         font-size: 22px;
       }
     }
-  }
-
-  .desktop-only {
-    display: none;
-  }
-
-  .mobile-only {
-    display: block;
   }
 }
 </style>
