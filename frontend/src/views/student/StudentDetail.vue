@@ -63,7 +63,7 @@
         </div>
 
         <!-- 成绩汇总卡片 -->
-        <div class="info-card" v-if="summaryGrades.length > 0">
+        <div class="info-card" v-if="subjectCount > 0">
           <div class="card-title">
             <el-icon><TrendCharts /></el-icon>
             <span>成绩汇总</span>
@@ -84,7 +84,7 @@
                 <div class="summary-label">科目数</div>
               </div>
               <div class="summary-item summary-item--warning">
-                <div class="summary-value">{{ summaryGrades.filter(g => g.score >= 90).length }}</div>
+                <div class="summary-value">{{ excellentCount }}</div>
                 <div class="summary-label">优秀科目</div>
               </div>
             </div>
@@ -155,6 +155,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useStudentStore } from '@/stores/student'
 import { getGradeList } from '@/api/grade'
+import { getStudentStatistics } from '@/api/statistics'
 import { formatDateTime, formatDate, getScoreLevel } from '@/utils/format'
 import { EXAM_TYPES } from '@/types/grade'
 import type { Student } from '@/types/student'
@@ -168,18 +169,15 @@ const examTypes = EXAM_TYPES
 const loading = ref(false)
 const student = ref<Student | null>(null)
 const grades = ref<Grade[]>([])
-const summaryGrades = ref<Grade[]>([])
 const filterExamType = ref('')
 const currentPage = ref(1)
 const pageSize = 20
 const gradeTotal = ref(0)
 
-const totalScore = computed(() => summaryGrades.value.reduce((sum, g) => sum + g.score, 0))
-const averageScore = computed(() => {
-  if (summaryGrades.value.length === 0) return 0
-  return Math.round((totalScore.value / summaryGrades.value.length) * 10) / 10
-})
-const subjectCount = computed(() => summaryGrades.value.length)
+const totalScore = ref(0)
+const averageScore = ref(0)
+const subjectCount = ref(0)
+const excellentCount = ref(0)
 
 async function fetchGrades(page?: number) {
   if (page) currentPage.value = page
@@ -197,14 +195,14 @@ async function fetchGrades(page?: number) {
 
 async function fetchSummary() {
   const studentId = route.params.id as string
-  const params: Record<string, unknown> = {
-    student_id: studentId,
-    page: 1,
-    page_size: 500,
-  }
+  const params: Record<string, string> = {}
   if (filterExamType.value) params.exam_type = filterExamType.value
-  const res = await getGradeList(params as any)
-  summaryGrades.value = res.data?.items || []
+  const res = await getStudentStatistics(studentId, params)
+  const data = (res as any).data || res
+  totalScore.value = data.total_score || 0
+  averageScore.value = data.average_score || 0
+  subjectCount.value = data.subject_count || 0
+  excellentCount.value = data.excellent_count || 0
 }
 
 function handleExamTypeChange() {
@@ -240,9 +238,9 @@ function getScoreClass(score: number): string {
   return 'score-fail'
 }
 
-function getScoreTagType(score: number): '' | 'success' | 'warning' | 'danger' | 'info' {
+function getScoreTagType(score: number): 'primary' | 'success' | 'warning' | 'danger' | 'info' {
   if (score >= 90) return 'success'
-  if (score >= 80) return ''
+  if (score >= 80) return 'primary'
   if (score >= 70) return 'warning'
   if (score >= 60) return 'warning'
   return 'danger'
