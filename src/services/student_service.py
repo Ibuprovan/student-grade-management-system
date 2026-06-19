@@ -20,7 +20,9 @@ from src.core.exceptions import (
     ValidationException,
 )
 from src.models.student import Student
+from src.models.user import User
 from src.repositories.student_repo import StudentRepository
+from src.repositories.user_repo import UserRepository
 from src.schemas.student import StudentCreate, StudentUpdate
 
 
@@ -45,6 +47,8 @@ class StudentService:
             db: SQLAlchemy 数据库会话
         """
         self.repo = StudentRepository(db)
+        self.user_repo = UserRepository(db)
+        self.db = db
 
     def create_student(self, data: StudentCreate) -> Student:
         """
@@ -157,6 +161,7 @@ class StudentService:
         删除学生
 
         删除学生时会级联删除其所有成绩记录（通过 ORM 的 cascade 配置）
+        同时删除关联的用户账号
 
         Args:
             student_id: 学号
@@ -167,12 +172,15 @@ class StudentService:
         Raises:
             StudentNotFoundException: 学生不存在
         """
-        # 检查学生是否存在
         student = self.repo.get_by_student_id(student_id)
         if student is None:
             raise StudentNotFoundException(student_id)
 
-        # 执行删除
+        # 删除关联的用户账号（用户名 = 学号）
+        user = self.user_repo.get_by_username(student_id)
+        if user:
+            self.user_repo.delete(user.id)
+
         return self.repo.delete(student.student_id)
 
     def search_students(
