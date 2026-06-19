@@ -101,11 +101,15 @@ class StatisticsService:
         Args:
             class_name: 班级名称（可选）
             subject: 科目名称（可选）
-            exam_type: 考试类型（可选）
+            exam_type: 考试类型（可选，默认取最新考试类型）
 
         Returns:
             List[Tuple[float, str, str]]: (分数, 学号, 学生姓名) 列表
         """
+        # 未指定考试类型时默认取最新，避免跨考试类型混合统计
+        if not exam_type:
+            exam_type = self._get_latest_exam_type(class_name)
+
         stmt = (
             select(Grade.score, Grade.student_id, Student.name)
             .join(Student, Grade.student_id == Student.student_id)
@@ -370,12 +374,16 @@ class StatisticsService:
         Args:
             class_name: 班级名称（可选）
             subject: 科目名称（可选）
-            exam_type: 考试类型（可选）
+            exam_type: 考试类型（可选，默认取最新考试类型）
             top_n: 优秀学生数量（默认5）
 
         Returns:
             Dict[str, Any]: 综合统计报告
         """
+        # 未指定考试类型时默认取最新
+        if not exam_type:
+            exam_type = self._get_latest_exam_type(class_name)
+
         score_data = self._get_scores(class_name, subject, exam_type)
 
         if not score_data:
@@ -839,11 +847,14 @@ class StatisticsService:
 
         Args:
             class_name: 班级名称（可选）
-            exam_type: 考试类型（可选）
+            exam_type: 考试类型（可选，默认取最新考试类型）
 
         Returns:
             Dict[str, Any]: 包含所有科目统计数据的字典
         """
+        # 未指定考试类型时默认取最新
+        if not exam_type:
+            exam_type = self._get_latest_exam_type(class_name)
         # 查询每个科目每个学生的成绩
         student_stmt = (
             select(
@@ -1043,7 +1054,7 @@ class StatisticsService:
         Args:
             class_name: 班级名称（可选）
             subject: 科目名称（可选）
-            exam_type: 考试类型（可选）
+            exam_type: 考试类型（可选，默认取最新考试类型）
             metrics: 需要计算的指标列表（可选，默认全部）
 
         Returns:
@@ -1051,6 +1062,10 @@ class StatisticsService:
         """
         if metrics is None:
             metrics = ["avg", "max", "min", "pass_rate"]
+
+        # 未指定考试类型时默认取最新
+        if not exam_type:
+            exam_type = self._get_latest_exam_type(class_name)
 
         score_data = self._get_scores(class_name, subject, exam_type)
 
