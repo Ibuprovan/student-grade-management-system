@@ -61,7 +61,7 @@
       </el-form>
 
       <!-- 底部提示 -->
-      <div class="login-footer">
+      <div class="login-footer"></div>
     </div>
   </div>
 </template>
