@@ -59,7 +59,7 @@ const protectedRoutes: RouteRecordRaw[] = [
     path: '/dashboard',
     name: 'Dashboard',
     component: () => import('@/views/dashboard/Dashboard.vue'),
-    meta: { title: '仪表盘', icon: 'Odometer', requiresAuth: true, roles: ['admin', 'teacher'] },
+    meta: { title: '仪表盘', icon: 'Odometer', requiresAuth: true, roles: ['admin'] },
   },
   {
     path: '/student',
@@ -396,6 +396,12 @@ router.beforeEach(async (to, _from, next) => {
   // 学科组长访问根路径或管理员仪表盘时，重定向到学科仪表盘
   if (authStore.userRole === 'subject_leader' && (to.path === '/' || to.path === '/dashboard')) {
     next('/sl/dashboard')
+    return
+  }
+
+  // 教师访问根路径或管理员仪表盘时，重定向到教师仪表盘
+  if (authStore.userRole === 'teacher' && (to.path === '/' || to.path === '/dashboard')) {
+    next('/t/dashboard')
     return
   }
 
