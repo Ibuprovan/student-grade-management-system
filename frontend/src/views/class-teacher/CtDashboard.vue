@@ -2,6 +2,11 @@
   <div class="ct-dashboard page-container">
     <div class="page-header">
       <h1 class="page-title">班级仪表盘</h1>
+      <div class="header-filters">
+        <el-select v-model="examType" placeholder="考试类型" clearable style="width: 140px" @change="fetchDashboard">
+          <el-option v-for="t in examTypes" :key="t" :label="t" :value="t" />
+        </el-select>
+      </div>
     </div>
 
     <el-row :gutter="16" class="overview-cards">
@@ -42,7 +47,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { getCtDashboard } from '@/api/classTeacher'
+import { EXAM_TYPES } from '@/types/grade'
 
+const examTypes = EXAM_TYPES
+const examType = ref('')
 const stats = ref<Record<string, unknown>>({})
 
 function formatNum(v: unknown): string {
@@ -57,7 +65,9 @@ function formatPercent(v: unknown): string {
 
 async function fetchDashboard() {
   try {
-    const res = await getCtDashboard()
+    const params: Record<string, string> = {}
+    if (examType.value) params.exam_type = examType.value
+    const res = await getCtDashboard(params)
     if (res?.data) {
       stats.value = res.data as Record<string, unknown>
     }
@@ -76,8 +86,12 @@ onMounted(() => {
   animation: fadeIn 0.3s ease;
 
   .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 20px;
     .page-title { margin: 0; font-size: 22px; font-weight: 700; }
+    .header-filters { display: flex; gap: 12px; align-items: center; }
   }
 
   .overview-cards { margin-bottom: 16px; }

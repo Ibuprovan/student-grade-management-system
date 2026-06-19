@@ -1,8 +1,15 @@
 <template>
   <div class="sl-dashboard page-container">
     <div class="page-header">
-      <h1 class="page-title">学科仪表盘</h1>
-      <span class="page-subtitle" v-if="stats.subject">{{ stats.subject }}</span>
+      <div class="header-left">
+        <h1 class="page-title">学科仪表盘</h1>
+        <span class="page-subtitle" v-if="stats.subject">{{ stats.subject }}</span>
+      </div>
+      <div class="header-filters">
+        <el-select v-model="examType" placeholder="考试类型" clearable style="width: 140px" @change="fetchData">
+          <el-option v-for="t in examTypes" :key="t" :label="t" :value="t" />
+        </el-select>
+      </div>
     </div>
 
     <el-row :gutter="16" class="overview-cards">
@@ -43,7 +50,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { getSlDashboard } from '@/api/subjectLeader'
+import { EXAM_TYPES } from '@/types/grade'
 
+const examTypes = EXAM_TYPES
+const examType = ref('')
 const stats = ref<Record<string, unknown>>({})
 
 function formatNum(v: unknown) { return v == null ? '-' : Number(v).toFixed(1) }
@@ -51,7 +61,9 @@ function formatPercent(v: unknown) { return v == null ? '-' : Number(v).toFixed(
 
 async function fetchData() {
   try {
-    const res = await getSlDashboard()
+    const params: Record<string, string> = {}
+    if (examType.value) params.exam_type = examType.value
+    const res = await getSlDashboard(params)
     if (res?.data) stats.value = res.data as Record<string, unknown>
   } catch (e) { console.error('获取仪表盘数据失败:', e) }
 }
@@ -62,7 +74,14 @@ onMounted(() => { fetchData() })
 <style lang="scss" scoped>
 .sl-dashboard {
   animation: fadeIn 0.3s ease;
-  .page-header { margin-bottom: 20px; display: flex; align-items: baseline; gap: 12px; }
+  .page-header {
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    .header-left { display: flex; align-items: baseline; gap: 12px; }
+    .header-filters { display: flex; gap: 12px; align-items: center; }
+  }
   .page-title { margin: 0; font-size: 22px; font-weight: 700; }
   .page-subtitle { font-size: 16px; color: var(--text-color-secondary); font-weight: 500; }
   .overview-cards { margin-bottom: 16px; }

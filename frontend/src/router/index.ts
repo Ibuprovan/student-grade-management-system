@@ -89,7 +89,7 @@ const protectedRoutes: RouteRecordRaw[] = [
         path: 'detail/:id',
         name: 'StudentDetail',
         component: () => import('@/views/student/StudentDetail.vue'),
-        meta: { title: '学生详情', icon: 'User', hidden: true, requiresAuth: true, roles: ['admin', 'teacher'] },
+        meta: { title: '学生详情', icon: 'User', hidden: true, requiresAuth: true, roles: ['admin', 'teacher', 'class_teacher', 'subject_leader'] },
       },
       {
         path: 'import',

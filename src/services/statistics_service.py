@@ -49,6 +49,20 @@ class StatisticsService:
         self.student_repo = StudentRepository(db)
         self.db = db
 
+    def _get_latest_exam_type(self, class_name: Optional[str] = None) -> Optional[str]:
+        """获取最新的考试类型（按考试日期倒序取第一条）"""
+        stmt = (
+            select(Grade.exam_type)
+            .order_by(Grade.exam_date.desc())
+            .limit(1)
+        )
+        if class_name:
+            stmt = stmt.join(Student, Grade.student_id == Student.student_id).where(
+                Student.class_name == class_name
+            )
+        result = self.db.execute(stmt).scalar()
+        return result
+
     def _build_filters(
         self,
         class_name: Optional[str] = None,
@@ -428,12 +442,15 @@ class StatisticsService:
 
         Args:
             class_name: 班级名称（可选）
-            exam_type: 考试类型（可选）
+            exam_type: 考试类型（可选，默认取最新考试类型）
             top_n: 优秀学生数量（默认10）
 
         Returns:
             Dict[str, Any]: 总分统计报告
         """
+        # 未指定考试类型时默认取最新
+        if not exam_type:
+            exam_type = self._get_latest_exam_type(class_name)
         # 优先从总分表查询
         rows = self._query_total_from_exam_total(class_name, exam_type)
 
@@ -748,11 +765,16 @@ class StatisticsService:
         - 优秀：总分 >= 675（90%）
 
         Args:
-            exam_type: 考试类型（可选）
+            exam_type: 考试类型（可选，默认取最新考试类型）
 
         Returns:
             Dict[str, Any]: 包含所有班级统计数据的字典
         """
+        # 未指定考试类型时默认取最新
+        if not exam_type:
+            exam_type = self._get_latest_exam_type()
+            if not exam_type:
+                return {"classes": []}
         # 查询每个学生的总分（按班级分组）
         total_stmt = (
             select(
@@ -910,11 +932,14 @@ class StatisticsService:
 
         Args:
             student_id: 学号
-            exam_type: 考试类型（可选）
+            exam_type: 考试类型（可选，默认取最新考试类型）
 
         Returns:
             Dict[str, Any]: 学生统计数据
         """
+        # 未指定考试类型时默认取最新
+        if not exam_type:
+            exam_type = self._get_latest_exam_type()
         # 查询学生信息
         student = self.student_repo.get_by_student_id(student_id)
         if not student:

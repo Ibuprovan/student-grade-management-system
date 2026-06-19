@@ -45,6 +45,7 @@ def _get_subject_for_leader(
 @router.get("/dashboard")
 def get_subject_dashboard(
     subject: Optional[str] = Query(None),
+    exam_type: Optional[str] = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_subject_leader_or_admin),
 ) -> ApiResponse:
@@ -57,12 +58,17 @@ def get_subject_dashboard(
         select(func.count()).select_from(Student)
     ).scalar() or 0
 
+    grade_filters = [Grade.subject == subj]
+    if exam_type:
+        grade_filters.append(Grade.exam_type == exam_type)
+
     grade_count = db.execute(
-        select(func.count()).select_from(Grade).where(Grade.subject == subj)
+        select(func.count()).select_from(Grade)
+        .where(and_(*grade_filters))
     ).scalar() or 0
 
     avg_result = db.execute(
-        select(func.avg(Grade.score)).where(Grade.subject == subj)
+        select(func.avg(Grade.score)).where(and_(*grade_filters))
     ).scalar()
     average_score = round(float(avg_result), 2) if avg_result else 0.0
 
@@ -70,7 +76,7 @@ def get_subject_dashboard(
         func.count(Grade.grade_id),
         func.sum(case((Grade.score >= pass_th, 1), else_=0)),
         func.sum(case((Grade.score >= exc_th, 1), else_=0)),
-    ).where(Grade.subject == subj)).one()
+    ).where(and_(*grade_filters))).one()
     total = row[0] or 0
     passed = int(row[1]) if row[1] else 0
     excellent = int(row[2]) if row[2] else 0

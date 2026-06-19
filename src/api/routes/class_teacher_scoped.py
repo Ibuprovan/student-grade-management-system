@@ -71,6 +71,7 @@ def _get_class_name_for_teacher(
 @router.get("/dashboard", response_model=ApiResponse)
 def get_class_dashboard(
     class_name: Optional[str] = Query(None, description="班级名称（管理员必填）"),
+    exam_type: Optional[str] = Query(None, description="考试类型"),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_class_teacher_or_admin),
 ) -> ApiResponse:
@@ -88,6 +89,8 @@ def get_class_dashboard(
         .join(Student, Grade.student_id == Student.student_id)
         .where(Student.class_name == cn)
     )
+    if exam_type:
+        grade_count_stmt = grade_count_stmt.where(Grade.exam_type == exam_type)
     grade_count = db.execute(grade_count_stmt).scalar() or 0
 
     # 班级平均分（单科平均分的平均值）
@@ -96,6 +99,8 @@ def get_class_dashboard(
         .join(Student, Grade.student_id == Student.student_id)
         .where(Student.class_name == cn)
     )
+    if exam_type:
+        avg_stmt = avg_stmt.where(Grade.exam_type == exam_type)
     avg_result = db.execute(avg_stmt).scalar()
     average_score = round(float(avg_result), 2) if avg_result else 0.0
 
@@ -109,6 +114,8 @@ def get_class_dashboard(
         .join(Student, Grade.student_id == Student.student_id)
         .where(Student.class_name == cn)
     )
+    if exam_type:
+        rate_stmt = rate_stmt.where(Grade.exam_type == exam_type)
     row = db.execute(rate_stmt).one()
     total = row[0] or 0
     passed = int(row[1]) if row[1] else 0
@@ -356,12 +363,15 @@ def get_class_statistics_overview(
         select(func.count()).select_from(Student).where(Student.class_name == cn)
     ).scalar() or 0
 
-    grade_count = db.execute(
+    grade_count_stmt = (
         select(func.count())
         .select_from(Grade)
         .join(Student, Grade.student_id == Student.student_id)
         .where(Student.class_name == cn)
-    ).scalar() or 0
+    )
+    if exam_type:
+        grade_count_stmt = grade_count_stmt.where(Grade.exam_type == exam_type)
+    grade_count = db.execute(grade_count_stmt).scalar() or 0
 
     avg_stmt = (
         select(func.avg(Grade.score))

@@ -214,7 +214,7 @@ onMounted(async () => {
       page: 1,
       page_size: 100,
     })
-    grades.value = gradeResponse.items
+    grades.value = gradeResponse.data?.items || []
   } catch (error) {
     console.error('获取学生详情失败:', error)
   } finally {

@@ -510,6 +510,7 @@ class GradeService:
 
     def search_grades(
         self,
+        student_id: Optional[str] = None,
         class_name: Optional[str] = None,
         subject: Optional[str] = None,
         exam_type: Optional[str] = None,
@@ -519,9 +520,10 @@ class GradeService:
         """
         组合条件查询成绩
 
-        支持按班级、科目、考试类型进行组合筛选
+        支持按学号、班级、科目、考试类型进行组合筛选
 
         Args:
+            student_id: 学号筛选（可选）
             class_name: 班级筛选（可选）
             subject: 科目筛选（可选）
             exam_type: 考试类型筛选（可选）
@@ -535,6 +537,8 @@ class GradeService:
 
         # 构建过滤条件
         filters = []
+        if student_id:
+            filters.append(Grade.student_id == student_id)
         if class_name:
             filters.append(Student.class_name == class_name)
         if subject:

@@ -53,10 +53,8 @@ export function deleteClassTeacher(id: number) {
 }
 
 /** 班主任：获取班级仪表盘 */
-export function getCtDashboard(class_name?: string) {
-  return get<{ success: boolean; data: Record<string, unknown> }>('/class-teacher/dashboard', {
-    params: class_name ? { class_name } : undefined,
-  })
+export function getCtDashboard(params?: { class_name?: string; exam_type?: string }) {
+  return get<{ success: boolean; data: Record<string, unknown> }>('/class-teacher/dashboard', { params })
 }
 
 /** 班主任：获取班级学生列表 */

@@ -2,6 +2,11 @@
   <div class="t-dashboard page-container">
     <div class="page-header">
       <h1 class="page-title">教师仪表盘</h1>
+      <div class="header-filters">
+        <el-select v-model="examType" placeholder="考试类型" clearable style="width: 140px" @change="fetchData">
+          <el-option v-for="t in examTypes" :key="t" :label="t" :value="t" />
+        </el-select>
+      </div>
     </div>
 
     <div class="overview-cards">
@@ -37,6 +42,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { getTDashboard } from '@/api/teacher'
+import { EXAM_TYPES } from '@/types/grade'
 
 interface DashboardItem {
   subject: string
@@ -48,6 +54,8 @@ interface DashboardItem {
   excellent_rate: number
 }
 
+const examTypes = EXAM_TYPES
+const examType = ref('')
 const items = ref<DashboardItem[]>([])
 
 function formatNum(v: unknown) { return v == null ? '-' : Number(v).toFixed(1) }
@@ -71,7 +79,9 @@ const cards = computed(() => {
 
 async function fetchData() {
   try {
-    const res = await getTDashboard()
+    const params: Record<string, string> = {}
+    if (examType.value) params.exam_type = examType.value
+    const res = await getTDashboard(params)
     if (res?.data) items.value = res.data as unknown as DashboardItem[]
   } catch (e) { console.error('获取仪表盘失败:', e) }
 }
@@ -82,7 +92,13 @@ onMounted(() => { fetchData() })
 <style lang="scss" scoped>
 .t-dashboard {
   animation: fadeIn 0.3s ease;
-  .page-header { margin-bottom: 20px; }
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    .header-filters { display: flex; gap: 12px; align-items: center; }
+  }
   .page-title { margin: 0; font-size: 22px; font-weight: 700; }
   .section-title { font-size: 16px; font-weight: 600; color: var(--text-color); margin: 0 0 16px; }
   .overview-cards { margin-bottom: 16px; display: flex; gap: 16px; }

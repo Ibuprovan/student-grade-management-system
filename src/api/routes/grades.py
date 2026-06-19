@@ -222,6 +222,7 @@ def save_exam_total(
     },
 )
 def search_grades(
+    student_id: Optional[str] = Query(None, description="按学号筛选"),
     class_name: Optional[str] = Query(None, description="按班级筛选"),
     subject: Optional[str] = Query(None, description="按科目筛选"),
     exam_type: Optional[str] = Query(None, description="按考试类型筛选"),
@@ -233,6 +234,7 @@ def search_grades(
     """
     组合条件查询成绩（需要认证）
 
+    - **student_id**: 按学号筛选（可选）
     - **class_name**: 按班级筛选（可选）
     - **subject**: 按科目筛选（可选）
     - **exam_type**: 按考试类型筛选（可选）
@@ -244,6 +246,7 @@ def search_grades(
         page_size = min(page_size, settings.MAX_PAGE_SIZE)
 
         grades, total = service.search_grades(
+            student_id=student_id,
             class_name=class_name,
             subject=subject,
             exam_type=exam_type,

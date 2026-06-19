@@ -35,7 +35,7 @@ export function deleteSubjectLeader(id: number) {
   return del<{ success: boolean; message: string }>(`/subject-leaders/${id}`)
 }
 
-export function getSlDashboard(params?: { subject?: string }) {
+export function getSlDashboard(params?: { subject?: string; exam_type?: string }) {
   return get<{ success: boolean; data: Record<string, unknown> }>('/subject-leader/dashboard', { params })
 }
 
