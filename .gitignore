@@ -22,6 +22,12 @@ Thumbs.db
 # OpenCode
 .opencode/.gitignore
 
+# 测试覆盖率数据（含绝对路径，禁止跟踪）
+.coverage
+
+# 数据库文件（含用户数据，通过 init_users.py + seed_demo_data.py 生成）
+data/
+
 # Environment（安全修复：防止敏感配置泄露）
 .env
 .env.local
